@@ -29,7 +29,13 @@ export default function LoginPage() {
           <LoginForm />
         </div>
 
-        <p className="text-center text-sm text-slate-400 mt-6">
+        <p className="text-center text-sm text-slate-400 mt-4">
+          <Link href="/auth/recuperar-senha" className="text-brand-600 font-semibold hover:underline">
+            Esqueci minha senha
+          </Link>
+        </p>
+
+        <p className="text-center text-sm text-slate-400 mt-2">
           Não tem conta?{' '}
           <Link href="/auth/cadastro" className="text-brand-600 font-semibold hover:underline">
             Solicitar acesso

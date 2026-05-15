@@ -1,5 +1,5 @@
-/**
- * Tipos TypeScript gerados a partir do schema Supabase (Vete do Rim)
+﻿/**
+ * Tipos TypeScript gerados a partir do schema Supabase (Vet do Rim)
  * Tabelas cobertas: profiles, tutores, pets, colaboradores
  * Atualizado em: 2026-05-15
  */

@@ -1,0 +1,336 @@
+'use client'
+
+import { useState, useCallback, useTransition } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import {
+  Upload, FileText, Loader2, CheckCircle2, AlertTriangle,
+  ChevronDown, ChevronUp, Zap, FlaskConical
+} from 'lucide-react'
+
+interface HemogramaResult {
+  paciente: {
+    nome: string; especie: string; raca: string; idade: string
+    peso_kg: number | null; tutor: string
+  }
+  serie_vermelha: {
+    hemacias: number | null; hemoglobina: number | null
+    hematocrito: number | null; vcm: number | null
+    hcm: number | null; chcm: number | null; rdw: number | null
+  }
+  serie_branca: {
+    leucocitos_totais: number | null; neutrofilos_segmentados: number | null
+    neutrofilos_bastoes: number | null; linfocitos: number | null
+    monocitos: number | null; eosinofilos: number | null; basofilos: number | null
+  }
+  plaquetas: { contagem: number | null; vpm: number | null }
+  bioquimica: {
+    ureia: number | null; creatinina: number | null
+    alt_tgp: number | null; ast_tgo: number | null
+    fosforo: number | null; potassio: number | null
+    sodio: number | null; albumina: number | null; proteina_total: number | null
+  }
+  interpretacao_ia: {
+    resumo: string
+    achados_relevantes: string[]
+    alertas: string[]
+    estadiamento_iris_sugerido: string | null
+  }
+  laboratorio: string
+  data_coleta: string
+  data_resultado: string
+}
+
+function ValueRow({ label, value, unit }: { label: string; value: number | null; unit?: string }) {
+  return (
+    <div className="flex items-center justify-between py-1.5 border-b border-slate-50">
+      <span className="text-xs text-slate-500">{label}</span>
+      <span className="text-xs font-semibold text-slate-800">
+        {value !== null ? `${value}${unit ? ` ${unit}` : ''}` : '—'}
+      </span>
+    </div>
+  )
+}
+
+function Section({ title, children, defaultOpen = true }: {
+  title: string; children: React.ReactNode; defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
+      >
+        {title}
+        {open ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
+    </div>
+  )
+}
+
+/**
+ * Upload de laudo PDF com análise por IA e visualização side-by-side.
+ * STORY-403: UI Lab Evolution para laudos.
+ */
+export function LaudoUploader({ petId }: { petId: string }) {
+  const supabase = createClient()
+  const [isPending, startTransition] = useTransition()
+  const [dragActive, setDragActive] = useState(false)
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'analyzing' | 'done' | 'error'>('idle')
+  const [result, setResult] = useState<HemogramaResult | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  const handleFile = useCallback((file: File) => {
+    if (file.type !== 'application/pdf') {
+      setErrorMsg('Apenas arquivos PDF são aceitos.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg('Arquivo muito grande. Máximo: 10 MB.')
+      return
+    }
+    setErrorMsg(null)
+    setPdfFile(file)
+    setPdfUrl(URL.createObjectURL(file))
+    setStatus('idle')
+    setResult(null)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setDragActive(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFile(file)
+  }, [handleFile])
+
+  async function handleAnalyze() {
+    if (!pdfFile) return
+    setErrorMsg(null)
+
+    startTransition(async () => {
+      try {
+        // 1. Upload para o Storage
+        setStatus('uploading')
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('Sessão expirada. Faça login novamente.')
+
+        const fileName = `${user.id}/${Date.now()}_${pdfFile.name.replace(/\s/g, '_')}`
+        const { error: uploadError } = await supabase.storage
+          .from('laudos')
+          .upload(fileName, pdfFile, { contentType: 'application/pdf', upsert: false })
+        if (uploadError) throw new Error(`Upload falhou: ${uploadError.message}`)
+
+        // 2. Cria registro no banco
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: laudo, error: insertError } = await (supabase as any)
+          .from('laudos_pdf')
+          .insert({
+            pet_id: petId,
+            vet_id: user.id,
+            storage_path: fileName,
+            nome_arquivo: pdfFile.name,
+            tipo_exame: 'hemograma',
+            tamanho_bytes: pdfFile.size,
+          })
+          .select('id')
+          .single() as { data: { id: string } | null; error: Error | null }
+        if (insertError || !laudo) throw new Error('Erro ao registrar laudo.')
+
+        // 3. Dispara Edge Function
+        setStatus('analyzing')
+        const { data: { session } } = await supabase.auth.getSession()
+        const fnRes = await supabase.functions.invoke('parse-laudo', {
+          body: { laudoId: laudo.id },
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        })
+        if (fnRes.error) throw new Error(fnRes.error.message)
+        if (!fnRes.data?.data) throw new Error('Resposta inválida da IA.')
+
+        setResult(fnRes.data.data as HemogramaResult)
+        setStatus('done')
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : 'Erro desconhecido')
+        setStatus('error')
+      }
+    })
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Upload zone */}
+      {!pdfFile ? (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragActive(true) }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={handleDrop}
+          className={`rounded-2xl border-2 border-dashed p-10 text-center transition-all duration-200 cursor-pointer ${
+            dragActive ? 'border-brand-400 bg-brand-50' : 'border-slate-200 hover:border-brand-300 hover:bg-slate-50'
+          }`}
+          role="button"
+          tabIndex={0}
+          aria-label="Área de upload de laudo PDF"
+          onClick={() => document.getElementById('laudo-file-input')?.click()}
+          onKeyDown={(e) => e.key === 'Enter' && document.getElementById('laudo-file-input')?.click()}
+        >
+          <Upload className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+          <p className="font-semibold text-slate-700 mb-1">Arraste o laudo PDF aqui</p>
+          <p className="text-sm text-slate-400 mb-4">ou clique para selecionar o arquivo</p>
+          <span className="text-xs text-slate-300">PDF · máx. 10 MB</span>
+          <input
+            id="laudo-file-input"
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+          />
+        </div>
+      ) : (
+        /* Side-by-side: PDF viewer + resultado */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* PDF Viewer */}
+          <div className="rounded-2xl border border-slate-100 overflow-hidden bg-slate-50">
+            <div className="flex items-center gap-2 px-4 py-3 bg-white border-b border-slate-100">
+              <FileText className="h-4 w-4 text-slate-400" aria-hidden />
+              <span className="text-sm font-medium text-slate-700 truncate flex-1">{pdfFile.name}</span>
+              <button
+                type="button"
+                onClick={() => { setPdfFile(null); setPdfUrl(null); setResult(null); setStatus('idle') }}
+                className="text-xs text-slate-400 hover:text-red-500 transition-colors"
+              >
+                Trocar
+              </button>
+            </div>
+            {pdfUrl && (
+              <iframe
+                src={pdfUrl}
+                title="Visualizador de laudo PDF"
+                className="w-full"
+                style={{ height: '600px' }}
+              />
+            )}
+          </div>
+
+          {/* Painel de resultado */}
+          <div className="space-y-4">
+            {/* Botão analisar */}
+            {status === 'idle' || status === 'error' ? (
+              <button
+                type="button"
+                onClick={handleAnalyze}
+                disabled={isPending}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-bold text-sm hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg shadow-brand-500/20"
+              >
+                <Zap className="h-4 w-4" aria-hidden />
+                Analisar com IA (GPT-4o)
+              </button>
+            ) : status === 'uploading' ? (
+              <div className="flex items-center gap-3 px-6 py-4 rounded-xl bg-slate-50 border border-slate-100">
+                <Loader2 className="h-5 w-5 text-brand-500 animate-spin" />
+                <span className="text-sm font-medium text-slate-700">Enviando PDF…</span>
+              </div>
+            ) : status === 'analyzing' ? (
+              <div className="flex items-center gap-3 px-6 py-4 rounded-xl bg-brand-50 border border-brand-100">
+                <Loader2 className="h-5 w-5 text-brand-500 animate-spin" />
+                <div>
+                  <p className="text-sm font-semibold text-brand-700">IA analisando o laudo…</p>
+                  <p className="text-xs text-brand-400 mt-0.5">GPT-4o extraindo dados clínicos</p>
+                </div>
+              </div>
+            ) : null}
+
+            {errorMsg && (
+              <div role="alert" className="flex items-start gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                {errorMsg}
+              </div>
+            )}
+
+            {/* Resultado da IA */}
+            {result && status === 'done' && (
+              <div className="space-y-3" aria-live="polite">
+                {/* Interpretação */}
+                <div className="bg-gradient-to-br from-brand-50 to-blue-50 rounded-xl border border-brand-100 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle2 className="h-5 w-5 text-brand-500" aria-hidden />
+                    <span className="font-semibold text-brand-800 text-sm">Análise concluída</span>
+                    {result.interpretacao_ia.estadiamento_iris_sugerido && (
+                      <span className="ml-auto px-2.5 py-0.5 rounded-full bg-brand-500 text-white text-xs font-bold">
+                        {result.interpretacao_ia.estadiamento_iris_sugerido}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-slate-700 leading-relaxed mb-3">{result.interpretacao_ia.resumo}</p>
+
+                  {result.interpretacao_ia.alertas.length > 0 && (
+                    <div className="space-y-1.5">
+                      {result.interpretacao_ia.alertas.map((alerta) => (
+                        <div key={alerta} className="flex items-start gap-2 text-xs text-amber-800">
+                          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-500" />
+                          {alerta}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Séries hematológicas */}
+                <Section title="🔴 Série Vermelha">
+                  <ValueRow label="Hemácias" value={result.serie_vermelha.hemacias} unit="×10⁶/µL" />
+                  <ValueRow label="Hemoglobina" value={result.serie_vermelha.hemoglobina} unit="g/dL" />
+                  <ValueRow label="Hematócrito" value={result.serie_vermelha.hematocrito} unit="%" />
+                  <ValueRow label="VCM" value={result.serie_vermelha.vcm} unit="fL" />
+                  <ValueRow label="HCM" value={result.serie_vermelha.hcm} unit="pg" />
+                  <ValueRow label="CHCM" value={result.serie_vermelha.chcm} unit="g/dL" />
+                </Section>
+
+                <Section title="⚪ Série Branca" defaultOpen={false}>
+                  <ValueRow label="Leucócitos totais" value={result.serie_branca.leucocitos_totais} unit="/µL" />
+                  <ValueRow label="Neutrófilos segm." value={result.serie_branca.neutrofilos_segmentados} unit="/µL" />
+                  <ValueRow label="Linfócitos" value={result.serie_branca.linfocitos} unit="/µL" />
+                  <ValueRow label="Monócitos" value={result.serie_branca.monocitos} unit="/µL" />
+                  <ValueRow label="Eosinófilos" value={result.serie_branca.eosinofilos} unit="/µL" />
+                </Section>
+
+                <Section title="🧪 Bioquímica Renal" defaultOpen={true}>
+                  <ValueRow label="Ureia" value={result.bioquimica.ureia} unit="mg/dL" />
+                  <ValueRow label="Creatinina" value={result.bioquimica.creatinina} unit="mg/dL" />
+                  <ValueRow label="Fósforo" value={result.bioquimica.fosforo} unit="mg/dL" />
+                  <ValueRow label="Potássio" value={result.bioquimica.potassio} unit="mEq/L" />
+                  <ValueRow label="Sódio" value={result.bioquimica.sodio} unit="mEq/L" />
+                  <ValueRow label="Albumina" value={result.bioquimica.albumina} unit="g/dL" />
+                </Section>
+
+                <Section title="💊 Plaquetas" defaultOpen={false}>
+                  <ValueRow label="Contagem" value={result.plaquetas.contagem} unit="×10³/µL" />
+                  <ValueRow label="VPM" value={result.plaquetas.vpm} unit="fL" />
+                </Section>
+
+                {/* Achados relevantes */}
+                {result.interpretacao_ia.achados_relevantes.length > 0 && (
+                  <div className="bg-white rounded-xl border border-slate-100 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FlaskConical className="h-4 w-4 text-brand-500" />
+                      <span className="text-sm font-semibold text-slate-800">Achados relevantes</span>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {result.interpretacao_ia.achados_relevantes.map((achado) => (
+                        <li key={achado} className="flex items-start gap-2 text-xs text-slate-600">
+                          <span className="text-brand-400 mt-0.5">•</span>
+                          {achado}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

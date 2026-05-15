@@ -1,6 +1,6 @@
 # 📊 Dashboard de Execução e Orquestração de Agentes (AIOX)
 
-**Projeto:** Ecossistema Digital "Vete do Rim"
+**Projeto:** Ecossistema Digital "Vet do Rim"
 **Metodologia:** Sprints Ágeis (Story-Driven Development)
 **Gerenciado por:** `@aiox-master`
 
@@ -13,11 +13,11 @@
 | Fase / Sprint | Foco Estratégico | Status | Agentes Líderes |
 |---------------|------------------|--------|-----------------|
 | **Sprint 0** | Setup, Infra e Arquitetura DB | ✅ Concluída | `@architect`, `@devops`, `@data-engineer` |
-| **Sprint 1** | Institucional & Motor SEO Blog | ⏳ A Iniciar | `@dev`, `@analyst` |
-| **Sprint 2** | Auth & Integração Lab Evolution | ⏳ A Iniciar | `@dev`, `@qa` |
-| **Sprint 3** | Lead Magnets (Ferramentas Grátis) | ⏳ A Iniciar | `@pm`, `@dev` |
-| **Sprint 4** | Storage de PDF e MVP Inteligência Artificial | ⏳ A Iniciar | `@data-engineer`, `@dev` |
-| **Sprint 5** | Qualidade, Observabilidade e Go-Live | ⏳ A Iniciar | `@devops`, `@qa`, `@analyst` |
+| **Sprint 1** | Institucional & Motor SEO Blog | ✅ Concluída | `@dev`, `@analyst` |
+| **Sprint 2** | Auth & Integração Lab Evolution | ✅ Concluída | `@dev`, `@qa` |
+| **Sprint 3** | Lead Magnets (Ferramentas Grátis) | ✅ Concluída | `@pm`, `@dev` |
+| **Sprint 4** | Storage de PDF e MVP Inteligência Artificial | ✅ Concluída | `@data-engineer`, `@dev` |
+| **Sprint 5** | Qualidade, Observabilidade e Go-Live | ✅ Concluída | `@devops`, `@qa`, `@analyst` |
 
 ---
 

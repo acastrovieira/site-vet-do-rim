@@ -1,0 +1,82 @@
+'use client'
+
+import { useState, useCallback } from 'react'
+import type { FreePatient } from '@/lib/lab-free/types'
+import { getPatients } from '@/lib/lab-free/storage'
+import { FreePatientList } from './FreePatientList'
+import { FreePatientForm } from './FreePatientForm'
+import { FreeDashboard } from './FreeDashboard'
+
+type View = 'list' | 'dashboard'
+
+/**
+ * Componente raiz da ferramenta Planilha Laboratorial Gratuita.
+ * Orquestra navegação entre lista de pacientes e dashboard individual.
+ * Dados persistem em localStorage do navegador.
+ */
+export function FreeLabApp() {
+  const [view, setView] = useState<View>('list')
+  const [patients, setPatients] = useState<FreePatient[]>(() => getPatients())
+  const [currentPatient, setCurrentPatient] = useState<FreePatient | null>(null)
+  const [showForm, setShowForm] = useState(false)
+
+  const refreshPatients = useCallback(() => {
+    setPatients(getPatients())
+  }, [])
+
+  function handleSelectPatient(p: FreePatient) {
+    setCurrentPatient(p)
+    setView('dashboard')
+  }
+
+  function handleSavePatient(p: FreePatient) {
+    refreshPatients()
+    setShowForm(false)
+    setCurrentPatient(p)
+    setView('dashboard')
+  }
+
+  function handleBack() {
+    refreshPatients()
+    setView('list')
+    setCurrentPatient(null)
+  }
+
+  return (
+    <>
+      {view === 'list' && (
+        <FreePatientList
+          patients={patients}
+          onSelect={handleSelectPatient}
+          onNew={() => setShowForm(true)}
+          onRefresh={refreshPatients}
+        />
+      )}
+
+      {view === 'dashboard' && currentPatient && (
+        <FreeDashboard
+          patient={currentPatient}
+          onBack={handleBack}
+        />
+      )}
+
+      {showForm && (
+        <FreePatientForm
+          onSave={handleSavePatient}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {/* Banner de dados locais */}
+      <div className="mt-8 rounded-xl border border-amber-200/60 bg-amber-50 p-3 text-center">
+        <p className="text-xs leading-relaxed text-amber-700">
+          <strong>💡 Seus dados ficam salvos neste navegador</strong> (localStorage).
+          Para backup na nuvem, sincronização com Google Drive e acesso multi-dispositivo, utilize o{' '}
+          <a href="/lab" className="font-bold text-brand-600 underline hover:text-brand-700">
+            Lab Evolution Premium
+          </a>.
+        </p>
+      </div>
+    </>
+  )
+}

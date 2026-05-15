@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
-import { Calculator, Activity, ChevronRight, Lock } from 'lucide-react'
+import { Calculator, Activity, ChevronRight, Lock, FlaskConical } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Ferramentas Clínicas Gratuitas — Nefrologia Veterinária | Vet do Rim',
@@ -40,6 +40,18 @@ const activeTools = [
     tags: ['IRIS 2023', 'Proteinúria', 'Pressão arterial', 'Progressão'],
     iconBg: 'bg-gold-50',
     iconColor: 'text-gold-500',
+  },
+  {
+    href: '/ferramentas/planilha-laboratorial',
+    icon: FlaskConical,
+    title: 'Planilha Laboratorial',
+    subtitle: 'Acompanhamento Evolutivo',
+    description:
+      'Cadastre pacientes e acompanhe a evolução dos exames laboratoriais com planilha visual interativa. Insira dados manualmente e exporte em PDF gratuitamente.',
+    tags: ['Hemograma', 'Bioquímica', 'Urinálise', 'PDF Gratuito'],
+    iconBg: 'bg-emerald-50',
+    iconColor: 'text-emerald-500',
+    badge: 'Freemium',
   },
 ]
 
@@ -80,9 +92,15 @@ export default function FerramentasPage() {
                     <div className={`p-2.5 rounded-xl ${tool.iconBg}`}>
                       <Icon className={`h-5 w-5 ${tool.iconColor}`} strokeWidth={1.75} aria-hidden />
                     </div>
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
-                      Gratuito
-                    </span>
+                    {'badge' in tool && tool.badge === 'Freemium' ? (
+                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-gradient-to-r from-gold-50 to-brand-50 text-gold-600 border border-gold-200/60">
+                        ✨ Freemium
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                        Gratuito
+                      </span>
+                    )}
                   </div>
                   <h2 className="font-display font-bold text-lg text-slate-900 leading-tight mb-1">
                     {tool.title}

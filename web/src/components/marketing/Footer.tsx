@@ -29,9 +29,9 @@ export function Footer() {
               <Image
                 src="/logo.png"
                 alt="Vet do Rim"
-                width={48}
-                height={48}
-                className="object-contain brightness-0 invert"
+                width={64}
+                height={64}
+                className="w-12 h-12 sm:w-14 sm:h-14 object-contain brightness-0 invert shrink-0"
               />
               <div>
                 <span className="block font-display font-bold text-base text-white tracking-tight leading-none">

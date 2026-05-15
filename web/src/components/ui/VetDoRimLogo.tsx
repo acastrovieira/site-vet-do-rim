@@ -1,49 +1,49 @@
 import Image from 'next/image'
 
 interface VetDoRimLogoProps {
+  /** Largura intrínseca (Next.js otimização). Tamanho real = className CSS */
   width?: number
+  /** Altura intrínseca (Next.js otimização). Tamanho real = className CSS */
   height?: number
   className?: string
   /**
-   * 'color'  = logo original navy + dourado (padrão, fundos claros)
-   * 'white'  = logo invertida para fundos escuros
+   * 'color'  = logo navy + dourado — fundos claros (usa mix-blend-multiply automaticamente)
+   * 'white'  = logo invertida — fundos escuros (brightness-0 invert)
    */
   variant?: 'color' | 'white'
-  /**
-   * true = exibe apenas o símbolo sem texto — ideal para header compacto e favicon
-   * (para este logo, sempre exibe o símbolo pois não tem texto integrado)
-   */
-  symbolOnly?: boolean
+  priority?: boolean
 }
 
 /**
- * Logo oficial da marca Vet do Rim.
- * PNG premium: dois gotas navy com gato + cão e rim dourado no centro.
- * Substitua /images/logo-oficial.png pela imagem oficial de alta resolução.
+ * Logo oficial Vet do Rim — PNG 1024×1024 com fundo transparente.
+ * Tamanho visual controlado via className (Tailwind responsivo).
+ *
+ * @example
+ * // Header desktop
+ * <VetDoRimLogo className="w-10 h-10 sm:w-12 sm:h-12" priority />
+ *
+ * @example
+ * // Footer escuro
+ * <VetDoRimLogo variant="white" className="w-12 h-12 sm:w-14 sm:h-14" />
  */
 export function VetDoRimLogo({
-  width = 160,
-  height = 160,
+  width = 256,
+  height = 256,
   className = '',
   variant = 'color',
-  symbolOnly = false,
+  priority = false,
 }: VetDoRimLogoProps) {
-  // Em symbolOnly, manter proporção quadrada para o ícone
-  const displayWidth = symbolOnly ? height : width
-  const displayHeight = height
+  const blendClass = variant === 'color' ? 'mix-blend-multiply' : 'brightness-0 invert'
 
   return (
     <Image
-      src="/images/logo-oficial.png"
+      src="/logo.png"
       alt="Vet do Rim — Nefrologia e Urologia Veterinária"
-      width={displayWidth}
-      height={displayHeight}
+      width={width}
+      height={height}
       quality={95}
-      className={`object-contain select-none ${
-        variant === 'white' ? 'brightness-0 invert' : ''
-      } ${className}`}
-      style={{ width: `${displayWidth}px`, height: `${displayHeight}px` }}
-      priority
+      className={`object-contain select-none shrink-0 ${blendClass} ${className}`}
+      priority={priority}
     />
   )
 }

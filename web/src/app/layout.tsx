@@ -23,6 +23,16 @@ export const metadata: Metadata = {
     default: 'Vet do Rim — Nefrologia e Urologia Veterinária de Alta Complexidade',
     template: '%s | Vet do Rim',
   },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.png', type: 'image/png', sizes: '32x32' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    other: [
+      { rel: 'mask-icon', url: '/logo.png', color: '#1A2E5A' },
+    ],
+  },
   description:
     'Especialistas em nefrologia e urologia veterinária. Atendimento humanizado, medicina de ponta e rigor técnico científico para o bem-estar do seu animal.',
   keywords: [

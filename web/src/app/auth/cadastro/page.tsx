@@ -13,7 +13,10 @@ export default function CadastroPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-science-50 to-white px-4 py-12">
       <Link href="/" className="flex flex-col items-center gap-2 mb-10 group" aria-label="Vet do Rim — Voltar ao site">
-        <VetDoRimLogo width={72} height={90} symbolOnly className="transition-transform group-hover:scale-105 duration-200" />
+        <VetDoRimLogo
+          className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 transition-transform group-hover:scale-105 duration-200"
+          priority
+        />
         <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">Lab Evolution</span>
       </Link>
 

@@ -40,9 +40,9 @@ export function Header() {
             <Image
               src="/logo.png"
               alt="Vet do Rim"
-              width={44}
-              height={44}
-              className="transition-transform duration-200 group-hover:scale-105 object-contain"
+              width={64}
+              height={64}
+              className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 object-contain mix-blend-multiply transition-transform duration-200 group-hover:scale-105 shrink-0"
               priority
             />
             <div className="hidden sm:block">

@@ -29,13 +29,18 @@ export function Footer() {
               <Image
                 src="/logo.png"
                 alt="Vet do Rim"
-                width={52}
-                height={52}
+                width={48}
+                height={48}
                 className="object-contain brightness-0 invert"
               />
-              <span className="font-display font-bold text-lg text-white tracking-tight">
-                Vet do Rim
-              </span>
+              <div>
+                <span className="block font-display font-bold text-base text-white tracking-tight leading-none">
+                  Vet do Rim
+                </span>
+                <span className="block text-[10px] text-slate-400 tracking-wider font-medium mt-0.5">
+                  Nefrologia Veterinária
+                </span>
+              </div>
             </Link>
             <p className="text-sm leading-relaxed max-w-xs">
               Nefrologia e urologia veterinária de alta complexidade. Ciência, tecnologia e

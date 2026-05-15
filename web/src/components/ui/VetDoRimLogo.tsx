@@ -4,34 +4,46 @@ interface VetDoRimLogoProps {
   width?: number
   height?: number
   className?: string
-  /** 'color' = navy+gold | 'white' = todo branco (para fundos escuros) */
+  /**
+   * 'color'  = logo original navy + dourado (padrão, fundos claros)
+   * 'white'  = logo invertida para fundos escuros
+   */
   variant?: 'color' | 'white'
-  /** true = exibe apenas o símbolo (sem textos), ideal para o Header */
+  /**
+   * true = exibe apenas o símbolo sem texto — ideal para header compacto e favicon
+   * (para este logo, sempre exibe o símbolo pois não tem texto integrado)
+   */
   symbolOnly?: boolean
 }
 
 /**
  * Logo oficial da marca Vet do Rim.
- * SVG inline — escalável, sem requisição HTTP, sem pixelização.
+ * PNG premium: dois gotas navy com gato + cão e rim dourado no centro.
+ * Substitua /images/logo-oficial.png pela imagem oficial de alta resolução.
  */
 export function VetDoRimLogo({
   width = 160,
-  height = 200,
+  height = 160,
   className = '',
   variant = 'color',
+  symbolOnly = false,
 }: VetDoRimLogoProps) {
+  // Em symbolOnly, manter proporção quadrada para o ícone
+  const displayWidth = symbolOnly ? height : width
+  const displayHeight = height
 
   return (
     <Image
-      src="/images/logo-oficial.svg"
-      alt="Vet do Rim"
-      width={width}
-      height={height}
-      className={`${className} object-contain ${variant === 'white' ? 'brightness-0 invert' : ''}`}
-      style={{ 
-        width: width ? `${width}px` : 'auto', 
-        height: height ? `${height}px` : 'auto' 
-      }}
+      src="/images/logo-oficial.png"
+      alt="Vet do Rim — Nefrologia e Urologia Veterinária"
+      width={displayWidth}
+      height={displayHeight}
+      quality={95}
+      className={`object-contain select-none ${
+        variant === 'white' ? 'brightness-0 invert' : ''
+      } ${className}`}
+      style={{ width: `${displayWidth}px`, height: `${displayHeight}px` }}
+      priority
     />
   )
 }

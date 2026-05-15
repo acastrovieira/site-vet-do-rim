@@ -36,15 +36,19 @@ export function Header() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group" aria-label="Vet do Rim — Início">
+          <Link href="/" className="flex items-center gap-3 group" aria-label="Vet do Rim — Início">
             <Image
               src="/logo.png"
               alt="Vet do Rim"
-              width={48}
-              height={48}
-              className="transition-transform duration-200 group-hover:scale-110 object-contain"
+              width={44}
+              height={44}
+              className="transition-transform duration-200 group-hover:scale-105 object-contain"
               priority
             />
+            <div className="hidden sm:block">
+              <span className="block font-display font-bold text-sm text-brand-500 leading-none tracking-tight">Vet do Rim</span>
+              <span className="block text-[10px] text-science-500 font-medium tracking-wider">Nefrologia Veterinária</span>
+            </div>
           </Link>
 
           {/* Nav Desktop */}
@@ -60,7 +64,7 @@ export function Header() {
             ))}
             <Link
               href="/auth/login"
-              className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-all duration-200 shadow-sm hover:shadow-brand-500/25"
+              className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-all duration-200 shadow-sm"
             >
               Entrar
             </Link>

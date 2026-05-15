@@ -1,6 +1,6 @@
-﻿/**
+/**
  * Tipos TypeScript gerados a partir do schema Supabase (Vet do Rim)
- * Tabelas cobertas: profiles, tutores, pets, colaboradores
+ * Tabelas cobertas: profiles, tutores, pets, colaboradores, laudos_pdf
  * Atualizado em: 2026-05-15
  */
 
@@ -13,6 +13,8 @@ export type Json =
   | Json[]
 
 export type UserRole = 'vet' | 'tutor' | 'admin'
+
+export type LaudoStatus = 'pendente' | 'processando' | 'concluido' | 'erro'
 
 export interface Database {
   public: {
@@ -132,6 +134,37 @@ export interface Database {
           atualizado_em?: string
         }
         Update: Partial<Database['public']['Tables']['colaboradores']['Insert']>
+      }
+      laudos_pdf: {
+        Row: {
+          id: string
+          pet_id: string
+          vet_id: string | null
+          storage_path: string
+          nome_arquivo: string
+          tipo_exame: string
+          status: LaudoStatus
+          resultado_ia: Json | null
+          erro_ia: string | null
+          tamanho_bytes: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          pet_id: string
+          vet_id?: string | null
+          storage_path: string
+          nome_arquivo: string
+          tipo_exame?: string
+          status?: LaudoStatus
+          resultado_ia?: Json | null
+          erro_ia?: string | null
+          tamanho_bytes?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['laudos_pdf']['Insert']>
       }
     }
     Views: Record<string, never>

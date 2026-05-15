@@ -2,11 +2,11 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
- * Middleware de autenticação do Next.js.
+ * Proxy de autenticação do Next.js (substitui middleware.ts no Next.js 16+).
  * Protege rotas do SaaS (/lab, /dashboard) exigindo sessão válida.
  * Rotas públicas (/, /blog, /ferramentas, /auth) são sempre acessíveis.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Rotas protegidas — requer autenticação
-  const protectedRoutes = ['/lab', '/dashboard', '/admin']
+  const protectedRoutes = ['/lab', '/portal', '/dashboard', '/admin']
   const isProtected = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   )
@@ -49,13 +49,56 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Redirecionamento pós-login baseado em role
+  // Garante que tutor não acessa /lab e vet não acessa /portal
+  if (user) {
+    const pathname = request.nextUrl.pathname
+
+    // Busca role do usuário (apenas quando necessário para redirecionar)
+    if (pathname === '/auth/login' || pathname === '/auth/cadastro') {
+      // Já autenticado — redireciona para a área correta
+      // O redirect real acontece no Server Component após checar o role
+      return supabaseResponse
+    }
+
+    // Tutor tentando acessar área de vet
+    if (pathname.startsWith('/lab') || pathname.startsWith('/admin')) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'tutor') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/portal'
+        return NextResponse.redirect(url)
+      }
+    }
+
+    // Vet tentando acessar área de tutor
+    if (pathname.startsWith('/portal')) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'vet' || profile?.role === 'admin') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/lab'
+        return NextResponse.redirect(url)
+      }
+    }
+  }
+
   return supabaseResponse
 }
 
 export const config = {
   matcher: [
     /*
-     * Aplica o middleware em todas as rotas EXCETO:
+     * Aplica o proxy em todas as rotas EXCETO:
      * - arquivos estáticos (_next/static, _next/image, *.ico, etc.)
      * - rotas de API internas do Next.js
      */

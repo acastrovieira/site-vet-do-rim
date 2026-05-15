@@ -1,24 +1,37 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── Design System Tokens ─────────────────────────────── */
+  /* ── Tipografia ────────────────────────────────────────── */
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-plus-jakarta), var(--font-inter), system-ui, sans-serif;
 
-  /* Paleta "Clinical Luxury" */
-  --color-brand-50: #f0f9ff;
-  --color-brand-100: #e0f2fe;
-  --color-brand-500: #0ea5e9;
-  --color-brand-600: #0284c7;
-  --color-brand-700: #0369a1;
-  --color-brand-900: #0c4a6e;
+  /* ── Paleta "Clinical Luxury" — Navy + Dourado ─────────── */
+  /* Navy (cor primária da marca — mesma do logo) */
+  --color-brand-50:  #EEF1F8;
+  --color-brand-100: #D3DAF0;
+  --color-brand-200: #A8B5E0;
+  --color-brand-300: #7B90D0;
+  --color-brand-500: #1A2E5A;
+  --color-brand-600: #152245;
+  --color-brand-700: #101833;
+  --color-brand-900: #080F20;
 
-  --color-science-50: #f8fafc;
-  --color-science-100: #f1f5f9;
-  --color-science-200: #e2e8f0;
-  --color-science-500: #64748b;
+  /* Gold (cor de acento da marca — mesmo dourado do rim no logo) */
+  --color-gold-50:  #FDF9EC;
+  --color-gold-100: #FAF1CC;
+  --color-gold-200: #F4E099;
+  --color-gold-400: #D4AF37;
+  --color-gold-500: #C9A84C;
+  --color-gold-600: #B8932A;
+  --color-gold-700: #9A7A20;
+
+  /* Science / Neutrals (fundo clínico premium) */
+  --color-science-50:  #F8FAFC;
+  --color-science-100: #F1F5F9;
+  --color-science-200: #E2E8F0;
+  --color-science-500: #64748B;
   --color-science-700: #334155;
-  --color-science-900: #0f172a;
+  --color-science-900: #0F172A;
 }
 
 /* ── Base ─────────────────────────────────────────────── */
@@ -44,20 +57,33 @@
     text-wrap: balance;
   }
 
-  /* Gradiente de texto brand */
+  /* Gradiente de texto: Navy → Gold (identidade da marca) */
   .text-gradient-brand {
-    background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+    background: linear-gradient(135deg, #1A2E5A 0%, #C9A84C 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* Glass card sutil */
+  /* Gradiente dourado puro */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #D4AF37 0%, #C9A84C 50%, #B8932A 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glass card sutil — tom navy */
   .glass-card {
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.75);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(14, 165, 233, 0.1);
+    border: 1px solid rgba(26, 46, 90, 0.08);
+  }
+
+  /* Glow dourado sutil para elementos premium */
+  .gold-glow {
+    box-shadow: 0 0 24px rgba(201, 168, 76, 0.2), 0 0 4px rgba(201, 168, 76, 0.1);
   }
 
   /* Animação de fade-up para seções */
@@ -80,10 +106,10 @@
 /* ── Prose (artigos científicos) ───────────────────────── */
 .prose-vet {
   --tw-prose-body: #334155;
-  --tw-prose-headings: #0f172a;
-  --tw-prose-links: #0284c7;
-  --tw-prose-bold: #0f172a;
-  --tw-prose-quotes: #64748b;
-  --tw-prose-code: #0284c7;
+  --tw-prose-headings: #0F172A;
+  --tw-prose-links: #1A2E5A;
+  --tw-prose-bold: #0F172A;
+  --tw-prose-quotes: #64748B;
+  --tw-prose-code: #1A2E5A;
   max-width: 72ch;
 }

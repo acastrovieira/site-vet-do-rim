@@ -10,13 +10,27 @@ export const metadata: Metadata = {
 
 export default async function LabDashboardPage() {
   const supabase = await createClient()
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   // Métricas rápidas (dados reais do banco)
   const [{ count: totalPets }, { count: totalTutores }] = await Promise.all([
     supabase.from('pets').select('*', { count: 'exact', head: true }),
     supabase.from('tutores').select('*', { count: 'exact', head: true }),
   ])
+
+  // Perfil do usuário logado
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, role')
+    .eq('id', user!.id)
+    .single() as { data: { full_name: string | null; role: string } | null; error: Error | null }
+
+  // Saudação dinâmica por horário de Brasília (UTC-3)
+  const brtHour = new Date(
+    new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })
+  ).getHours()
+  const greeting = brtHour < 12 ? 'Bom dia' : brtHour < 18 ? 'Boa tarde' : 'Boa noite'
+  const firstName = profile?.full_name?.split(' ')[0] ?? 'Doutor(a)'
 
   const cards = [
     {
@@ -47,10 +61,10 @@ export default async function LabDashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Saudação */}
+      {/* Saudação dinâmica */}
       <div>
         <h1 className="font-display text-2xl font-bold text-slate-900">
-          Bom dia, doutor(a) 👋
+          {greeting}, {firstName} 👋
         </h1>
         <p className="text-slate-500 mt-1 text-sm">
           Visão geral dos seus pacientes renais · Lab Evolution
@@ -79,7 +93,7 @@ export default async function LabDashboardPage() {
       <div className="bg-white rounded-2xl border border-slate-100 p-6">
         <h2 className="font-display font-semibold text-slate-900 mb-4">Pacientes recentes</h2>
         <p className="text-sm text-slate-400">
-          Lista de pacientes aparecerá aqui. Integração com o Lab Evolution atual em andamento.
+          Acesse a seção <strong>Pacientes</strong> no menu lateral para gerenciar seus pacientes renais.
         </p>
       </div>
     </div>

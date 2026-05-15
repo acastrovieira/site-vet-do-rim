@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useTransition } from 'react'
+import { useState, useCallback, useTransition, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   Upload, FileText, Loader2, CheckCircle2, AlertTriangle,
@@ -95,9 +95,21 @@ export function LaudoUploader({ petId }: { petId: string }) {
     }
     setErrorMsg(null)
     setPdfFile(file)
-    setPdfUrl(URL.createObjectURL(file))
+    // Revoga URL anterior antes de criar uma nova (previne memory leak)
+    setPdfUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return URL.createObjectURL(file)
+    })
     setStatus('idle')
     setResult(null)
+  }, [])
+
+  // Cleanup: revoga blob URL ao desmontar o componente
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -124,9 +136,9 @@ export function LaudoUploader({ petId }: { petId: string }) {
           .upload(fileName, pdfFile, { contentType: 'application/pdf', upsert: false })
         if (uploadError) throw new Error(`Upload falhou: ${uploadError.message}`)
 
-        // 2. Cria registro no banco
+        // 2. Cria registro no banco (cast necessário pelas limitações do client Supabase)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: laudo, error: insertError } = await (supabase as any)
+        const { data: laudo, error: insertError } = await (supabase as unknown as { from: (t: string) => any })
           .from('laudos_pdf')
           .insert({
             pet_id: petId,

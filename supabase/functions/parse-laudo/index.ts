@@ -1,10 +1,29 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Origens permitidas: domínio de produção e localhost para desenvolvimento
+const ALLOWED_ORIGINS = [
+  "https://vetdorim.com.br",
+  "https://www.vetdorim.com.br",
+  "http://localhost:3000",
+];
+
+/**
+ * Retorna os headers CORS restritos à origem da requisição, se permitida.
+ * Fallback para a origem de produção em caso de origem não reconhecida.
+ */
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const allowedOrigin =
+    origin && ALLOWED_ORIGINS.includes(origin)
+      ? origin
+      : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 /** Schema OpenAI Structured Outputs para hemograma veterinário */
 const HEMOGRAMA_SCHEMA = {
@@ -100,6 +119,9 @@ const HEMOGRAMA_SCHEMA = {
 };
 
 Deno.serve(async (req: Request) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

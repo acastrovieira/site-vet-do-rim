@@ -22,13 +22,14 @@ export default async function LaudosPacientePage({ params }: Props) {
   const { petId } = await params
   const supabase = await createClient()
 
+  type PetRow = { id: string; nome: string; especie: string; raca: string | null }
+
   // Busca dados do pet para exibir nome
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: pet } = await (supabase as any)
+  const { data: pet } = await supabase
     .from('pets')
     .select('id, nome, especie, raca')
     .eq('id', petId)
-    .single() as { data: { id: string; nome: string; especie: string; raca: string } | null }
+    .single() as { data: PetRow | null; error: Error | null }
 
   if (!pet) notFound()
 

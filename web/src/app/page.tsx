@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
@@ -233,7 +233,7 @@ export default function HomePage() {
         </section>
 
         {/* ── Diferenciais ─────────────────────────── */}
-        <section className="py-24 bg-science-50" aria-labelledby="diferenciais-heading">
+        <section id="sobre" className="py-24 bg-science-50" aria-labelledby="diferenciais-heading">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
               <div>

@@ -15,14 +15,14 @@ const ROOT = path.join(__dirname, '..')
 
 const LOGO = path.join(ROOT, 'public', 'logo.png')
 
-// ── Gera PNG com fundo branco para ICO (browsers esperam fundo sólido no favicon) ─
+// ── Gera PNG transparente para ICO (browsers modernos suportam alpha no favicon) ─
 async function resizePng(size) {
   return sharp(LOGO)
     .resize(size, size, {
       fit: 'contain',
-      background: { r: 255, g: 255, b: 255, alpha: 1 },
+      background: { r: 0, g: 0, b: 0, alpha: 0 }, // fundo transparente
     })
-    .flatten({ background: { r: 255, g: 255, b: 255 } })
+    .ensureAlpha()
     .png()
     .toBuffer()
 }
@@ -86,9 +86,10 @@ async function main() {
   console.log(`  ✓ favicon.png 32x32 → public/`)
 
   // Regera apple-touch-icon com logo limpo
+  // apple-touch-icon: fundo branco obrigatório (iOS adiciona efeitos visuais)
   const png180 = await sharp(LOGO)
     .resize(160, 160, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
-    .extend({ top: 10, bottom: 10, left: 10, right: 10, background: { r: 255, g: 255, b: 255 } })
+    .extend({ top: 10, bottom: 10, left: 10, right: 10, background: { r: 255, g: 255, b: 255, alpha: 1 } })
     .flatten({ background: '#ffffff' })
     .png()
     .toBuffer()

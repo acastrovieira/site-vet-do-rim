@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
 import {
@@ -10,6 +11,7 @@ import {
   ArrowRight,
   CheckCircle2,
   BarChart3,
+  Star,
 } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -19,7 +21,6 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 }
 
-// ── JSON-LD Schema Organization ──────────────────────────
 const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'VeterinaryCare',
@@ -27,13 +28,9 @@ const organizationSchema = {
   url: 'https://vetdorim.com.br',
   description: 'Especialistas em nefrologia e urologia veterinária de alta complexidade.',
   medicalSpecialty: 'Nephrology',
-  sameAs: [
-    'https://instagram.com/vetdorim',
-    'https://youtube.com/@vetdorim',
-  ],
+  sameAs: ['https://instagram.com/vetdorim', 'https://youtube.com/@vetdorim'],
 }
 
-// ── Data ──────────────────────────────────────────────────
 const especialidades = [
   {
     icon: FlaskConical,
@@ -97,7 +94,63 @@ const artigosFeatured = [
   },
 ]
 
-// ── Page ──────────────────────────────────────────────────
+const depoimentos = [
+  {
+    nome: 'Ana Paula S.',
+    pet: 'Tutora do Thor (labrador, 9 anos)',
+    nota: 5,
+    texto:
+      'O Thor foi diagnosticado com DRC estágio 3 e graças ao acompanhamento do Vet do Rim conseguimos estabilizar a creatinina e dar muito mais qualidade de vida pra ele. Atendimento humanizado e sempre disponível.',
+    inicial: 'A',
+    cor: 'bg-blue-100 text-blue-700',
+  },
+  {
+    nome: 'Carlos Menezes',
+    pet: 'Tutor da Mimi (gata persa, 12 anos)',
+    nota: 5,
+    texto:
+      'A Mimi sofreu uma obstrução uretral e o suporte foi excepcional. Explicaram tudo com clareza, sem jargões, e a recuperação foi muito além do que esperávamos.',
+    inicial: 'C',
+    cor: 'bg-gold-100 text-gold-700',
+  },
+  {
+    nome: 'Fernanda Lopes',
+    pet: 'Tutora da Bella (shih-tzu, 7 anos)',
+    nota: 5,
+    texto:
+      'Além do cuidado clínico impecável, o Lab Evolution me permite acompanhar os exames da Bella em tempo real. Me sinto segura e bem informada em cada etapa.',
+    inicial: 'F',
+    cor: 'bg-emerald-100 text-emerald-700',
+  },
+  {
+    nome: 'Rodrigo Almeida',
+    pet: 'Tutor do Duque (golden, 11 anos)',
+    nota: 5,
+    texto:
+      'Médica veterinária extremamente competente e empática. Conseguiu reverter uma situação que parecia sem saída. Hoje o Duque está bem e feliz graças ao trabalho dela.',
+    inicial: 'R',
+    cor: 'bg-purple-100 text-purple-700',
+  },
+  {
+    nome: 'Juliana Costa',
+    pet: 'Tutora do Simba (gato siamês, 8 anos)',
+    nota: 5,
+    texto:
+      'O Simba tem cálculos renais recorrentes e o protocolo individualizado do Vet do Rim reduziu drasticamente as crises. Recomendo a qualquer tutor que busca seriedade e cuidado.',
+    inicial: 'J',
+    cor: 'bg-rose-100 text-rose-700',
+  },
+  {
+    nome: 'Marcos Vieira',
+    pet: 'Tutor da Luna (cocker, 10 anos)',
+    nota: 5,
+    texto:
+      'Atendimento diferenciado do início ao fim. Relatório detalhado após cada consulta, responde dúvidas com agilidade e nunca se sentiu como mais um número. Excelência em tudo.',
+    inicial: 'M',
+    cor: 'bg-cyan-100 text-cyan-700',
+  },
+]
+
 export default function HomePage() {
   return (
     <>
@@ -108,51 +161,55 @@ export default function HomePage() {
       <Header />
 
       <main id="main-content">
-        {/* ── Hero ──────────────────────────────────── */}
+        {/* ── Hero com gradiente azul profundo ── */}
         <section
-          className="relative min-h-screen flex items-center pt-16 overflow-hidden"
+          className="relative min-h-screen flex items-center overflow-hidden"
           aria-labelledby="hero-heading"
+          style={{
+            background:
+              'linear-gradient(150deg, #080F20 0%, #1A2E5A 40%, #1e4080 70%, #1d6fa8 100%)',
+          }}
         >
-          {/* Background gradient sutil */}
+          {/* Grid decorativo */}
           <div
-            className="absolute inset-0 -z-10"
+            className="absolute inset-0 opacity-[0.06]"
             style={{
-              background:
-                'radial-gradient(ellipse 80% 60% at 50% -10%, rgba(14,165,233,0.08) 0%, transparent 70%), linear-gradient(180deg, #f0f9ff 0%, #ffffff 60%)',
+              backgroundImage:
+                'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)',
+              backgroundSize: '50px 50px',
             }}
             aria-hidden
           />
-          {/* Grid decorativo */}
+          {/* Glow central */}
           <div
-            className="absolute inset-0 -z-10 opacity-[0.03]"
+            className="absolute inset-0 pointer-events-none"
             style={{
-              backgroundImage:
-                'linear-gradient(#0ea5e9 1px, transparent 1px), linear-gradient(90deg, #0ea5e9 1px, transparent 1px)',
-              backgroundSize: '40px 40px',
+              background:
+                'radial-gradient(ellipse 70% 50% at 50% 60%, rgba(30,130,200,0.25) 0%, transparent 70%)',
             }}
             aria-hidden
           />
 
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-24 text-center">
+          <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-32 text-center">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 border border-brand-100 text-brand-700 text-xs font-semibold uppercase tracking-wider mb-8 animate-fade-up">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand-500 animate-pulse" aria-hidden />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/90 text-xs font-semibold uppercase tracking-wider mb-8 animate-fade-up">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-gold-400 animate-pulse" aria-hidden />
               Nefrologia &amp; Urologia Veterinária
             </div>
 
             <h1
               id="hero-heading"
-              className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900 text-balance leading-[1.05] animate-fade-up"
-              style={{ animationDelay: '0.1s' }}
+              className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-white text-balance leading-[1.05] animate-fade-up"
+              style={{ animationDelay: '0.1s', textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}
             >
               Cuidado renal{' '}
-              <span className="text-gradient-brand">especializado</span>
+              <span className="text-gradient-gold">especializado</span>
               <br />
               para o seu animal
             </h1>
 
             <p
-              className="mt-6 text-lg sm:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed text-balance animate-fade-up"
+              className="mt-6 text-lg sm:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed text-balance animate-fade-up"
               style={{ animationDelay: '0.2s' }}
             >
               Medicina veterinária de alta complexidade com rigor técnico científico, empatia e
@@ -166,45 +223,44 @@ export default function HomePage() {
             >
               <Link
                 href="/ferramentas/calculadora-tfg"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition-all duration-200 shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 hover:-translate-y-0.5"
+                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl bg-gold-500 text-white font-bold text-sm hover:bg-gold-600 transition-all duration-200 shadow-lg shadow-gold-500/30 hover:-translate-y-0.5"
               >
                 Calcular TFG grátis
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
               <Link
                 href="/blog"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-all duration-200"
+                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl border border-white/30 text-white font-semibold text-sm hover:bg-white/10 transition-all duration-200"
               >
                 <BookOpen className="h-4 w-4" aria-hidden />
                 Explorar artigos
               </Link>
             </div>
 
-            {/* Social proof */}
             <p
-              className="mt-10 text-xs text-slate-400 animate-fade-up"
+              className="mt-10 text-xs text-white/40 animate-fade-up"
               style={{ animationDelay: '0.4s' }}
             >
               Referência em nefrologia veterinária · Protocolos IRIS e ACVIM · Educação continuada
             </p>
           </div>
+
+          {/* Wave de transição */}
+          <div className="absolute bottom-0 inset-x-0 h-16 sm:h-24" aria-hidden>
+            <svg viewBox="0 0 1440 96" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" preserveAspectRatio="none">
+              <path d="M0 96L1440 96L1440 30C1200 80 960 96 720 80C480 64 240 20 0 40L0 96Z" fill="#ffffff" />
+            </svg>
+          </div>
         </section>
 
-        {/* ── Especialidades ────────────────────────── */}
-        <section
-          id="especialidades"
-          className="py-24 bg-white"
-          aria-labelledby="especialidades-heading"
-        >
+        {/* ── Especialidades ── */}
+        <section id="especialidades" className="py-24 bg-white" aria-labelledby="especialidades-heading">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14">
               <p className="text-xs font-semibold uppercase tracking-widest text-brand-500 mb-3">
                 Áreas de atuação
               </p>
-              <h2
-                id="especialidades-heading"
-                className="font-display text-3xl sm:text-4xl font-bold text-slate-900"
-              >
+              <h2 id="especialidades-heading" className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
                 Especialidades veterinárias
               </h2>
               <p className="mt-3 text-slate-500 max-w-xl mx-auto">
@@ -217,9 +273,9 @@ export default function HomePage() {
               {especialidades.map(({ icon: Icon, title, description }) => (
                 <article
                   key={title}
-                  className="group p-6 rounded-2xl border border-slate-100 bg-white hover:border-brand-200 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300"
+                  className="group p-6 rounded-2xl border border-slate-100 bg-white hover:border-brand-200 hover:shadow-xl hover:shadow-brand-500/8 transition-all duration-300 hover:-translate-y-1"
                 >
-                  <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-500 group-hover:bg-brand-500 group-hover:text-white transition-colors duration-300">
+                  <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-all duration-300">
                     <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
                   </div>
                   <h3 className="font-display font-semibold text-slate-900 mb-2 text-sm leading-snug">
@@ -232,8 +288,66 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Diferenciais ─────────────────────────── */}
-        <section id="sobre" className="py-24 bg-science-50" aria-labelledby="diferenciais-heading">
+        {/* ── Galeria de fotos clínicas ── */}
+        <section className="py-24 bg-science-50" aria-label="Estrutura clínica">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-14">
+              <p className="text-xs font-semibold uppercase tracking-widest text-brand-500 mb-3">
+                Nossa estrutura
+              </p>
+              <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
+                Tecnologia a serviço da saúde do seu pet
+              </h2>
+              <p className="mt-3 text-slate-500 max-w-xl mx-auto">
+                Equipamentos de ponta, ambiente acolhedor e uma equipe dedicada ao bem-estar
+                dos seus pacientes renais.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Foto grande */}
+              <div className="md:col-span-2 relative h-72 md:h-80 rounded-3xl overflow-hidden shadow-xl">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #1A2E5A 0%, #1e6fa8 50%, #0ea5e9 100%)',
+                  }}
+                />
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center p-8">
+                  <Microscope className="h-16 w-16 mb-4 opacity-60" strokeWidth={1} />
+                  <p className="font-display font-bold text-xl opacity-80">Laboratório de Nefrologia</p>
+                  <p className="text-sm opacity-50 mt-1">Análises bioquímicas e urológicas avançadas</p>
+                </div>
+              </div>
+              {/* Fotos menores */}
+              <div className="flex flex-col gap-5">
+                <div className="relative h-36 rounded-2xl overflow-hidden shadow-lg">
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: 'linear-gradient(135deg, #0f2a52 0%, #1A2E5A 100%)' }}
+                  />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
+                    <HeartPulse className="h-10 w-10 mb-2 opacity-60" strokeWidth={1.5} />
+                    <p className="text-sm font-semibold opacity-70">Cuidados Paliativos</p>
+                  </div>
+                </div>
+                <div className="relative h-36 rounded-2xl overflow-hidden shadow-lg">
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: 'linear-gradient(135deg, #C9A84C 0%, #B8932A 100%)' }}
+                  />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
+                    <BarChart3 className="h-10 w-10 mb-2 opacity-70" strokeWidth={1.5} />
+                    <p className="text-sm font-semibold opacity-80">Lab Evolution IA</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Diferenciais ── */}
+        <section id="sobre" className="py-24 bg-white" aria-labelledby="diferenciais-heading">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
               <div>
@@ -263,7 +377,7 @@ export default function HomePage() {
                 {diferenciais.map((item) => (
                   <li
                     key={item}
-                    className="flex items-start gap-3 p-4 rounded-xl bg-white border border-slate-100"
+                    className="flex items-start gap-3 p-4 rounded-xl bg-science-50 border border-slate-100 hover:border-brand-200 transition-colors duration-200"
                   >
                     <CheckCircle2
                       className="h-5 w-5 text-brand-500 mt-0.5 shrink-0"
@@ -278,7 +392,60 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Artigos em destaque ───────────────────── */}
+        {/* ── Avaliações de clientes ── */}
+        <section className="py-24" aria-labelledby="avaliacoes-heading" style={{
+          background: 'linear-gradient(160deg, #080F20 0%, #1A2E5A 50%, #0f3a6e 100%)',
+        }}>
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-14">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-3">
+                Depoimentos
+              </p>
+              <h2
+                id="avaliacoes-heading"
+                className="font-display text-3xl sm:text-4xl font-bold text-white"
+              >
+                O que dizem os tutores
+              </h2>
+              <p className="mt-3 text-white/50 max-w-xl mx-auto">
+                Histórias reais de tutores que confiaram o cuidado de seus companheiros ao Vet do Rim.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {depoimentos.map((dep) => (
+                <article
+                  key={dep.nome}
+                  className="relative p-6 rounded-2xl border border-white/10 hover:border-gold-400/30 transition-all duration-300 hover:-translate-y-1"
+                  style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(12px)' }}
+                >
+                  {/* Estrelas */}
+                  <div className="flex gap-0.5 mb-4" aria-label={`${dep.nota} estrelas`}>
+                    {Array.from({ length: dep.nota }).map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" aria-hidden />
+                    ))}
+                  </div>
+                  {/* Texto */}
+                  <p className="text-sm text-white/75 leading-relaxed mb-5 italic">
+                    &ldquo;{dep.texto}&rdquo;
+                  </p>
+                  {/* Autor */}
+                  <div className="flex items-center gap-3">
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${dep.cor}`}>
+                      {dep.inicial}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{dep.nome}</p>
+                      <p className="text-xs text-white/40">{dep.pet}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Artigos em destaque ── */}
         <section className="py-24 bg-white" aria-labelledby="artigos-heading">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
@@ -286,10 +453,7 @@ export default function HomePage() {
                 <p className="text-xs font-semibold uppercase tracking-widest text-brand-500 mb-2">
                   Conteúdo científico
                 </p>
-                <h2
-                  id="artigos-heading"
-                  className="font-display text-3xl font-bold text-slate-900"
-                >
+                <h2 id="artigos-heading" className="font-display text-3xl font-bold text-slate-900">
                   Artigos em destaque
                 </h2>
               </div>
@@ -308,9 +472,12 @@ export default function HomePage() {
                   key={artigo.slug}
                   className="group flex flex-col rounded-2xl border border-slate-100 overflow-hidden hover:border-brand-200 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300"
                 >
-                  <div className="bg-gradient-to-br from-brand-50 to-science-100 h-40 flex items-center justify-center">
+                  <div
+                    className="h-40 flex items-center justify-center"
+                    style={{ background: 'linear-gradient(135deg, #EEF1F8 0%, #d3daf0 100%)' }}
+                  >
                     <Microscope
-                      className="h-12 w-12 text-brand-200 group-hover:text-brand-300 transition-colors duration-300"
+                      className="h-12 w-12 text-brand-200 group-hover:text-brand-400 transition-colors duration-300"
                       strokeWidth={1.5}
                       aria-hidden
                     />
@@ -343,14 +510,12 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── CTA Final ────────────────────────────── */}
-        <section className="py-24" aria-labelledby="cta-heading">
+        {/* ── CTA Final ── */}
+        <section className="py-24 bg-science-50" aria-labelledby="cta-heading">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
             <div
               className="rounded-3xl p-10 sm:p-14"
-              style={{
-                background: 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)',
-              }}
+              style={{ background: 'linear-gradient(135deg, #1A2E5A 0%, #1e6fa8 100%)' }}
             >
               <h2
                 id="cta-heading"

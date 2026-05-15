@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Settings,
 } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import type { User } from '@supabase/supabase-js'
@@ -97,7 +98,7 @@ export function LabShell({ children, user, profile }: LabShellProps) {
           ))}
         </nav>
 
-        {/* User + Logout */}
+        {/* User + Links + Logout */}
         <div className="px-4 py-4 border-t border-slate-100">
           <div className="flex items-center gap-3 mb-3">
             <div className="h-8 w-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold shrink-0">
@@ -108,6 +109,14 @@ export function LabShell({ children, user, profile }: LabShellProps) {
               <p className="text-[10px] text-slate-400">{roleLabel}</p>
             </div>
           </div>
+          <Link
+            href="/lab/perfil"
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors duration-200 mb-1"
+          >
+            <Settings className="h-4 w-4" aria-hidden />
+            Meu perfil
+          </Link>
           <button
             onClick={handleLogout}
             disabled={isPending}

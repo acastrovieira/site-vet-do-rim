@@ -1,29 +1,60 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react'
 
 /**
  * Formulário de redefinição de senha.
- * Executado após o usuário clicar no link de recovery e ser redirecionado
- * para /auth/redefinir-senha com sessão ativa de recovery.
+ * Usa onAuthStateChange para capturar o evento PASSWORD_RECOVERY
+ * que chega via fragmento #access_token na URL (PKCE flow do Supabase Auth v2).
  */
 export function ResetForm() {
   const router = useRouter()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [showPw, setShowPw] = useState(false)
-  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error' | 'no-session'>('idle')
+  const [status, setStatus] = useState<'loading-session' | 'idle' | 'loading' | 'done' | 'error' | 'no-session'>('loading-session')
   const [errorMsg, setErrorMsg] = useState('')
+  const sessionChecked = useRef(false)
 
-  // Verifica se há sessão de recovery ativa
   useEffect(() => {
+    if (sessionChecked.current) return
+    sessionChecked.current = true
+
     const supabase = createClient()
+
+    // Tenta primeiro verificar sessão já existente (ex: refresh de página)
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        setStatus('no-session')
+      if (data.session) {
+        setStatus('idle')
+        return
+      }
+      // Aguarda evento de recovery (link do e-mail ainda não processado)
+      // O Supabase processa o #access_token do fragmento da URL automaticamente
+      const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+          setStatus('idle')
+          listener.subscription.unsubscribe()
+        }
+      })
+
+      // Timeout de segurança: se após 5s nenhum evento chegar, link é inválido
+      const timeout = setTimeout(() => {
+        supabase.auth.getSession().then(({ data: d }) => {
+          if (d.session) {
+            setStatus('idle')
+          } else {
+            setStatus('no-session')
+          }
+        })
+        listener.subscription.unsubscribe()
+      }, 5000)
+
+      return () => {
+        clearTimeout(timeout)
+        listener.subscription.unsubscribe()
       }
     })
   }, [])
@@ -54,6 +85,15 @@ export function ResetForm() {
       setStatus('done')
       setTimeout(() => router.push('/lab'), 3000)
     }
+  }
+
+  if (status === 'loading-session') {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <div className="h-8 w-8 rounded-full border-2 border-brand-400 border-t-transparent animate-spin" />
+        <p className="text-sm text-slate-500">Verificando link de recuperação...</p>
+      </div>
+    )
   }
 
   if (status === 'no-session') {

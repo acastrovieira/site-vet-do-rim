@@ -5,7 +5,7 @@ import type { FreeLabExam, LabParameter } from '@/lib/lab-free/types'
 import { KNOWN_PARAMETERS } from '@/lib/lab-free/types'
 import { saveExam } from '@/lib/lab-free/storage'
 import { generateId } from '@/lib/lab-free/id'
-import { FileText, X, Plus, Check, Trash2, Upload, Camera } from 'lucide-react'
+import { FileText, X, Plus, Check, Trash2 } from 'lucide-react'
 import { PremiumGate } from './PremiumGate'
 
 interface Props {

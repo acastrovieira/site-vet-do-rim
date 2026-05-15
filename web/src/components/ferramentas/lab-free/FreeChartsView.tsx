@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import type { FreeLabExam } from '@/lib/lab-free/types'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -15,8 +15,8 @@ interface Props {
 const PALETTE = ['#1A2E5A', '#0d9488', '#D4AF37', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
 
 /**
- * Gráficos de evolução temporal de parâmetros laboratoriais.
- * Seleção por pills, linhas de referência min/max.
+ * Wrapper que remonta o componente interno quando allParams muda.
+ * Isso evita useEffect + setState e refs durante render.
  */
 export function FreeChartsView({ exams }: Props) {
   const allParams = useMemo(() => {
@@ -29,11 +29,14 @@ export function FreeChartsView({ exams }: Props) {
     return Array.from(s).sort()
   }, [exams])
 
-  const [selected, setSelected] = useState<string[]>(allParams.slice(0, 3))
+  // key based on allParams content forces re-mount when params change
+  const paramsKey = allParams.join(',')
 
-  useEffect(() => {
-    setSelected(allParams.slice(0, 3))
-  }, [allParams])
+  return <FreeChartsViewInner key={paramsKey} exams={exams} allParams={allParams} />
+}
+
+function FreeChartsViewInner({ exams, allParams }: { exams: FreeLabExam[]; allParams: string[] }) {
+  const [selected, setSelected] = useState<string[]>(allParams.slice(0, 3))
 
   const chartData = useMemo(
     () =>

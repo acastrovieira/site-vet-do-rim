@@ -29,25 +29,29 @@ export function Header() {
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm'
-          : 'bg-transparent'
+          ? 'bg-white/90 backdrop-blur-xl border-b border-slate-200/60 shadow-sm'
+          : 'bg-gradient-to-b from-brand-900/70 to-transparent backdrop-blur-sm'
       }`}
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex h-20 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group" aria-label="Vet do Rim — Início">
             <Image
               src="/logo.png"
               alt="Vet do Rim"
-              width={64}
-              height={64}
-              className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 object-contain mix-blend-multiply transition-transform duration-200 group-hover:scale-105 shrink-0"
+              width={80}
+              height={80}
+              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 object-contain transition-transform duration-200 group-hover:scale-105 shrink-0 drop-shadow-lg"
               priority
             />
             <div className="hidden sm:block">
-              <span className="block font-display font-bold text-sm text-brand-500 leading-none tracking-tight">Vet do Rim</span>
-              <span className="block text-[10px] text-science-500 font-medium tracking-wider">Nefrologia Veterinária</span>
+              <span className={`block font-display font-bold text-base leading-none tracking-tight transition-colors duration-300 ${
+                scrolled ? 'text-brand-600' : 'text-white drop-shadow-md'
+              }`}>Vet do Rim</span>
+              <span className={`block text-[11px] font-semibold uppercase tracking-widest mt-0.5 transition-colors duration-300 ${
+                scrolled ? 'text-gold-600' : 'text-gold-300'
+              }`}>Nefrologia Veterinária</span>
             </div>
           </Link>
 
@@ -57,14 +61,22 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  scrolled
+                    ? 'text-slate-600 hover:text-brand-600 hover:bg-brand-50'
+                    : 'text-white/85 hover:text-white hover:bg-white/10'
+                }`}
               >
                 {link.label}
               </Link>
             ))}
             <Link
               href="/auth/login"
-              className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-all duration-200 shadow-sm"
+              className={`ml-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm ${
+                scrolled
+                  ? 'bg-brand-600 text-white hover:bg-brand-700'
+                  : 'bg-white text-brand-700 hover:bg-blue-50'
+              }`}
             >
               Entrar
             </Link>
@@ -72,12 +84,14 @@ export function Header() {
 
           {/* Menu mobile toggle */}
           <button
-            className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+            className={`md:hidden p-2 rounded-lg transition-colors ${
+              scrolled ? 'text-slate-600 hover:bg-slate-100' : 'text-white hover:bg-white/10'
+            }`}
             onClick={() => setMenuOpen(!menuOpen)}
             aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
           >
-            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
 
@@ -100,7 +114,7 @@ export function Header() {
             <Link
               href="/auth/login"
               onClick={() => setMenuOpen(false)}
-              className="mt-2 mx-4 py-3 text-center rounded-lg text-sm font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-colors"
+              className="mt-2 mx-4 py-3 text-center rounded-lg text-sm font-semibold bg-brand-600 text-white hover:bg-brand-700 transition-colors"
             >
               Entrar no Lab
             </Link>

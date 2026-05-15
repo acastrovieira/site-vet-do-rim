@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Users, Plus, Phone, Mail } from 'lucide-react'
+import { Users, Plus, Phone, Mail, ChevronRight } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Tutores — Lab Evolution',
@@ -68,14 +69,15 @@ export default async function TutoresPage() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {tutores.map((tutor) => (
-                  <tr key={tutor.id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr key={tutor.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer">
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
+                      <Link href={`/lab/tutores/${tutor.id}`} className="flex items-center gap-3 w-full">
                         <div className="h-8 w-8 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold shrink-0">
                           {tutor.nome.charAt(0).toUpperCase()}
                         </div>
-                        <p className="font-semibold text-slate-900">{tutor.nome}</p>
-                      </div>
+                        <p className="font-semibold text-slate-900 group-hover:text-brand-600 transition-colors">{tutor.nome}</p>
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-brand-400 ml-auto transition-colors" aria-hidden />
+                      </Link>
                     </td>
                     <td className="px-5 py-4 hidden sm:table-cell">
                       <div className="space-y-0.5">

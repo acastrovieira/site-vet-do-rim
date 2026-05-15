@@ -9,7 +9,7 @@ import { FreeExamForm } from './FreeExamForm'
 import { PremiumGate } from './PremiumGate'
 import {
   ArrowLeft, Plus, TrendingUp, Info,
-  FlaskConical, CalendarDays, PawPrint, Cloud,
+  FlaskConical, CalendarDays, Cloud,
 } from 'lucide-react'
 import { differenceInYears, differenceInMonths, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'

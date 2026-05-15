@@ -1,6 +1,7 @@
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
 import type { Metadata } from 'next'
 import { PostHogProvider } from '@/components/providers/PostHogProvider'
+import { WhatsAppFloat } from '@/components/marketing/WhatsAppFloat'
 import './globals.css'
 
 const inter = Inter({
@@ -80,6 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PostHogProvider>
           {children}
         </PostHogProvider>
+        <WhatsAppFloat />
       </body>
     </html>
   )

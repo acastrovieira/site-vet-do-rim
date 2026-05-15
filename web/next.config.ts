@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   images: {
     // Formatos modernos para imagens otimizadas
     formats: ['image/avif', 'image/webp'],
+    // Qualidades suportadas (75 = padrão, 95 = logo premium)
+    qualities: [75, 95],
     // Cache TTL mínimo para imagens otimizadas (60 dias)
     minimumCacheTTL: 5184000,
     // Domínios externos permitidos (Supabase Storage)

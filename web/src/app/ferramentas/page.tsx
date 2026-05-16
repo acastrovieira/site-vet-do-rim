@@ -2,34 +2,25 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
-import { Calculator, Activity, ChevronRight, Lock, FlaskConical, Droplets, TestTube, Scale, UtensilsCrossed } from 'lucide-react'
+import { Activity, ChevronRight, Lock, FlaskConical, Droplets, TestTube, Scale, UtensilsCrossed, Zap } from 'lucide-react'
+
 
 export const metadata: Metadata = {
   title: 'Ferramentas Clínicas Gratuitas — Nefrologia Veterinária | Vet do Rim',
   description:
-    'Ferramentas gratuitas de nefrologia veterinária: Calculadora de TFG e Estadiamento IRIS da DRC para cães e gatos. Baseadas em diretrizes IRIS 2023.',
+    'Ferramentas gratuitas de nefrologia veterinária: Estadiamento IRIS da DRC, Injúria Renal Aguda, Fluidoterapia e Reposição Eletrolítica para cães e gatos.',
   keywords: [
     'ferramentas nefrologia veterinária',
-    'calculadora TFG veterinária',
     'estadiamento IRIS DRC',
+    'injúria renal aguda cão gato',
     'doença renal crônica cão gato',
+    'fluidoterapia veterinária',
     'ferramenta gratuita veterinária',
   ],
   alternates: { canonical: '/ferramentas' },
 }
 
 const activeTools = [
-  {
-    href: '/ferramentas/calculadora-tfg',
-    icon: Calculator,
-    title: 'Calculadora de TFG',
-    subtitle: 'Taxa de Filtração Glomerular',
-    description:
-      'Calcule a TFG estimada a partir de creatinina sérica, peso e espécie. Resultado com estadiamento IRIS automático e interpretação clínica.',
-    tags: ['Creatinina', 'SDMA', 'Estadiamento IRIS', 'Cão e Gato'],
-    iconBg: 'bg-brand-50',
-    iconColor: 'text-brand-500',
-  },
   {
     href: '/ferramentas/estadiamento-iris',
     icon: Activity,
@@ -40,6 +31,17 @@ const activeTools = [
     tags: ['IRIS 2023', 'Proteinúria', 'Pressão arterial', 'Progressão'],
     iconBg: 'bg-gold-50',
     iconColor: 'text-gold-500',
+  },
+  {
+    href: '/ferramentas/injuria-renal-aguda',
+    icon: Zap,
+    title: 'Classificação de Injúria Renal Aguda',
+    subtitle: 'IRIS AKI · KDIGO · Condutas por Grau',
+    description:
+      'Classifique a IRA em cães e gatos conforme o sistema IRIS AKI (Graus I–V). Inclui critério de creatinina, débito urinário e condutas recomendadas por grau de gravidade. Baseada nas diretrizes IRIS 2016 e KDIGO.',
+    tags: ['IRIS AKI', 'KDIGO', 'Oligúria', 'Urgência renal'],
+    iconBg: 'bg-red-50',
+    iconColor: 'text-red-500',
   },
   {
     href: '/ferramentas/planilha-laboratorial',

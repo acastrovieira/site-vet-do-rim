@@ -36,15 +36,17 @@ export function Header() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group" aria-label="Vet do Rim — Início">
-            <Image
-              src="/logo.png"
-              alt="Vet do Rim"
-              width={80}
-              height={80}
-              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 object-contain transition-transform duration-200 group-hover:scale-105 shrink-0 drop-shadow-lg"
-              priority
-            />
+          <Link href="/" className="flex items-center gap-3.5 group" aria-label="Vet do Rim — Início">
+            <div className="bg-white p-2 sm:p-2.5 rounded-xl shadow-md ring-1 ring-slate-900/5 shrink-0 transition-transform duration-300 group-hover:scale-105 flex items-center justify-center">
+              <Image
+                src="/logo.png"
+                alt="Vet do Rim"
+                width={80}
+                height={80}
+                className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 object-contain"
+                priority
+              />
+            </div>
             <div className="hidden sm:block">
               <span className={`block font-display font-bold text-base leading-none tracking-tight transition-colors duration-300 ${
                 scrolled ? 'text-brand-600' : 'text-white drop-shadow-md'

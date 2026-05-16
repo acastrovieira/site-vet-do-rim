@@ -44,16 +44,18 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="md:col-span-2">
-            <Link href="/" className="flex items-center gap-3 mb-4" aria-label="Vet do Rim">
-              <Image
-                src="/logo.png"
-                alt="Vet do Rim"
-                width={64}
-                height={64}
-                className="w-12 h-12 sm:w-14 sm:h-14 object-contain brightness-0 invert shrink-0"
-              />
+            <Link href="/" className="flex items-center gap-3.5 mb-4 group" aria-label="Vet do Rim">
+              <div className="bg-white p-2 sm:p-2.5 rounded-xl shadow-lg ring-1 ring-white/20 shrink-0 transition-transform duration-300 group-hover:scale-105 flex items-center justify-center">
+                <Image
+                  src="/logo.png"
+                  alt="Vet do Rim"
+                  width={64}
+                  height={64}
+                  className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+                />
+              </div>
               <div>
-                <span className="block font-display font-bold text-base text-white tracking-tight leading-none">
+                <span className="block font-display font-bold text-base text-white tracking-tight leading-none transition-colors duration-200 group-hover:text-blue-100">
                   Vet do Rim
                 </span>
                 <span className="block text-[10px] text-slate-400 tracking-wider font-medium mt-0.5">

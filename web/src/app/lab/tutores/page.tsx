@@ -38,14 +38,15 @@ export default async function TutoresPage() {
             Tutores de pacientes renais cadastrados · Lab Evolution
           </p>
         </div>
-        <button
-          type="button"
+        <Link
+          href="/lab/tutores/novo"
+          id="btn-novo-tutor"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-sm"
           aria-label="Cadastrar novo tutor"
         >
           <Plus className="h-4 w-4" aria-hidden />
           Novo tutor
-        </button>
+        </Link>
       </div>
 
       {/* Grid de tutores */}

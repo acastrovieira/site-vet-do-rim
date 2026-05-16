@@ -47,14 +47,15 @@ export default async function PacientesPage() {
             Pacientes renais cadastrados · Lab Evolution
           </p>
         </div>
-        <button
-          type="button"
+        <Link
+          href="/lab/pacientes/novo"
+          id="btn-novo-paciente"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-sm"
           aria-label="Cadastrar novo paciente"
         >
           <Plus className="h-4 w-4" aria-hidden />
           Novo paciente
-        </button>
+        </Link>
       </div>
 
       {/* Search (UI apenas — funcionalidade futura) */}

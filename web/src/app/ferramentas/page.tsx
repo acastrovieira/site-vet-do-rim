@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
-import { Calculator, Activity, ChevronRight, Lock, FlaskConical } from 'lucide-react'
+import { Calculator, Activity, ChevronRight, Lock, FlaskConical, Droplets, TestTube, Scale, UtensilsCrossed } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Ferramentas Clínicas Gratuitas — Nefrologia Veterinária | Vet do Rim',
@@ -52,6 +52,50 @@ const activeTools = [
     iconBg: 'bg-emerald-50',
     iconColor: 'text-emerald-500',
     badge: 'Freemium',
+  },
+  {
+    href: '/ferramentas/fluidoterapia',
+    icon: Droplets,
+    title: 'Calculadora de Fluidoterapia',
+    subtitle: 'Manutenção, Déficit e Ressuscitação',
+    description:
+      'Calcule taxas de manutenção hídrica, reposição de déficit por desidratação e bolus de ressuscitação para cães e gatos. Baseada nas diretrizes AAHA/AAFP 2013.',
+    tags: ['Manutenção', 'Déficit hídrico', 'Bolus de choque', 'AAHA/AAFP'],
+    iconBg: 'bg-sky-50',
+    iconColor: 'text-sky-500',
+  },
+  {
+    href: '/ferramentas/reposicao-eletrolitica',
+    icon: TestTube,
+    title: 'Reposição Eletrolítica',
+    subtitle: 'K⁺ · HCO₃⁻ · Ca²⁺ · PO₄³⁻ · Mg²⁺',
+    description:
+      'Calcule reposição de potássio, bicarbonato, cálcio, fósforo e magnésio em cães e gatos. Protocolos baseados em DiBartola 4ª ed. e diretrizes ACVIM atualizadas.',
+    tags: ['Hipocalemia', 'Acidose metabólica', 'Hipocalcemia', 'DiBartola'],
+    iconBg: 'bg-violet-50',
+    iconColor: 'text-violet-500',
+  },
+  {
+    href: '/ferramentas/controle-de-peso',
+    icon: Scale,
+    title: 'Controle de Peso',
+    subtitle: 'Histórico Evolutivo · ECC',
+    description:
+      'Registre e acompanhe a evolução do peso corporal e do Escore de Condição Corporal (ECC) do paciente. Histórico visual com gráfico e exportação CSV gratuita. Sem cadastro necessário.',
+    tags: ['Peso corporal', 'ECC WSAVA', 'Histórico', 'CSV Gratuito'],
+    iconBg: 'bg-teal-50',
+    iconColor: 'text-teal-600',
+  },
+  {
+    href: '/ferramentas/dieta-renal',
+    icon: UtensilsCrossed,
+    title: 'Dieta Terapêutica Renal',
+    subtitle: 'Royal Canin · Hill\'s · Premier · Vet Life',
+    description:
+      'Calcule a quantidade diária de dieta renal por espécie, peso atual, ECC e marca. Ajuste automático pelo escore corporal. Comparativo entre Royal Canin, Hill\'s k/d, Premier Pet e Vet Life Farmina.',
+    tags: ['Dieta renal', 'ECC ajuste', 'Multimarca', 'Cão e Gato'],
+    iconBg: 'bg-orange-50',
+    iconColor: 'text-orange-500',
   },
 ]
 

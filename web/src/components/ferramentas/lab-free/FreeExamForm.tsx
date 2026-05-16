@@ -6,7 +6,7 @@ import { KNOWN_PARAMETERS } from '@/lib/lab-free/types'
 import { saveExam } from '@/lib/lab-free/storage'
 import { generateId } from '@/lib/lab-free/id'
 import { FileText, X, Plus, Check, Trash2 } from 'lucide-react'
-import { PremiumGate } from './PremiumGate'
+import { LeadGate } from './LeadGate'
 
 interface Props {
   patientId: string
@@ -16,7 +16,7 @@ interface Props {
 
 /**
  * Modal de inserção manual de exame laboratorial.
- * Modo file/OCR bloqueado como premium.
+ * Modo file/OCR bloqueado exigindo cadastro.
  */
 export function FreeExamForm({ patientId, onSaved, onCancel }: Props) {
   const [examDate, setExamDate] = useState(new Date().toISOString().slice(0, 10))
@@ -101,10 +101,10 @@ export function FreeExamForm({ patientId, onSaved, onCancel }: Props) {
             </div>
           </div>
 
-          {/* Zona Premium — Upload bloqueado */}
-          <PremiumGate
+          {/* Zona Lead — Upload bloqueado */}
+          <LeadGate
             title="Upload Automático de Exames"
-            description="Envie PDFs, fotos ou imagens de exames e o sistema extrai os parâmetros automaticamente via OCR. Disponível no Lab Evolution Premium."
+            description="Envie PDFs, fotos ou imagens de exames e o sistema extrai os parâmetros automaticamente via IA. Crie uma conta gratuita para testar."
           />
 
           {/* Inserção Manual */}

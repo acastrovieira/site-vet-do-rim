@@ -83,6 +83,31 @@ export function LaudoUploader({ petId }: { petId: string }) {
   const [status, setStatus] = useState<'idle' | 'uploading' | 'analyzing' | 'done' | 'error'>('idle')
   const [result, setResult] = useState<HemogramaResult | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [aiQuota, setAiQuota] = useState<{ used: number; limit: number } | null>(null)
+
+  // Busca cota de IA do usuário
+  useEffect(() => {
+    async function fetchQuota() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
+      const { data: rawData } = await supabase
+        .from('profiles')
+        .select('ai_quota_used, ai_quota_limit')
+        .eq('id', user.id)
+        .single()
+        
+      const data = rawData as unknown as { ai_quota_used: number; ai_quota_limit: number };
+        
+      if (data) {
+        setAiQuota({
+          used: data.ai_quota_used || 0,
+          limit: data.ai_quota_limit || 5
+        })
+      }
+    }
+    fetchQuota()
+  }, [supabase])
 
   const handleFile = useCallback((file: File) => {
     if (file.type !== 'application/pdf') {
@@ -164,6 +189,11 @@ export function LaudoUploader({ petId }: { petId: string }) {
 
         setResult(fnRes.data.data as HemogramaResult)
         setStatus('done')
+        
+        // Atualiza cota local
+        if (aiQuota) {
+          setAiQuota({ ...aiQuota, used: aiQuota.used + 1 })
+        }
       } catch (err) {
         setErrorMsg(err instanceof Error ? err.message : 'Erro desconhecido')
         setStatus('error')
@@ -230,15 +260,24 @@ export function LaudoUploader({ petId }: { petId: string }) {
           <div className="space-y-4">
             {/* Botão analisar */}
             {status === 'idle' || status === 'error' ? (
-              <button
-                type="button"
-                onClick={handleAnalyze}
-                disabled={isPending}
-                className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-bold text-sm hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg shadow-brand-500/20"
-              >
-                <Zap className="h-4 w-4" aria-hidden />
-                Analisar com IA (GPT-4o)
-              </button>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={handleAnalyze}
+                  disabled={isPending || (aiQuota !== null && aiQuota.used >= aiQuota.limit)}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-bold text-sm hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg shadow-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Zap className="h-4 w-4" aria-hidden />
+                  {aiQuota !== null && aiQuota.used >= aiQuota.limit 
+                    ? 'Limite Gratuito Atingido' 
+                    : 'Analisar com IA (GPT-4o)'}
+                </button>
+                {aiQuota && (
+                  <p className="text-center text-xs text-slate-500">
+                    Você já usou <strong className={aiQuota.used >= aiQuota.limit ? 'text-red-500' : 'text-slate-700'}>{aiQuota.used}</strong> de <strong>{aiQuota.limit}</strong> análises gratuitas este mês.
+                  </p>
+                )}
+              </div>
             ) : status === 'uploading' ? (
               <div className="flex items-center gap-3 px-6 py-4 rounded-xl bg-slate-50 border border-slate-100">
                 <Loader2 className="h-5 w-5 text-brand-500 animate-spin" />

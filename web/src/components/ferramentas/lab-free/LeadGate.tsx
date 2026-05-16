@@ -2,7 +2,7 @@
 
 import { Lock, Sparkles, ArrowRight } from 'lucide-react'
 
-interface PremiumGateProps {
+interface LeadGateProps {
   title: string
   description: string
   ctaLabel?: string
@@ -10,15 +10,15 @@ interface PremiumGateProps {
 }
 
 /**
- * Bloqueio visual para features premium.
- * Exibe cadeado, descrição e CTA para upgrade.
+ * Bloqueio visual para features exclusivas para cadastrados.
+ * Exibe cadeado, descrição e CTA para criar conta gratuita.
  */
-export function PremiumGate({
+export function LeadGate({
   title,
   description,
-  ctaLabel = 'Acessar Lab Evolution Premium',
-  ctaHref = '/lab',
-}: PremiumGateProps) {
+  ctaLabel = 'Criar Conta Gratuita',
+  ctaHref = '/auth/cadastro',
+}: LeadGateProps) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-brand-50/30 p-6 text-center">
       {/* Glow decorativo */}

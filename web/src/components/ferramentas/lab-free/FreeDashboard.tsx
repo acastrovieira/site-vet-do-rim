@@ -6,7 +6,7 @@ import { getExamsForPatient } from '@/lib/lab-free/storage'
 import { FreeEvolutionTable } from './FreeEvolutionTable'
 import { FreeChartsView } from './FreeChartsView'
 import { FreeExamForm } from './FreeExamForm'
-import { PremiumGate } from './PremiumGate'
+import { LeadGate } from './LeadGate'
 import {
   ArrowLeft, Plus, TrendingUp, Info,
   FlaskConical, CalendarDays, Cloud,
@@ -19,10 +19,10 @@ interface Props {
   onBack: () => void
 }
 
-type Tab = 'lab' | 'charts' | 'info' | 'premium'
+type Tab = 'lab' | 'charts' | 'info' | 'advanced'
 
 /**
- * Dashboard do paciente com tabs: Laboratorial, Gráficos, Info, Premium.
+ * Dashboard do paciente com tabs: Laboratorial, Gráficos, Info, Avançado.
  */
 export function FreeDashboard({ patient, onBack }: Props) {
   const [tab, setTab] = useState<Tab>('lab')
@@ -44,7 +44,7 @@ export function FreeDashboard({ patient, onBack }: Props) {
     { id: 'lab', label: 'Laboratorial', icon: <FlaskConical className="h-3.5 w-3.5" />, count: exams.length },
     { id: 'charts', label: 'Gráficos', icon: <TrendingUp className="h-3.5 w-3.5" /> },
     { id: 'info', label: 'Paciente', icon: <Info className="h-3.5 w-3.5" /> },
-    { id: 'premium', label: 'Premium', icon: <Cloud className="h-3.5 w-3.5" /> },
+    { id: 'advanced', label: 'Avançado', icon: <Cloud className="h-3.5 w-3.5" /> },
   ]
 
   const SPECIES_EMOJI: Record<string, string> = {
@@ -140,23 +140,23 @@ export function FreeDashboard({ patient, onBack }: Props) {
         {tab === 'lab' && <FreeEvolutionTable patient={patient} exams={exams} onExamsChange={refreshExams} />}
         {tab === 'charts' && <FreeChartsView exams={exams} />}
         {tab === 'info' && <PatientInfoCard patient={patient} age={getAge()} />}
-        {tab === 'premium' && (
+        {tab === 'advanced' && (
           <div className="space-y-4">
-            <PremiumGate
-              title="Upload Automático de Exames"
-              description="Envie PDFs e fotos de exames. O sistema extrai os parâmetros automaticamente via OCR e preenche a planilha."
+            <LeadGate
+              title="Leitura com Inteligência Artificial"
+              description="Envie PDFs e fotos de exames. O sistema extrai os parâmetros automaticamente via IA e preenche a planilha para você."
             />
-            <PremiumGate
-              title="Sincronização Google Drive"
-              description="Salve planilhas e arquivos originais no Google Drive para backup, auditoria e compartilhamento seguro com o tutor."
+            <LeadGate
+              title="Sincronização na Nuvem"
+              description="Salve planilhas e arquivos originais na nuvem para backup, auditoria e acesso em qualquer dispositivo."
             />
-            <PremiumGate
+            <LeadGate
               title="Portal do Tutor"
-              description="O tutor do pet acessa a evolução laboratorial e laudos de imagem com login seguro, direto pelo celular."
+              description="Compartilhe a evolução laboratorial e laudos de imagem de forma segura com o tutor do pet."
             />
-            <PremiumGate
-              title="Histórico Completo e Backup"
-              description="Armazenamento na nuvem com histórico ilimitado, laudos de imagem (ultrassom, raio-x) e exportação em Excel profissional."
+            <LeadGate
+              title="Gestão de Prontuários Completa"
+              description="Armazenamento na nuvem com histórico, laudos de imagem (ultrassom, raio-x) e muito mais criando uma conta gratuita."
             />
           </div>
         )}

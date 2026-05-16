@@ -145,6 +145,24 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
 
+    // 1.1. Verifica Cota de IA
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("ai_quota_used, ai_quota_limit")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return new Response(JSON.stringify({ error: "Perfil não encontrado" }), { status: 404, headers: corsHeaders });
+    }
+
+    const quotaUsed = profile.ai_quota_used || 0;
+    const quotaLimit = profile.ai_quota_limit || 5;
+
+    if (quotaUsed >= quotaLimit) {
+      return new Response(JSON.stringify({ error: "Limite de cota de Inteligência Artificial gratuito atingido." }), { status: 403, headers: corsHeaders });
+    }
+
     // 2. Payload
     const { laudoId } = await req.json() as { laudoId: string };
     if (!laudoId) {
@@ -229,6 +247,14 @@ Deno.serve(async (req: Request) => {
       resultado_ia: resultadoIa,
       erro_ia: null
     }).eq("id", laudoId);
+
+    // 9. Incrementa a cota de uso de IA
+    await supabase.rpc('increment_ai_quota', { user_id: user.id });
+    // Se a função RPC não existir, o fallback será fazer um update direto:
+    await supabase
+      .from("profiles")
+      .update({ ai_quota_used: quotaUsed + 1 })
+      .eq("id", user.id);
 
     return new Response(JSON.stringify({ success: true, data: resultadoIa }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }

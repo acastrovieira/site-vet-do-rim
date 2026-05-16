@@ -71,9 +71,9 @@ export function FreeLabApp() {
       <div className="mt-8 rounded-xl border border-amber-200/60 bg-amber-50 p-3 text-center">
         <p className="text-xs leading-relaxed text-amber-700">
           <strong>💡 Seus dados ficam salvos neste navegador</strong> (localStorage).
-          Para backup na nuvem, sincronização com Google Drive e acesso multi-dispositivo, utilize o{' '}
-          <a href="/lab" className="font-bold text-brand-600 underline hover:text-brand-700">
-            Lab Evolution Premium
+          Para backup na nuvem, sincronização segura e leitura automática de PDFs via Inteligência Artificial,{' '}
+          <a href="/auth/cadastro" className="font-bold text-brand-600 underline hover:text-brand-700">
+            crie sua conta gratuita
           </a>.
         </p>
       </div>

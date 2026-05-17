@@ -32,17 +32,30 @@
   --color-science-500: #64748B;
   --color-science-700: #334155;
   --color-science-900: #0F172A;
+
+  /* ── Dark Executive (Padrão Ouro $500k+) ───────────────── */
+  --color-dark-bg: #0A0A0C;
+  --color-dark-surface: rgba(15, 17, 21, 0.8);
+  --color-dark-border: rgba(255, 255, 255, 0.05);
 }
 
 /* ── Base ─────────────────────────────────────────────── */
 @layer base {
   html {
     font-family: var(--font-sans);
+    background-color: var(--color-dark-bg);
+    color: var(--color-science-50);
+  }
+
+  body {
+    background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.05) 0%, rgba(10, 10, 12, 0) 70%), var(--color-dark-bg);
+    min-height: 100vh;
   }
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
     letter-spacing: -0.025em;
+    color: #F8FAFC;
   }
 
   /* Smooth anchor scrolling */
@@ -75,10 +88,11 @@
 
   /* Glass card sutil — tom navy */
   .glass-card {
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(26, 46, 90, 0.08);
+    background: var(--color-dark-surface);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--color-dark-border);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   /* Glow dourado sutil para elementos premium */

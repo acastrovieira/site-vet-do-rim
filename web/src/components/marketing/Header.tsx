@@ -13,8 +13,8 @@ const navLinks = [
 
 /**
  * Header principal do site Vet do Rim.
- * Glassmorphism cinza claro com 80% de transparência e blur em todo o holder.
- * Borda inferior sutil ao rolar para reforçar separação do conteúdo.
+ * Glassmorphism Dark Executive com blur.
+ * Borda inferior luminosa ao rolar para reforçar separação do conteúdo.
  */
 export function Header() {
   const [scrolled, setScrolled] = useState(false)
@@ -29,13 +29,8 @@ export function Header() {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-        scrolled ? 'shadow-md border-b border-white/20' : 'shadow-sm'
+        scrolled ? 'shadow-lg border-b border-white/10 glass-card' : 'bg-transparent'
       }`}
-      style={{
-        background: 'rgba(230, 233, 238, 0.65)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-      }}
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-22 items-center justify-between py-3">
@@ -46,14 +41,14 @@ export function Header() {
               alt="Vet do Rim"
               width={200}
               height={200}
-              className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-contain transition-transform duration-300 group-hover:scale-105 shrink-0 drop-shadow-md"
+              className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-contain transition-transform duration-300 group-hover:scale-105 shrink-0"
               priority
             />
             <div className="hidden sm:block">
-              <span className="block font-display font-bold text-lg leading-none tracking-tight text-brand-700">
+              <span className="block font-display font-bold text-lg leading-none tracking-tight text-white">
                 Vet do Rim
               </span>
-              <span className="block text-[11px] font-semibold uppercase tracking-widest mt-1 text-gold-600">
+              <span className="block text-[11px] font-semibold uppercase tracking-widest mt-1 text-gold-400">
                 Nefrologia Veterinária
               </span>
             </div>
@@ -65,14 +60,14 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-700 hover:text-brand-600 hover:bg-white/50"
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 text-science-200 hover:text-white hover:bg-white/5"
               >
                 {link.label}
               </Link>
             ))}
             <Link
               href="/auth/login"
-              className="ml-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm bg-brand-600 text-white hover:bg-brand-700"
+              className="ml-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 shadow-sm bg-transparent border border-white/20 text-white hover:bg-white/10 hover:border-white/40"
             >
               Entrar
             </Link>
@@ -80,7 +75,7 @@ export function Header() {
 
           {/* Menu mobile toggle */}
           <button
-            className="md:hidden p-2 rounded-lg transition-colors text-slate-700 hover:bg-white/50"
+            className="md:hidden p-2 rounded-lg transition-colors text-science-200 hover:bg-white/10 hover:text-white"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
@@ -92,7 +87,7 @@ export function Header() {
         {/* Mobile menu */}
         {menuOpen && (
           <nav
-            className="md:hidden pb-4 pt-3 flex flex-col gap-1 border-t border-white/30"
+            className="md:hidden pb-4 pt-3 flex flex-col gap-1 border-t border-white/10 glass-card rounded-b-xl px-2"
             aria-label="Navegação mobile"
           >
             {navLinks.map((link) => (
@@ -100,7 +95,7 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="px-4 py-3 rounded-lg text-sm font-medium transition-colors text-slate-700 hover:bg-white/50"
+                className="px-4 py-3 rounded-lg text-sm font-medium transition-colors text-science-200 hover:text-white hover:bg-white/5"
               >
                 {link.label}
               </Link>
@@ -108,7 +103,7 @@ export function Header() {
             <Link
               href="/auth/login"
               onClick={() => setMenuOpen(false)}
-              className="mt-2 mx-4 py-3 text-center rounded-lg text-sm font-semibold transition-colors bg-brand-600 text-white hover:bg-brand-700"
+              className="mt-2 mx-4 py-3 text-center rounded-lg text-sm font-semibold transition-colors bg-transparent border border-white/20 text-white hover:bg-white/10"
             >
               Entrar no Lab
             </Link>

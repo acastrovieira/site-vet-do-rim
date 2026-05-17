@@ -289,16 +289,16 @@ export default function HomePage() {
         </section>
 
         {/* ── Especialidades ── */}
-        <section id="especialidades" className="py-24 bg-white" aria-labelledby="especialidades-heading">
+        <section id="especialidades" className="py-24" aria-labelledby="especialidades-heading">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14">
-              <p className="text-xs font-semibold uppercase tracking-widest text-brand-500 mb-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-3">
                 Áreas de atuação
               </p>
-              <h2 id="especialidades-heading" className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
+              <h2 id="especialidades-heading" className="font-display text-3xl sm:text-4xl font-bold text-white">
                 Especialidades veterinárias
               </h2>
-              <p className="mt-3 text-slate-500 max-w-xl mx-auto">
+              <p className="mt-3 text-science-200 max-w-xl mx-auto">
                 Diagnóstico preciso e manejo clínico especializado para as condições mais complexas
                 do sistema renal e urinário.
               </p>
@@ -308,15 +308,15 @@ export default function HomePage() {
               {especialidades.map(({ icon: Icon, title, description }) => (
                 <article
                   key={title}
-                  className="group p-6 rounded-2xl border border-slate-100 bg-white hover:border-brand-200 hover:shadow-xl hover:shadow-brand-500/8 transition-all duration-300 hover:-translate-y-1"
+                  className="group p-6 rounded-2xl glass-card transition-all duration-300 hover:-translate-y-1 hover:border-gold-400/30"
                 >
-                  <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-all duration-300">
+                  <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-gold-400 group-hover:bg-gold-500 group-hover:text-white transition-all duration-300 gold-glow">
                     <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
                   </div>
-                  <h3 className="font-display font-semibold text-slate-900 mb-2 text-sm leading-snug">
+                  <h3 className="font-display font-semibold text-white mb-2 text-sm leading-snug">
                     {title}
                   </h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
+                  <p className="text-sm text-science-200 leading-relaxed">{description}</p>
                 </article>
               ))}
             </div>
@@ -324,16 +324,16 @@ export default function HomePage() {
         </section>
 
         {/* ── Galeria de fotos clínicas ── */}
-        <section className="py-24 bg-science-50" aria-label="Estrutura clínica">
+        <section className="py-24 border-y border-white/5" aria-label="Estrutura clínica">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14">
-              <p className="text-xs font-semibold uppercase tracking-widest text-brand-500 mb-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-3">
                 Nossa estrutura
               </p>
-              <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
+              <h2 className="font-display text-3xl sm:text-4xl font-bold text-white">
                 Tecnologia a serviço da saúde do seu pet
               </h2>
-              <p className="mt-3 text-slate-500 max-w-xl mx-auto">
+              <p className="mt-3 text-science-200 max-w-xl mx-auto">
                 Equipamentos de ponta, ambiente acolhedor e uma equipe dedicada ao bem-estar
                 dos seus pacientes renais.
               </p>
@@ -382,26 +382,26 @@ export default function HomePage() {
         </section>
 
         {/* ── Diferenciais ── */}
-        <section id="sobre" className="py-24 bg-white" aria-labelledby="diferenciais-heading">
+        <section id="sobre" className="py-24" aria-labelledby="diferenciais-heading">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-brand-500 mb-3">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-3">
                   Por que escolher
                 </p>
                 <h2
                   id="diferenciais-heading"
-                  className="font-display text-3xl sm:text-4xl font-bold text-slate-900 mb-5"
+                  className="font-display text-3xl sm:text-4xl font-bold text-white mb-5"
                 >
                   Medicina veterinária de ponta, com o cuidado que o seu animal merece
                 </h2>
-                <p className="text-slate-500 leading-relaxed mb-8">
+                <p className="text-science-200 leading-relaxed mb-8">
                   Unimos rigor técnico científico baseado em protocolos internacionais IRIS e ACVIM
                   com um atendimento humanizado e tecnologia digital para acompanhamento contínuo.
                 </p>
                 <Link
                   href="/lab"
-                  className="inline-flex items-center gap-2 text-brand-600 font-semibold text-sm hover:gap-3 transition-all duration-200"
+                  className="inline-flex items-center gap-2 text-gold-400 font-semibold text-sm hover:gap-3 transition-all duration-200"
                 >
                   Conhecer o Lab Evolution
                   <ArrowRight className="h-4 w-4" aria-hidden />
@@ -412,14 +412,14 @@ export default function HomePage() {
                 {diferenciais.map((item) => (
                   <li
                     key={item}
-                    className="flex items-start gap-3 p-4 rounded-xl bg-science-50 border border-slate-100 hover:border-brand-200 transition-colors duration-200"
+                    className="flex items-start gap-3 p-4 rounded-xl glass-card transition-colors duration-200"
                   >
                     <CheckCircle2
-                      className="h-5 w-5 text-brand-500 mt-0.5 shrink-0"
+                      className="h-5 w-5 text-gold-400 mt-0.5 shrink-0"
                       strokeWidth={2}
                       aria-hidden
                     />
-                    <span className="text-sm text-slate-700 font-medium">{item}</span>
+                    <span className="text-sm text-science-100 font-medium">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -481,20 +481,20 @@ export default function HomePage() {
         </section>
 
         {/* ── Artigos em destaque ── */}
-        <section className="py-24 bg-white" aria-labelledby="artigos-heading">
+        <section className="py-24 border-t border-white/5" aria-labelledby="artigos-heading">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-brand-500 mb-2">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-2">
                   Conteúdo científico
                 </p>
-                <h2 id="artigos-heading" className="font-display text-3xl font-bold text-slate-900">
+                <h2 id="artigos-heading" className="font-display text-3xl font-bold text-white">
                   Artigos em destaque
                 </h2>
               </div>
               <Link
                 href="/blog"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:gap-2.5 transition-all duration-200 shrink-0"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-gold-400 hover:gap-2.5 transition-all duration-200 shrink-0"
               >
                 Ver todos os artigos
                 <ArrowRight className="h-4 w-4" aria-hidden />
@@ -505,34 +505,34 @@ export default function HomePage() {
               {artigosFeatured.map((artigo) => (
                 <article
                   key={artigo.slug}
-                  className="group flex flex-col rounded-2xl border border-slate-100 overflow-hidden hover:border-brand-200 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300"
+                  className="group flex flex-col rounded-2xl glass-card overflow-hidden hover:border-gold-400/30 transition-all duration-300"
                 >
                   <div
-                    className="h-40 flex items-center justify-center"
-                    style={{ background: 'linear-gradient(135deg, #EEF1F8 0%, #d3daf0 100%)' }}
+                    className="h-40 flex items-center justify-center border-b border-white/5"
+                    style={{ background: 'rgba(255,255,255,0.02)' }}
                   >
                     <Microscope
-                      className="h-12 w-12 text-brand-200 group-hover:text-brand-400 transition-colors duration-300"
+                      className="h-12 w-12 text-white/20 group-hover:text-gold-400 transition-colors duration-300"
                       strokeWidth={1.5}
                       aria-hidden
                     />
                   </div>
                   <div className="p-5 flex flex-col flex-1">
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gold-400/10 text-gold-400 border border-gold-400/20">
                         {artigo.categoria}
                       </span>
-                      <span className="text-xs text-slate-400">{artigo.leitura} de leitura</span>
+                      <span className="text-xs text-white/40">{artigo.leitura} de leitura</span>
                     </div>
-                    <h3 className="font-display font-bold text-slate-900 text-base leading-snug mb-2 group-hover:text-brand-700 transition-colors duration-200">
+                    <h3 className="font-display font-bold text-white text-base leading-snug mb-2 group-hover:text-gold-400 transition-colors duration-200">
                       {artigo.title}
                     </h3>
-                    <p className="text-sm text-slate-500 leading-relaxed flex-1">
+                    <p className="text-sm text-science-200 leading-relaxed flex-1">
                       {artigo.excerpt}
                     </p>
                     <Link
                       href={`/blog/${artigo.slug}`}
-                      className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:gap-2.5 transition-all duration-200"
+                      className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-gold-400 hover:gap-2.5 transition-all duration-200"
                       aria-label={`Ler artigo: ${artigo.title}`}
                     >
                       Ler artigo
@@ -546,33 +546,34 @@ export default function HomePage() {
         </section>
 
         {/* ── CTA Final ── */}
-        <section className="py-24 bg-science-50" aria-labelledby="cta-heading">
-          <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-            <div
-              className="rounded-3xl p-10 sm:p-14"
-              style={{ background: 'linear-gradient(135deg, #1A2E5A 0%, #1e6fa8 100%)' }}
-            >
+        <section className="py-24 border-t border-white/5 relative overflow-hidden" aria-labelledby="cta-heading">
+          {/* Subtle glow behind CTA */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden>
+             <div className="w-full max-w-2xl h-64 bg-brand-500/20 blur-[100px] rounded-full" />
+          </div>
+          <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
+            <div className="rounded-3xl p-10 sm:p-14 glass-card border border-gold-400/20">
               <h2
                 id="cta-heading"
                 className="font-display text-3xl sm:text-4xl font-bold text-white mb-4"
               >
                 Gerencie seus pacientes renais com inteligência
               </h2>
-              <p className="text-blue-100 text-lg mb-8 leading-relaxed">
+              <p className="text-science-200 text-lg mb-8 leading-relaxed">
                 O Lab Evolution centraliza laudos, histórico clínico e dashboards de biomarcadores
                 renais em uma plataforma segura e intuitiva.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/auth/login"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white text-brand-700 font-bold text-sm hover:bg-blue-50 transition-all duration-200 shadow-lg"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gold-500 text-white font-bold text-sm hover:bg-gold-600 transition-all duration-200 shadow-lg shadow-gold-500/20"
                 >
                   Acessar gratuitamente
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </Link>
                 <Link
                   href="/ferramentas/calculadora-tfg"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-white/30 text-white font-semibold text-sm hover:bg-white/10 transition-all duration-200"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-white/20 bg-white/5 text-white font-semibold text-sm hover:bg-white/10 transition-all duration-200"
                 >
                   Calcular TFG grátis
                 </Link>

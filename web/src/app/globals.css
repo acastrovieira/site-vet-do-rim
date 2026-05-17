@@ -119,6 +119,9 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--card-border);
     border-top: 1px solid var(--card-border-top);
+    /* Força camada de GPU (evita repaint na rolagem) */
+    will-change: transform, opacity;
+    transform: translateZ(0);
   }
 
   /* Glow dourado sutil para elementos premium */
@@ -128,18 +131,20 @@
 
   /* Animação de fade-up para seções */
   .animate-fade-up {
-    animation: fadeUp 0.6s ease-out both;
+    animation: fadeUp 0.6s cubic-bezier(0.85, 0, 0.15, 1) both;
+    will-change: transform, opacity;
+    transform: translateZ(0);
   }
 }
 
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translate3d(0, 20px, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 

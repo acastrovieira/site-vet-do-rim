@@ -79,6 +79,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="pt-BR"
       className={`${inter.variable} ${plusJakarta.variable} h-full antialiased scroll-smooth`}
     >
+      <head>
+        <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vtqemhmsyflhpxxptdls.supabase.co'} crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vtqemhmsyflhpxxptdls.supabase.co'} />
+      </head>
       <body className="min-h-full flex flex-col transition-colors duration-300">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <PostHogProvider>

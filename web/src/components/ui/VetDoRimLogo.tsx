@@ -47,6 +47,7 @@ export function VetDoRimLogo({
       quality={95}
       className={`object-contain select-none shrink-0 transition-all duration-300 ${blendClass} ${className}`}
       priority={priority}
+      fetchPriority={priority ? 'high' : 'auto'}
     />
   )
 }

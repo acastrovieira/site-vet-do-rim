@@ -4,7 +4,13 @@ import { useState } from 'react'
 import type { FreePatient, FreeLabExam } from '@/lib/lab-free/types'
 import { getExamsForPatient } from '@/lib/lab-free/storage'
 import { FreeEvolutionTable } from './FreeEvolutionTable'
-import { FreeChartsView } from './FreeChartsView'
+import dynamic from 'next/dynamic'
+
+// Lazy load para evitar baixar o bundle do Recharts no TTI inicial
+const FreeChartsView = dynamic(() => import('./FreeChartsView').then(mod => mod.FreeChartsView), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse rounded-2xl bg-slate-100" />
+})
 import { FreeExamForm } from './FreeExamForm'
 import { LeadGate } from './LeadGate'
 import {

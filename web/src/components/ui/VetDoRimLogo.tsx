@@ -9,8 +9,9 @@ interface VetDoRimLogoProps {
   /**
    * 'color'  = logo original navy + dourado
    * 'white'  = logo invertida (branca) — ideal para fundos muito escuros onde o navy some
+   * 'auto'   = reage automaticamente à classe .dark do Tailwind
    */
-  variant?: 'color' | 'white'
+  variant?: 'color' | 'white' | 'auto'
   priority?: boolean
 }
 
@@ -21,19 +22,21 @@ interface VetDoRimLogoProps {
  * @example
  * // Header desktop
  * <VetDoRimLogo className="w-10 h-10 sm:w-12 sm:h-12" priority />
- *
- * @example
- * // Footer escuro
- * <VetDoRimLogo variant="white" className="w-12 h-12 sm:w-14 sm:h-14" />
  */
 export function VetDoRimLogo({
   width = 256,
   height = 256,
   className = '',
-  variant = 'color',
+  variant = 'auto',
   priority = false,
 }: VetDoRimLogoProps) {
-  const blendClass = variant === 'color' ? '' : 'brightness-0 invert'
+  let blendClass = ''
+  
+  if (variant === 'white') {
+    blendClass = 'brightness-0 invert'
+  } else if (variant === 'auto') {
+    blendClass = 'dark:brightness-0 dark:invert'
+  }
 
   return (
     <Image
@@ -42,7 +45,7 @@ export function VetDoRimLogo({
       width={width}
       height={height}
       quality={95}
-      className={`object-contain select-none shrink-0 ${blendClass} ${className}`}
+      className={`object-contain select-none shrink-0 transition-all duration-300 ${blendClass} ${className}`}
       priority={priority}
     />
   )

@@ -1,6 +1,7 @@
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
 import type { Metadata } from 'next'
 import { PostHogProvider } from '@/components/providers/PostHogProvider'
+import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { WhatsAppFloat } from '@/components/marketing/WhatsAppFloat'
 import { CookieBanner } from '@/components/ui/CookieBanner'
 import './globals.css'
@@ -22,7 +23,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vetdorim.com.br'
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Vet do Rim — Nefrologia e Urologia Veterinária de Alta Complexidade',
+    default: 'Vet do Rim — Nefrologia e Urologia Veterinária Avançada',
     template: '%s | Vet do Rim',
   },
   icons: {
@@ -78,12 +79,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="pt-BR"
       className={`${inter.variable} ${plusJakarta.variable} h-full antialiased scroll-smooth`}
     >
-      <body className="min-h-full flex flex-col">
-        <PostHogProvider>
-          {children}
-        </PostHogProvider>
-        <WhatsAppFloat />
-        <CookieBanner />
+      <body className="min-h-full flex flex-col transition-colors duration-300">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <PostHogProvider>
+            {children}
+          </PostHogProvider>
+          <WhatsAppFloat />
+          <CookieBanner />
+        </ThemeProvider>
       </body>
     </html>
   )

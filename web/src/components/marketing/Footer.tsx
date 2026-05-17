@@ -39,7 +39,7 @@ const footerLinks = {
  */
 export function Footer() {
   return (
-    <footer className="bg-transparent border-t border-white/5 text-science-500 mt-auto relative z-10" role="contentinfo">
+    <footer className="bg-transparent border-t border-slate-200 dark:border-white/5 text-slate-500 dark:text-science-500 mt-auto relative z-10" role="contentinfo">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
@@ -50,25 +50,25 @@ export function Footer() {
                 alt="Vet do Rim"
                 width={128}
                 height={128}
-                className="w-16 h-16 sm:w-20 sm:h-20 object-contain brightness-0 invert shrink-0 transition-transform duration-300 group-hover:scale-105"
+                className="w-16 h-16 sm:w-20 sm:h-20 object-contain dark:brightness-0 dark:invert shrink-0 transition-transform duration-300 group-hover:scale-105"
               />
               <div>
-                <span className="block font-display font-bold text-lg text-white tracking-tight leading-none transition-colors duration-200 group-hover:text-blue-100">
+                <span className="block font-display font-bold text-lg text-slate-900 dark:text-white tracking-tight leading-none transition-colors duration-200 group-hover:text-blue-600 dark:group-hover:text-blue-100">
                   Vet do Rim
                 </span>
-                <span className="block text-xs text-slate-400 tracking-wider font-medium mt-1">
+                <span className="block text-xs text-slate-500 dark:text-slate-400 tracking-wider font-medium mt-1">
                   Nefrologia Veterinária
                 </span>
               </div>
             </Link>
-            <p className="text-sm leading-relaxed max-w-xs">
-              Nefrologia e urologia veterinária de alta complexidade. Ciência, tecnologia e
+            <p className="text-sm leading-relaxed max-w-xs text-slate-600 dark:text-science-500">
+              Nefrologia e urologia veterinária avançada. Ciência, tecnologia e
               atendimento humanizado.
             </p>
             <div className="flex gap-3 mt-5">
               <a
                 href="mailto:contato@vetdorim.com.br"
-                className="p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
+                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 aria-label="Enviar e-mail"
               >
                 <Mail className="h-4 w-4" aria-hidden />
@@ -77,7 +77,7 @@ export function Footer() {
                 href="https://www.instagram.com/vetdorim/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-pink-400"
+                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-pink-600 dark:hover:text-pink-400"
                 aria-label="Instagram @vetdorim"
               >
                 <IconInstagram className="h-4 w-4" />
@@ -86,7 +86,7 @@ export function Footer() {
                 href="https://wa.me/5527997987058"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-[#25D366]"
+                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-[#25D366]"
                 aria-label="WhatsApp"
               >
                 <IconWhatsApp className="h-4 w-4" />
@@ -104,7 +104,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm hover:text-white transition-colors duration-200"
+                    className="text-sm text-slate-600 dark:text-science-500 hover:text-slate-900 dark:hover:text-white transition-colors duration-200"
                   >
                     {link.label}
                   </Link>
@@ -123,7 +123,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm hover:text-white transition-colors duration-200"
+                    className="text-sm text-slate-600 dark:text-science-500 hover:text-slate-900 dark:hover:text-white transition-colors duration-200"
                   >
                     {link.label}
                   </Link>
@@ -133,7 +133,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between gap-3 text-xs">
+        <div className="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between gap-3 text-xs text-slate-500 dark:text-science-500">
           <p>© {new Date().getFullYear()} Vet do Rim. Todos os direitos reservados.</p>
           <p>
             Conteúdo de caráter educacional. Não substitui consulta veterinária presencial.

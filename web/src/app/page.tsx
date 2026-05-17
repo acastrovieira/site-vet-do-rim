@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Nefrologia e Urologia Veterinária de Alta Complexidade',
+  title: 'Nefrologia e Urologia Veterinária Avançada',
   description:
     'Vet do Rim — especialistas em doenças renais e urológicas de cães e gatos. Tratamento individualizado, empatia e rigor técnico científico.',
   alternates: { canonical: '/' },
@@ -26,7 +26,7 @@ const organizationSchema = {
   '@type': 'VeterinaryCare',
   name: 'Vet do Rim',
   url: 'https://vetdorim.com.br',
-  description: 'Especialistas em nefrologia e urologia veterinária de alta complexidade.',
+  description: 'Especialistas em nefrologia e urologia veterinária avançada.',
   medicalSpecialty: 'Nephrology',
   sameAs: ['https://instagram.com/vetdorim', 'https://youtube.com/@vetdorim'],
 }
@@ -295,10 +295,10 @@ export default function HomePage() {
               <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-3">
                 Áreas de atuação
               </p>
-              <h2 id="especialidades-heading" className="font-display text-3xl sm:text-4xl font-bold text-white">
+              <h2 id="especialidades-heading" className="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">
                 Especialidades veterinárias
               </h2>
-              <p className="mt-3 text-science-200 max-w-xl mx-auto">
+              <p className="mt-3 text-slate-600 dark:text-science-200 max-w-xl mx-auto">
                 Diagnóstico preciso e manejo clínico especializado para as condições mais complexas
                 do sistema renal e urinário.
               </p>
@@ -310,13 +310,13 @@ export default function HomePage() {
                   key={title}
                   className="group p-6 rounded-2xl glass-card transition-all duration-300 hover:-translate-y-1 hover:border-gold-400/30"
                 >
-                  <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-gold-400 group-hover:bg-gold-500 group-hover:text-white transition-all duration-300 gold-glow">
+                  <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 text-gold-400 group-hover:bg-gold-500 group-hover:text-white transition-all duration-300 gold-glow">
                     <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
                   </div>
-                  <h3 className="font-display font-semibold text-white mb-2 text-sm leading-snug">
+                  <h3 className="font-display font-semibold text-slate-900 dark:text-white mb-2 text-sm leading-snug">
                     {title}
                   </h3>
-                  <p className="text-sm text-science-200 leading-relaxed">{description}</p>
+                  <p className="text-sm text-slate-600 dark:text-science-200 leading-relaxed">{description}</p>
                 </article>
               ))}
             </div>
@@ -324,16 +324,16 @@ export default function HomePage() {
         </section>
 
         {/* ── Galeria de fotos clínicas ── */}
-        <section className="py-24 border-y border-white/5" aria-label="Estrutura clínica">
+        <section className="py-24 border-y border-slate-200 dark:border-white/5" aria-label="Estrutura clínica">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14">
               <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-3">
                 Nossa estrutura
               </p>
-              <h2 className="font-display text-3xl sm:text-4xl font-bold text-white">
+              <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">
                 Tecnologia a serviço da saúde do seu pet
               </h2>
-              <p className="mt-3 text-science-200 max-w-xl mx-auto">
+              <p className="mt-3 text-slate-600 dark:text-science-200 max-w-xl mx-auto">
                 Equipamentos de ponta, ambiente acolhedor e uma equipe dedicada ao bem-estar
                 dos seus pacientes renais.
               </p>
@@ -391,11 +391,11 @@ export default function HomePage() {
                 </p>
                 <h2
                   id="diferenciais-heading"
-                  className="font-display text-3xl sm:text-4xl font-bold text-white mb-5"
+                  className="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-5"
                 >
                   Medicina veterinária de ponta, com o cuidado que o seu animal merece
                 </h2>
-                <p className="text-science-200 leading-relaxed mb-8">
+                <p className="text-slate-600 dark:text-science-200 leading-relaxed mb-8">
                   Unimos rigor técnico científico baseado em protocolos internacionais IRIS e ACVIM
                   com um atendimento humanizado e tecnologia digital para acompanhamento contínuo.
                 </p>
@@ -419,7 +419,7 @@ export default function HomePage() {
                       strokeWidth={2}
                       aria-hidden
                     />
-                    <span className="text-sm text-science-100 font-medium">{item}</span>
+                    <span className="text-sm text-slate-700 dark:text-science-100 font-medium">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -481,14 +481,14 @@ export default function HomePage() {
         </section>
 
         {/* ── Artigos em destaque ── */}
-        <section className="py-24 border-t border-white/5" aria-labelledby="artigos-heading">
+        <section className="py-24 border-t border-slate-200 dark:border-white/5" aria-labelledby="artigos-heading">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-2">
                   Conteúdo científico
                 </p>
-                <h2 id="artigos-heading" className="font-display text-3xl font-bold text-white">
+                <h2 id="artigos-heading" className="font-display text-3xl font-bold text-slate-900 dark:text-white">
                   Artigos em destaque
                 </h2>
               </div>
@@ -508,11 +508,11 @@ export default function HomePage() {
                   className="group flex flex-col rounded-2xl glass-card overflow-hidden hover:border-gold-400/30 transition-all duration-300"
                 >
                   <div
-                    className="h-40 flex items-center justify-center border-b border-white/5"
-                    style={{ background: 'rgba(255,255,255,0.02)' }}
+                    className="h-40 flex items-center justify-center border-b border-slate-200 dark:border-white/5"
+                    style={{ background: 'rgba(128,128,128,0.05)' }}
                   >
                     <Microscope
-                      className="h-12 w-12 text-white/20 group-hover:text-gold-400 transition-colors duration-300"
+                      className="h-12 w-12 text-slate-300 dark:text-white/20 group-hover:text-gold-400 transition-colors duration-300"
                       strokeWidth={1.5}
                       aria-hidden
                     />
@@ -522,12 +522,12 @@ export default function HomePage() {
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gold-400/10 text-gold-400 border border-gold-400/20">
                         {artigo.categoria}
                       </span>
-                      <span className="text-xs text-white/40">{artigo.leitura} de leitura</span>
+                      <span className="text-xs text-slate-500 dark:text-white/40">{artigo.leitura} de leitura</span>
                     </div>
-                    <h3 className="font-display font-bold text-white text-base leading-snug mb-2 group-hover:text-gold-400 transition-colors duration-200">
+                    <h3 className="font-display font-bold text-slate-900 dark:text-white text-base leading-snug mb-2 group-hover:text-gold-400 transition-colors duration-200">
                       {artigo.title}
                     </h3>
-                    <p className="text-sm text-science-200 leading-relaxed flex-1">
+                    <p className="text-sm text-slate-600 dark:text-science-200 leading-relaxed flex-1">
                       {artigo.excerpt}
                     </p>
                     <Link
@@ -546,7 +546,7 @@ export default function HomePage() {
         </section>
 
         {/* ── CTA Final ── */}
-        <section className="py-24 border-t border-white/5 relative overflow-hidden" aria-labelledby="cta-heading">
+        <section className="py-24 border-t border-slate-200 dark:border-white/5 relative overflow-hidden" aria-labelledby="cta-heading">
           {/* Subtle glow behind CTA */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden>
              <div className="w-full max-w-2xl h-64 bg-brand-500/20 blur-[100px] rounded-full" />
@@ -555,11 +555,11 @@ export default function HomePage() {
             <div className="rounded-3xl p-10 sm:p-14 glass-card border border-gold-400/20">
               <h2
                 id="cta-heading"
-                className="font-display text-3xl sm:text-4xl font-bold text-white mb-4"
+                className="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4"
               >
                 Gerencie seus pacientes renais com inteligência
               </h2>
-              <p className="text-science-200 text-lg mb-8 leading-relaxed">
+              <p className="text-slate-600 dark:text-science-200 text-lg mb-8 leading-relaxed">
                 O Lab Evolution centraliza laudos, histórico clínico e dashboards de biomarcadores
                 renais em uma plataforma segura e intuitiva.
               </p>
@@ -573,7 +573,7 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="/ferramentas/calculadora-tfg"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-white/20 bg-white/5 text-white font-semibold text-sm hover:bg-white/10 transition-all duration-200"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-slate-300 dark:border-white/20 bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-white font-semibold text-sm hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-200"
                 >
                   Calcular TFG grátis
                 </Link>

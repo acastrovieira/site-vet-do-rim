@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Habilita o dark mode por classe explícita (.dark) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* ── Tipografia ────────────────────────────────────────── */
   --font-sans: var(--font-inter), system-ui, sans-serif;
@@ -41,21 +44,44 @@
 
 /* ── Base ─────────────────────────────────────────────── */
 @layer base {
+  :root {
+    --bg-main: var(--color-science-50);
+    --text-main: var(--color-slate-900);
+    --text-muted: var(--color-science-700);
+    --bg-gradient: radial-gradient(circle at 50% 0%, rgba(26, 46, 90, 0.03) 0%, rgba(248, 250, 252, 0) 70%), var(--bg-main);
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --card-border: var(--color-science-200);
+    --card-border-top: rgba(255, 255, 255, 1);
+    --text-heading: var(--color-brand-900);
+  }
+
+  .dark {
+    --bg-main: var(--color-dark-bg);
+    --text-main: var(--color-science-50);
+    --text-muted: var(--color-science-200);
+    --bg-gradient: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.05) 0%, rgba(10, 10, 12, 0) 70%), var(--bg-main);
+    --card-bg: var(--color-dark-surface);
+    --card-border: var(--color-dark-border);
+    --card-border-top: rgba(255, 255, 255, 0.1);
+    --text-heading: #F8FAFC;
+  }
+
   html {
     font-family: var(--font-sans);
-    background-color: var(--color-dark-bg);
-    color: var(--color-science-50);
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   body {
-    background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.05) 0%, rgba(10, 10, 12, 0) 70%), var(--color-dark-bg);
+    background: var(--bg-gradient);
     min-height: 100vh;
   }
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
     letter-spacing: -0.025em;
-    color: #F8FAFC;
+    color: var(--text-heading);
   }
 
   /* Smooth anchor scrolling */
@@ -86,13 +112,13 @@
     background-clip: text;
   }
 
-  /* Glass card sutil — tom navy */
+  /* Glass card responsivo (claro/escuro) */
   .glass-card {
-    background: var(--color-dark-surface);
+    background: var(--card-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--color-dark-border);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--card-border);
+    border-top: 1px solid var(--card-border-top);
   }
 
   /* Glow dourado sutil para elementos premium */

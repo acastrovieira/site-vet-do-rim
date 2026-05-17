@@ -7,8 +7,8 @@ interface VetDoRimLogoProps {
   height?: number
   className?: string
   /**
-   * 'color'  = logo navy + dourado — fundos claros (usa mix-blend-multiply automaticamente)
-   * 'white'  = logo invertida — fundos escuros (brightness-0 invert)
+   * 'color'  = logo original navy + dourado
+   * 'white'  = logo invertida (branca) — ideal para fundos muito escuros onde o navy some
    */
   variant?: 'color' | 'white'
   priority?: boolean
@@ -33,7 +33,7 @@ export function VetDoRimLogo({
   variant = 'color',
   priority = false,
 }: VetDoRimLogoProps) {
-  const blendClass = variant === 'color' ? 'mix-blend-multiply' : 'brightness-0 invert'
+  const blendClass = variant === 'color' ? '' : 'brightness-0 invert'
 
   return (
     <Image

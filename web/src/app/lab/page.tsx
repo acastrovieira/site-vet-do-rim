@@ -63,10 +63,10 @@ export default async function LabDashboardPage() {
     <div className="space-y-8">
       {/* Saudação dinâmica */}
       <div>
-        <h1 className="font-display text-2xl font-bold text-slate-900">
+        <h1 className="font-display text-2xl font-bold text-white">
           {greeting}, {firstName} 👋
         </h1>
-        <p className="text-slate-500 mt-1 text-sm">
+        <p className="text-science-200 mt-1 text-sm">
           Visão geral dos seus pacientes renais · Lab Evolution
         </p>
       </div>
@@ -76,24 +76,24 @@ export default async function LabDashboardPage() {
         {cards.map(({ icon: Icon, label, value, color }) => (
           <div
             key={label}
-            className="bg-white rounded-2xl border border-slate-100 p-5 flex items-start gap-4"
+            className="glass-card rounded-2xl border-white/5 p-5 flex items-start gap-4"
           >
-            <div className={`p-2.5 rounded-xl ${color}`}>
+            <div className={`p-2.5 rounded-xl ${color} bg-opacity-10`}>
               <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-900 font-display">{value}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+              <p className="text-2xl font-bold text-white font-display">{value}</p>
+              <p className="text-xs text-science-200 mt-0.5">{label}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Placeholder: lista de pacientes recentes */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-6">
-        <h2 className="font-display font-semibold text-slate-900 mb-4">Pacientes recentes</h2>
-        <p className="text-sm text-slate-400">
-          Acesse a seção <strong>Pacientes</strong> no menu lateral para gerenciar seus pacientes renais.
+      <div className="glass-card rounded-2xl border-white/5 p-6">
+        <h2 className="font-display font-semibold text-white mb-4">Pacientes recentes</h2>
+        <p className="text-sm text-science-200">
+          Acesse a seção <strong className="text-white">Pacientes</strong> no menu lateral para gerenciar seus pacientes renais.
         </p>
       </div>
     </div>

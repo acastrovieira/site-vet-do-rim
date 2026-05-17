@@ -20,11 +20,11 @@ export const metadata: Metadata = {
 }
 
 const categoriaColors: Record<string, string> = {
-  Nefrologia: 'bg-brand-50 text-brand-700',
-  Urologia: 'bg-violet-50 text-violet-700',
-  Diagnóstico: 'bg-emerald-50 text-emerald-700',
-  Nutrição: 'bg-amber-50 text-amber-700',
-  Tratamento: 'bg-rose-50 text-rose-700',
+  Nefrologia: 'bg-brand-50 dark:bg-brand-500/20 text-brand-700 dark:text-brand-200 border border-transparent dark:border-brand-500/30',
+  Urologia: 'bg-violet-50 dark:bg-violet-500/20 text-violet-700 dark:text-violet-200 border border-transparent dark:border-violet-500/30',
+  Diagnóstico: 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-200 border border-transparent dark:border-emerald-500/30',
+  Nutrição: 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-200 border border-transparent dark:border-amber-500/30',
+  Tratamento: 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-200 border border-transparent dark:border-rose-500/30',
 }
 
 export default function BlogPage() {
@@ -37,15 +37,15 @@ export default function BlogPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           {/* Hero do blog */}
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 border border-brand-100 text-brand-700 text-xs font-semibold uppercase tracking-wider mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/20 text-brand-700 dark:text-brand-300 text-xs font-semibold uppercase tracking-wider mb-6">
               <BookOpen className="h-3.5 w-3.5" aria-hidden />
               Conteúdo Científico
             </div>
-            <h1 className="font-display text-4xl sm:text-5xl font-bold text-slate-900 text-balance mb-4">
+            <h1 className="font-display text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white text-balance mb-4">
               Blog{' '}
-              <span className="text-gradient-brand">Científico</span>
+              <span className="text-gradient-brand dark:text-gradient-gold">Científico</span>
             </h1>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto leading-relaxed">
+            <p className="text-slate-500 dark:text-science-200 text-lg max-w-xl mx-auto leading-relaxed">
               Artigos baseados em evidências sobre nefrologia e urologia veterinária,
               escritos para médicos veterinários e tutores informados.
             </p>
@@ -65,12 +65,12 @@ export default function BlogPage() {
                 return (
                   <article
                     key={post.slug}
-                    className="group flex flex-col rounded-2xl border border-slate-100 bg-white overflow-hidden hover:border-brand-200 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300"
+                    className="group flex flex-col rounded-2xl glass-card overflow-hidden hover:border-brand-200 dark:hover:border-gold-400/30 transition-all duration-300"
                   >
                     {/* Thumbnail placeholder */}
-                    <div className="h-44 bg-gradient-to-br from-brand-50 via-sky-50 to-science-100 flex items-center justify-center">
+                    <div className="h-44 flex items-center justify-center border-b border-slate-200 dark:border-white/5" style={{ background: 'rgba(128,128,128,0.05)' }}>
                       <BookOpen
-                        className="h-12 w-12 text-brand-200 group-hover:text-brand-300 transition-colors duration-300"
+                        className="h-12 w-12 text-slate-300 dark:text-white/20 group-hover:text-brand-300 dark:group-hover:text-gold-400 transition-colors duration-300"
                         strokeWidth={1.5}
                         aria-hidden
                       />
@@ -82,7 +82,7 @@ export default function BlogPage() {
                         <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${colorClass}`}>
                           {post.frontmatter.categoria}
                         </span>
-                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <span className="text-xs text-slate-400 dark:text-white/40 flex items-center gap-1">
                           <Calendar className="h-3 w-3" aria-hidden />
                           {new Date(post.frontmatter.date).toLocaleDateString('pt-BR', {
                             day: '2-digit',
@@ -90,16 +90,16 @@ export default function BlogPage() {
                             year: 'numeric',
                           })}
                         </span>
-                        <span className="text-xs text-slate-400 ml-auto">{post.frontmatter.leitura}</span>
+                        <span className="text-xs text-slate-400 dark:text-white/40 ml-auto">{post.frontmatter.leitura}</span>
                       </div>
 
                       {/* Título */}
-                      <h2 className="font-display font-bold text-slate-900 text-base leading-snug mb-2 group-hover:text-brand-700 transition-colors duration-200 flex-1">
+                      <h2 className="font-display font-bold text-slate-900 dark:text-white text-base leading-snug mb-2 group-hover:text-brand-700 dark:group-hover:text-gold-400 transition-colors duration-200 flex-1">
                         {post.frontmatter.title}
                       </h2>
 
                       {/* Excerpt */}
-                      <p className="text-sm text-slate-500 leading-relaxed mb-4 line-clamp-2">
+                      <p className="text-sm text-slate-500 dark:text-science-200 leading-relaxed mb-4 line-clamp-2">
                         {post.frontmatter.description}
                       </p>
 

@@ -69,7 +69,7 @@ export function LabShell({ children, user, profile }: LabShellProps) {
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 h-16 border-b border-slate-200 dark:border-white/5">
-          <Image src="/logo.png" alt="Vet do Rim" width={80} height={80} className="w-12 h-12 sm:w-14 sm:h-14 object-contain shrink-0" priority />
+          <Image src="/logo.svg" alt="Vet do Rim" width={80} height={80} className="w-12 h-12 sm:w-14 sm:h-14 object-contain shrink-0" priority />
           <div>
             <span className="font-display font-bold text-sm text-slate-900 dark:text-white leading-none tracking-tight">Vet do Rim</span>
             <span className="block text-[10px] text-gold-400 font-medium tracking-wider mt-0.5">Lab Evolution</span>

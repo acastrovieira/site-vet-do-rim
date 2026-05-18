@@ -40,7 +40,7 @@ export function VetDoRimLogo({
 
   return (
     <Image
-      src="/logo.png"
+      src="/logo.svg"
       alt="Vet do Rim — Nefrologia e Urologia Veterinária"
       width={width}
       height={height}

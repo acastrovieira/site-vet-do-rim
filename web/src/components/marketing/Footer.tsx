@@ -46,7 +46,7 @@ export function Footer() {
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-4 mb-4 group" aria-label="Vet do Rim">
               <Image
-                src="/logo.png"
+                src="/logo.svg"
                 alt="Vet do Rim"
                 width={128}
                 height={128}

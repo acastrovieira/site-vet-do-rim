@@ -29,11 +29,15 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
+      { url: '/logo.svg', type: 'image/svg+xml' },
       { url: '/favicon.png', type: 'image/png', sizes: '32x32' },
     ],
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/logo.svg', type: 'image/svg+xml' }
+    ],
     other: [
-      { rel: 'mask-icon', url: '/logo.png', color: '#1A2E5A' },
+      { rel: 'mask-icon', url: '/logo.svg', color: '#1A2E5A' },
     ],
   },
   description:
@@ -57,13 +61,13 @@ export const metadata: Metadata = {
     title: 'Vet do Rim — Nefrologia e Urologia Veterinária',
     description:
       'Especialistas em nefrologia e urologia veterinária. Atendimento humanizado, medicina de ponta.',
-    images: [{ url: '/logo.png', width: 512, height: 512, alt: 'Vet do Rim — Nefrologia Veterinária' }],
+    images: [{ url: '/logo.svg', width: 512, height: 512, alt: 'Vet do Rim — Nefrologia Veterinária' }],
   },
   twitter: {
     card: 'summary',
     title: 'Vet do Rim — Nefrologia e Urologia Veterinária',
     description: 'Especialistas em nefrologia e urologia veterinária.',
-    images: ['/logo.png'],
+    images: ['/logo.svg'],
   },
   robots: {
     index: true,

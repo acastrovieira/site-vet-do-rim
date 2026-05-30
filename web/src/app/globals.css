@@ -135,17 +135,90 @@
     will-change: transform, opacity;
     transform: translateZ(0);
   }
-}
 
-@keyframes fadeUp {
-  from {
+  /* Scroll reveal — ativa via JS adicionando .revealed */
+  .scroll-reveal {
     opacity: 0;
-    transform: translate3d(0, 20px, 0);
+    transform: translate3d(0, 32px, 0);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
   }
-  to {
+  .scroll-reveal.revealed {
     opacity: 1;
     transform: translate3d(0, 0, 0);
   }
+
+  /* Aurora — fundo animado premium */
+  .aurora {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .aurora::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: 10%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(ellipse, rgba(30, 64, 175, 0.25) 0%, transparent 70%);
+    animation: auroraMove 12s ease-in-out infinite alternate;
+    border-radius: 50%;
+    filter: blur(40px);
+  }
+  .aurora::after {
+    content: '';
+    position: absolute;
+    top: 10%;
+    right: 5%;
+    width: 45%;
+    height: 50%;
+    background: radial-gradient(ellipse, rgba(201, 168, 76, 0.12) 0%, transparent 70%);
+    animation: auroraMove 15s ease-in-out infinite alternate-reverse;
+    border-radius: 50%;
+    filter: blur(50px);
+  }
+
+  /* Shimmer para elementos de loading/destaque */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
+    animation: shimmer 2.5s ease-in-out infinite;
+  }
+
+  /* Float suave para elementos hero */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+    will-change: transform;
+  }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translate3d(0, 20px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes auroraMove {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(5%, 3%) scale(1.08); }
+  100% { transform: translate(-3%, 5%) scale(0.95); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 
 /* ── Prose (artigos científicos) ───────────────────────── */

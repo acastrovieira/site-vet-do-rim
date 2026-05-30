@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, PawPrint, User, Scale } from 'lucide-react'
+import type { Database } from '@/types/database'
+import { ArrowLeft, PawPrint, User, Scale, AlertCircle } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Novo Paciente — Lab Evolution',
@@ -10,51 +11,72 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+/**
+ * Server Action para criação de paciente.
+ * Redireciona para laudos do paciente criado, ou para o formulário com ?error em caso de falha.
+ */
 async function criarPaciente(formData: FormData) {
   'use server'
 
   const supabase = await createClient()
 
-  const nome = formData.get('nome') as string
-  const tutor_id = formData.get('tutor_id') as string
-  const especie = formData.get('especie') as string
-  const raca = (formData.get('raca') as string) || null
+  // Valida sessão ativa
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/auth/login')
+  }
+
+  const nome = (formData.get('nome') as string)?.trim()
+  const tutor_id = (formData.get('tutor_id') as string)?.trim()
+  const especie = (formData.get('especie') as string)?.trim()
+  const raca = (formData.get('raca') as string)?.trim() || null
   const idade_anos = formData.get('idade_anos') ? Number(formData.get('idade_anos')) : null
   const idade_meses = formData.get('idade_meses') ? Number(formData.get('idade_meses')) : null
   const peso_atual = formData.get('peso_atual') ? Number(formData.get('peso_atual')) : null
   const status_paciente = (formData.get('status_paciente') as string) || 'ativo'
 
-  if (!nome?.trim() || !tutor_id || !especie) {
-    return
+  if (!nome || !tutor_id || !especie) {
+    redirect('/lab/pacientes/novo?error=campos_obrigatorios')
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('pets')
     .insert({
-      id: crypto.randomUUID(),
-      nome: nome.trim(),
+      nome,
       tutor_id,
       especie,
-      raca: raca?.trim() || null,
-      idade_anos,
-      idade_meses,
-      peso_atual,
+      raca: raca ?? null,
+      idade_anos: idade_anos ?? null,
+      idade_meses: idade_meses ?? null,
+      peso_atual: peso_atual ?? null,
       status_paciente,
-      atualizado_em: new Date().toISOString(),
     })
     .select('id')
-    .single() as { data: { id: string } | null; error: Error | null }
+    .single() as { data: { id: string } | null; error: { message: string; details: string } | null }
 
   if (error || !data) {
-    return
+    console.error('[criarPaciente] Supabase error:', error?.message, error?.details)
+    redirect('/lab/pacientes/novo?error=salvar_falhou')
   }
 
   redirect(`/lab/pacientes/${data.id}/laudos`)
 }
 
-export default async function NovoPacientePage() {
+interface PageProps {
+  searchParams: Promise<{ error?: string }>
+}
+
+export default async function NovoPacientePage({ searchParams }: PageProps) {
   const supabase = await createClient()
+  const params = await searchParams
+
+  const errorMsg =
+    params.error === 'campos_obrigatorios'
+      ? 'Preencha o nome do animal, a espécie e selecione um tutor.'
+      : params.error === 'salvar_falhou'
+        ? 'Não foi possível salvar o paciente. Verifique sua conexão e tente novamente.'
+        : null
 
   const { data: tutores } = await supabase
     .from('tutores')
@@ -82,6 +104,8 @@ export default async function NovoPacientePage() {
     { value: 'obito', label: 'Óbito' },
   ]
 
+  const temTutores = tutores && tutores.length > 0
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
@@ -98,6 +122,17 @@ export default async function NovoPacientePage() {
           <p className="text-slate-500 mt-0.5 text-sm">Cadastre o animal para acompanhamento renal</p>
         </div>
       </div>
+
+      {/* Feedback de erro */}
+      {errorMsg && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm"
+        >
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden />
+          <p>{errorMsg}</p>
+        </div>
+      )}
 
       {/* Formulário */}
       <form action={criarPaciente} className="space-y-6">
@@ -186,7 +221,7 @@ export default async function NovoPacientePage() {
             <label htmlFor="tutor_id" className="block text-sm font-medium text-slate-700 mb-1.5">
               Tutor <span className="text-red-500">*</span>
             </label>
-            {tutores && tutores.length > 0 ? (
+            {temTutores ? (
               <select
                 id="tutor_id"
                 name="tutor_id"
@@ -194,7 +229,7 @@ export default async function NovoPacientePage() {
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all bg-white"
               >
                 <option value="">Selecione o tutor…</option>
-                {tutores.map(t => (
+                {tutores!.map(t => (
                   <option key={t.id} value={t.id}>{t.nome}</option>
                 ))}
               </select>
@@ -280,7 +315,7 @@ export default async function NovoPacientePage() {
           <button
             type="submit"
             id="btn-salvar-paciente"
-            disabled={!tutores || tutores.length === 0}
+            disabled={!temTutores}
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Salvar paciente

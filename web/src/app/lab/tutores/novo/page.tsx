@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, User, Phone, Mail, MapPin } from 'lucide-react'
+import type { Database } from '@/types/database'
+import { ArrowLeft, User, Phone, Mail, MapPin, AlertCircle } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Novo Tutor — Lab Evolution',
@@ -10,56 +11,71 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+/**
+ * Server Action para criação de tutor.
+ * Redireciona para a página do tutor criado, ou para o formulário com ?error=1 em caso de falha.
+ */
 async function criarTutor(formData: FormData) {
   'use server'
 
   const supabase = await createClient()
 
-  const nome = formData.get('nome') as string
-  const telefone = formData.get('telefone') as string
-  const email = (formData.get('email') as string) || null
-  const cpf = (formData.get('cpf') as string) || null
-  const cep = (formData.get('cep') as string) || null
-  const endereco = (formData.get('endereco') as string) || null
-  const numero = (formData.get('numero') as string) || null
-  const complemento = (formData.get('complemento') as string) || null
-  const bairro = (formData.get('bairro') as string) || null
-  const cidade = (formData.get('cidade') as string) || null
-  const estado = (formData.get('estado') as string) || null
+  // Valida sessão ativa
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/auth/login')
+  }
 
-  if (!nome?.trim() || !telefone?.trim()) {
-    return
+  const nome = (formData.get('nome') as string)?.trim()
+  const telefone = (formData.get('telefone') as string)?.trim()
+  const email = (formData.get('email') as string)?.trim() || null
+  const cpf = (formData.get('cpf') as string)?.trim() || null
+  const cep = (formData.get('cep') as string)?.trim() || null
+  const endereco = (formData.get('endereco') as string)?.trim() || null
+  const cidade = (formData.get('cidade') as string)?.trim() || null
+  const estado = (formData.get('estado') as string)?.trim() || null
+
+  if (!nome || !telefone) {
+    redirect('/lab/tutores/novo?error=campos_obrigatorios')
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('tutores')
     .insert({
-      id: crypto.randomUUID(),
-      nome: nome.trim(),
-      telefone: telefone.trim(),
-      email: email?.trim() || null,
-      cpf: cpf?.trim() || null,
-      cep: cep?.trim() || null,
-      endereco: endereco?.trim() || null,
-      numero: numero?.trim() || null,
-      complemento: complemento?.trim() || null,
-      bairro: bairro?.trim() || null,
-      cidade: cidade?.trim() || null,
-      estado: estado?.trim() || null,
-      atualizado_em: new Date().toISOString(),
+      nome,
+      telefone,
+      email: email ?? null,
+      cpf: cpf ?? null,
+      cep: cep ?? null,
+      endereco: endereco ?? null,
+      cidade: cidade ?? null,
+      estado: estado ?? null,
     })
     .select('id')
-    .single() as { data: { id: string } | null; error: Error | null }
+    .single() as { data: { id: string } | null; error: { message: string; details: string } | null }
 
   if (error || !data) {
-    return
+    console.error('[criarTutor] Supabase error:', error?.message, error?.details)
+    redirect('/lab/tutores/novo?error=salvar_falhou')
   }
 
   redirect(`/lab/tutores/${data.id}`)
 }
 
-export default function NovoTutorPage() {
+interface PageProps {
+  searchParams: Promise<{ error?: string }>
+}
+
+export default async function NovoTutorPage({ searchParams }: PageProps) {
+  const params = await searchParams
+  const errorMsg =
+    params.error === 'campos_obrigatorios'
+      ? 'Preencha o nome completo e o telefone antes de salvar.'
+      : params.error === 'salvar_falhou'
+        ? 'Não foi possível salvar o tutor. Verifique sua conexão e tente novamente.'
+        : null
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
@@ -76,6 +92,17 @@ export default function NovoTutorPage() {
           <p className="text-slate-500 mt-0.5 text-sm">Cadastre o responsável pelo paciente</p>
         </div>
       </div>
+
+      {/* Feedback de erro */}
+      {errorMsg && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm"
+        >
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden />
+          <p>{errorMsg}</p>
+        </div>
+      )}
 
       {/* Formulário */}
       <form action={criarTutor} className="space-y-6">
@@ -187,45 +214,6 @@ export default function NovoTutorPage() {
             </div>
 
             <div>
-              <label htmlFor="numero" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Número
-              </label>
-              <input
-                id="numero"
-                name="numero"
-                type="text"
-                placeholder="123"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="complemento" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Complemento
-              </label>
-              <input
-                id="complemento"
-                name="complemento"
-                type="text"
-                placeholder="Apto, bloco…"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="bairro" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Bairro
-              </label>
-              <input
-                id="bairro"
-                name="bairro"
-                type="text"
-                placeholder="Bairro"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-              />
-            </div>
-
-            <div>
               <label htmlFor="cep" className="block text-sm font-medium text-slate-700 mb-1.5">
                 CEP
               </label>
@@ -254,7 +242,7 @@ export default function NovoTutorPage() {
               />
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <label htmlFor="estado" className="block text-sm font-medium text-slate-700 mb-1.5">
                 Estado (UF)
               </label>
@@ -283,7 +271,7 @@ export default function NovoTutorPage() {
           <button
             type="submit"
             id="btn-salvar-tutor"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-sm disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-sm"
           >
             Salvar tutor
           </button>

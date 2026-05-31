@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+import { ToastProvider } from '@/components/ui/Toast'
 import {
   LayoutDashboard,
   Users,
@@ -59,7 +60,8 @@ export function LabShell({ children, user, profile }: LabShellProps) {
   const roleLabel = profile?.role === 'vet' ? 'Veterinário(a)' : profile?.role === 'admin' ? 'Admin' : 'Tutor'
 
   return (
-    <div className="min-h-screen flex">
+    <ToastProvider>
+      <div className="min-h-screen flex">
       {/* ── Sidebar ───────────────────────────── */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 glass-card border-r flex flex-col transition-transform duration-300 md:translate-x-0 ${
@@ -159,6 +161,7 @@ export function LabShell({ children, user, profile }: LabShellProps) {
           {children}
         </main>
       </div>
-    </div>
+      </div>
+    </ToastProvider>
   )
 }

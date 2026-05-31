@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { User, Phone, Mail, MapPin, AlertCircle, Loader2 } from 'lucide-react'
+import { User, Phone, Mail, MapPin, Loader2 } from 'lucide-react'
+import { useToast } from '@/components/ui/Toast'
 
-async function salvarTutor(formData: {
+async function salvarTutorAPI(formData: {
   nome: string
   telefone: string
   email: string | null
@@ -20,34 +21,42 @@ async function salvarTutor(formData: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(formData),
   })
-  return res.json() as Promise<{ ok: boolean; id?: string; error?: string; code?: string }>
+  return res.json() as Promise<{
+    ok: boolean
+    id?: string
+    error?: string
+    code?: string
+    hint?: string
+  }>
 }
 
 /**
  * Formulário de criação de tutor — Client Component.
- * Usa fetch para a API Route ao invés de Server Action,
- * garantindo controle completo do estado e feedback de erro visível.
+ * Usa fetch + useToast para exibir erros/sucesso como popup.
  */
 export function TutorForm() {
   const router = useRouter()
+  const { toast } = useToast()
   const [isPending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setError(null)
 
     const fd = new FormData(e.currentTarget)
     const nome = (fd.get('nome') as string)?.trim()
     const telefone = (fd.get('telefone') as string)?.trim()
 
     if (!nome || !telefone) {
-      setError('Preencha o nome completo e o telefone antes de salvar.')
+      toast({
+        type: 'warning',
+        title: 'Campos obrigatórios',
+        message: 'Preencha o nome completo e o telefone antes de salvar.',
+      })
       return
     }
 
     startTransition(async () => {
-      const result = await salvarTutor({
+      const result = await salvarTutorAPI({
         nome,
         telefone,
         email: (fd.get('email') as string)?.trim() || null,
@@ -59,15 +68,23 @@ export function TutorForm() {
       })
 
       if (!result.ok || !result.id) {
-        // Exibe o erro real do Supabase para diagnóstico
-        const msg = result.code === 'RLS_DENIED'
-          ? 'Sem permissão para salvar. Verifique as políticas RLS no Supabase.'
-          : result.error
-            ? `Erro: ${result.error}`
-            : 'Não foi possível salvar o tutor. Tente novamente.'
-        setError(msg)
+        // Mensagem de erro clara com diagnóstico do Supabase
+        const isRLS = result.code === 'RLS_DENIED'
+        toast({
+          type: 'error',
+          title: isRLS ? 'Sem permissão de acesso (RLS)' : 'Erro ao salvar tutor',
+          message: isRLS
+            ? `Política de segurança bloqueou o cadastro. Acesse o Supabase Dashboard → Policies → tutores e adicione política INSERT para usuários autenticados.${result.hint ? ` Dica: ${result.hint}` : ''}`
+            : result.error ?? 'Erro desconhecido. Verifique sua conexão e tente novamente.',
+        })
         return
       }
+
+      toast({
+        type: 'success',
+        title: 'Tutor salvo!',
+        message: `${nome} foi cadastrado com sucesso.`,
+      })
 
       router.push(`/lab/tutores/${result.id}`)
       router.refresh()
@@ -76,29 +93,18 @@ export function TutorForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-      {/* Feedback de erro com mensagem real */}
-      {error && (
-        <div
-          role="alert"
-          className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm"
-        >
-          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden />
-          <p className="break-words">{error}</p>
-        </div>
-      )}
-
       {/* Dados pessoais */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-5">
+      <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 p-6 space-y-5">
         <div className="flex items-center gap-2 mb-1">
           <User className="h-4 w-4 text-brand-500" aria-hidden />
-          <h2 className="font-semibold text-slate-800 text-sm uppercase tracking-wider">
+          <h2 className="font-semibold text-slate-800 dark:text-white text-sm uppercase tracking-wider">
             Dados pessoais
           </h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div className="sm:col-span-2">
-            <label htmlFor="nome" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="nome" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Nome completo <span className="text-red-500">*</span>
             </label>
             <input
@@ -108,12 +114,12 @@ export function TutorForm() {
               required
               autoComplete="name"
               placeholder="Ex: Ana Paula Ferreira"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
             />
           </div>
 
           <div>
-            <label htmlFor="cpf" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="cpf" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               CPF
             </label>
             <input
@@ -123,24 +129,24 @@ export function TutorForm() {
               autoComplete="off"
               placeholder="000.000.000-00"
               maxLength={14}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
             />
           </div>
         </div>
       </div>
 
       {/* Contato */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-5">
+      <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 p-6 space-y-5">
         <div className="flex items-center gap-2 mb-1">
           <Phone className="h-4 w-4 text-brand-500" aria-hidden />
-          <h2 className="font-semibold text-slate-800 text-sm uppercase tracking-wider">
+          <h2 className="font-semibold text-slate-800 dark:text-white text-sm uppercase tracking-wider">
             Contato
           </h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
-            <label htmlFor="telefone" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="telefone" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Telefone / WhatsApp <span className="text-red-500">*</span>
             </label>
             <input
@@ -150,12 +156,12 @@ export function TutorForm() {
               required
               autoComplete="tel"
               placeholder="(27) 99999-9999"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               E-mail
             </label>
             <input
@@ -164,24 +170,24 @@ export function TutorForm() {
               type="email"
               autoComplete="email"
               placeholder="tutor@email.com"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
             />
           </div>
         </div>
       </div>
 
       {/* Endereço */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-5">
+      <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 p-6 space-y-5">
         <div className="flex items-center gap-2 mb-1">
           <MapPin className="h-4 w-4 text-brand-500" aria-hidden />
-          <h2 className="font-semibold text-slate-800 text-sm uppercase tracking-wider">
+          <h2 className="font-semibold text-slate-800 dark:text-white text-sm uppercase tracking-wider">
             Endereço <span className="text-slate-400 font-normal normal-case">(opcional)</span>
           </h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div className="sm:col-span-2">
-            <label htmlFor="endereco" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="endereco" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Logradouro
             </label>
             <input
@@ -190,12 +196,12 @@ export function TutorForm() {
               type="text"
               autoComplete="street-address"
               placeholder="Rua, Avenida…"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
             />
           </div>
 
           <div>
-            <label htmlFor="cep" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="cep" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               CEP
             </label>
             <input
@@ -205,12 +211,12 @@ export function TutorForm() {
               autoComplete="postal-code"
               placeholder="29000-000"
               maxLength={9}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
             />
           </div>
 
           <div>
-            <label htmlFor="cidade" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="cidade" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Cidade
             </label>
             <input
@@ -219,18 +225,18 @@ export function TutorForm() {
               type="text"
               autoComplete="address-level2"
               placeholder="Cidade"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
             />
           </div>
 
           <div className="sm:col-span-2">
-            <label htmlFor="estado" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="estado" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Estado (UF)
             </label>
             <select
               id="estado"
               name="estado"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all bg-white"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
             >
               <option value="">Selecione…</option>
               {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => (
@@ -245,7 +251,7 @@ export function TutorForm() {
       <div className="flex items-center justify-end gap-3 pb-2">
         <Link
           href="/lab/tutores"
-          className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+          className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
         >
           Cancelar
         </Link>

@@ -2,19 +2,19 @@
  * Script de aplicação das políticas RLS via Supabase REST API.
  * 
  * Como usar:
- * 1. Acesse: https://supabase.com/dashboard/project/vvcrukpcilfcgfiihxev/settings/api
+ * 1. Acesse: https://supabase.com/dashboard/project/ycclyzoslirpnnwgzrqx/settings/api
  * 2. Copie o "service_role key" (secret)
  * 3. Execute: node apply-rls.js SEU_SERVICE_ROLE_KEY
  * 
  * OU copie o SQL abaixo e execute no Dashboard → SQL Editor
  */
 
-const SUPABASE_URL = 'https://vvcrukpcilfcgfiihxev.supabase.co'
+const SUPABASE_URL = 'https://ycclyzoslirpnnwgzrqx.supabase.co'
 const SERVICE_ROLE_KEY = process.argv[2]
 
 if (!SERVICE_ROLE_KEY) {
   console.error('❌ Uso: node apply-rls.js SEU_SERVICE_ROLE_KEY')
-  console.error('   Obtenha em: https://supabase.com/dashboard/project/vvcrukpcilfcgfiihxev/settings/api')
+  console.error('   Obtenha em: https://supabase.com/dashboard/project/ycclyzoslirpnnwgzrqx/settings/api')
   process.exit(1)
 }
 
@@ -76,7 +76,7 @@ async function apply() {
     console.log('⚠️  API REST direta não suporta DDL.')
     console.log('')
     console.log('📋 Execute este SQL manualmente no Dashboard:')
-    console.log('   https://supabase.com/dashboard/project/vvcrukpcilfcgfiihxev/sql/new')
+    console.log('   https://supabase.com/dashboard/project/ycclyzoslirpnnwgzrqx/sql/new')
     console.log('')
     console.log(sql)
     return

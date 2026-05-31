@@ -28,13 +28,14 @@ const statusOptions = [
 
 interface Props {
   tutores: Array<{ id: string; nome: string }>
+  defaultTutorId?: string
 }
 
 /**
  * Formulário de criação de paciente — Client Component.
  * Usa fetch para /api/pets + useToast para feedback visual.
  */
-export function PacienteForm({ tutores }: Props) {
+export function PacienteForm({ tutores, defaultTutorId }: Props) {
   const router = useRouter()
   const { toast } = useToast()
   const [isPending, startTransition] = useTransition()
@@ -201,6 +202,7 @@ export function PacienteForm({ tutores }: Props) {
               id="tutor_id"
               name="tutor_id"
               required
+              defaultValue={defaultTutorId ?? ''}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
             >
               <option value="">Selecione o tutor…</option>

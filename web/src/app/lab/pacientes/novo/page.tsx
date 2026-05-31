@@ -10,9 +10,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default async function NovoPacientePage() {
+interface PageProps {
+  searchParams: Promise<{ tutor_id?: string }>
+}
+
+export default async function NovoPacientePage({ searchParams }: PageProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const { tutor_id: defaultTutorId } = await searchParams
 
   // Carrega lista de tutores no server para popular o select
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,9 +32,9 @@ export default async function NovoPacientePage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link
-          href="/lab/pacientes"
+          href={defaultTutorId ? `/lab/tutores/${defaultTutorId}` : '/lab/pacientes'}
           className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
-          aria-label="Voltar para pacientes"
+          aria-label="Voltar"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -55,7 +60,7 @@ export default async function NovoPacientePage() {
       )}
 
       {/* Formulário — erros/sucesso via Toast */}
-      <PacienteForm tutores={tutores ?? []} />
+      <PacienteForm tutores={tutores ?? []} defaultTutorId={defaultTutorId} />
     </div>
   )
 }

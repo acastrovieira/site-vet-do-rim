@@ -115,13 +115,13 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
             <PawPrint className="h-5 w-5 text-brand-500" strokeWidth={2} />
             Pets ({petsVivos.length})
           </h2>
-          <button
-            type="button"
+          <Link
+            href={`/lab/pacientes/novo?tutor_id=${id}`}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Novo pet
-          </button>
+          </Link>
         </div>
 
         {petsVivos.length === 0 ? (

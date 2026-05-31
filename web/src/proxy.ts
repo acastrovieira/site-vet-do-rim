@@ -2,14 +2,13 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
- * Middleware de autenticação do Next.js.
+ * Proxy de autenticação — Next.js 16.2+ renomeou middleware para proxy.
+ * Arquivo: proxy.ts | Função: proxy (era middleware)
+ *
  * Protege rotas do SaaS (/lab, /portal, /admin) exigindo sessão válida.
  * Rotas públicas (/, /blog, /ferramentas, /auth) são sempre acessíveis.
- *
- * IMPORTANTE: proxy.ts foi removido — Next.js 16+ reconhece AMBOS como middleware,
- * causando conflito de build. Todo o código vive aqui.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -52,12 +51,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirecionamento pós-login baseado em role
-  // Garante que tutor não acessa /lab e vet não acessa /portal
   if (user) {
     const pathname = request.nextUrl.pathname
 
-    // Já autenticado tentando acessar login/cadastro — deixa o Server Component decidir
+    // Já autenticado tentando acessar login/cadastro — Server Component decide
     if (pathname === '/auth/login' || pathname === '/auth/cadastro') {
       return supabaseResponse
     }
@@ -98,10 +95,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Aplica o middleware em todas as rotas EXCETO:
-     * - arquivos estáticos (_next/static, _next/image, *.ico, etc.)
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

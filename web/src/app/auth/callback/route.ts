@@ -3,30 +3,42 @@ import { createClient } from '@/lib/supabase/server'
 
 /**
  * Callback OAuth/Email do Supabase Auth.
- * Troca o `code` por sessão e redireciona para a área correta pelo role:
- *   - vet / admin → /lab
- *   - tutor       → /portal
- * O parâmetro `next` pode sobrescrever o destino (apenas caminhos relativos).
+ * Trata dois fluxos:
+ *   1. code  → login/cadastro normal → redireciona por role
+ *   2. token_hash + type=recovery → reset de senha → /auth/redefinir-senha
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const rawNext = searchParams.get('next') ?? ''
+  const code      = searchParams.get('code')
+  const tokenHash = searchParams.get('token_hash')
+  const type      = searchParams.get('type')
+  const rawNext   = searchParams.get('next') ?? ''
 
-  // Segurança: aceita apenas caminhos relativos para prevenir open redirect
+  // Segurança: aceita apenas caminhos relativos
   const explicitNext = rawNext.startsWith('/') ? rawNext : ''
 
+  // ── Fluxo 1: recuperação de senha (token_hash) ─────────────────────────────
+  if (tokenHash && type === 'recovery') {
+    const supabase = await createClient()
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+
+    if (!error) {
+      return NextResponse.redirect(`${origin}/auth/redefinir-senha`)
+    }
+
+    return NextResponse.redirect(`${origin}/auth/recuperar-senha?error=link_expirado`)
+  }
+
+  // ── Fluxo 2: confirmação de email (code) ────────────────────────────────────
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // Se o usuário foi redirecionado com ?next= explícito, respeita
       if (explicitNext) {
         return NextResponse.redirect(`${origin}${explicitNext}`)
       }
 
-      // Caso contrário: redireciona por role
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
@@ -44,6 +56,6 @@ export async function GET(request: Request) {
     }
   }
 
-  // Erro: redireciona para login com mensagem
+  // ── Erro: redireciona para login com mensagem ───────────────────────────────
   return NextResponse.redirect(`${origin}/auth/login?error=callback`)
 }

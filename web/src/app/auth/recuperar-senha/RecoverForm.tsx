@@ -31,8 +31,18 @@ export function RecoverForm() {
     })
 
     if (error) {
+      console.error('[RecoverForm] resetPasswordForEmail error:', error)
       setStatus('error')
-      setErrorMsg('Não foi possível enviar o e-mail. Verifique o endereço e tente novamente.')
+      // Mensagens amigáveis por código de erro Supabase
+      if (error.message?.includes('rate limit') || error.message?.includes('429')) {
+        setErrorMsg('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.')
+      } else if (error.message?.includes('not found') || error.message?.includes('invalid')) {
+        setErrorMsg('E-mail não encontrado. Verifique o endereço e tente novamente.')
+      } else if (error.message?.includes('redirect')) {
+        setErrorMsg('Erro de configuração de redirecionamento. Contate o suporte.')
+      } else {
+        setErrorMsg(`Erro ao enviar: ${error.message ?? 'Tente novamente em instantes.'}`)
+      }
     } else {
       setStatus('sent')
     }

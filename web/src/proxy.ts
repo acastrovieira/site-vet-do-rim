@@ -38,6 +38,19 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // ── Defesa: code/token_hash pousou em página errada ─────────────────────────
+  // Acontece quando o Site URL no Supabase aponta para a raiz em vez de /auth/callback.
+  // Redireciona qualquer ?code= ou ?token_hash= para o callback correto.
+  const pathname = request.nextUrl.pathname
+  const code      = request.nextUrl.searchParams.get('code')
+  const tokenHash = request.nextUrl.searchParams.get('token_hash')
+
+  if ((code || tokenHash) && pathname !== '/auth/callback') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/callback'
+    return NextResponse.redirect(url)
+  }
+
   // Rotas protegidas — requer autenticação
   const protectedRoutes = ['/lab', '/portal', '/dashboard', '/admin']
   const isProtected = protectedRoutes.some((route) =>
@@ -52,8 +65,6 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user) {
-    const pathname = request.nextUrl.pathname
-
     // Já autenticado tentando acessar login/cadastro — Server Component decide
     if (pathname === '/auth/login' || pathname === '/auth/cadastro') {
       return supabaseResponse

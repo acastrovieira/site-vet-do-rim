@@ -31,12 +31,12 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
   type TutorRow = {
     id: string; nome: string; email: string | null; telefone: string
     cidade: string | null; estado: string | null; endereco: string | null
-    numero: string | null; bairro: string | null; cep: string | null; criado_em: string
+    cep: string | null; criado_em: string
   }
 
   const { data: tutor } = await supabase
     .from('tutores')
-    .select('id, nome, email, telefone, cidade, estado, endereco, numero, bairro, cep, criado_em')
+    .select('id, nome, email, telefone, cidade, estado, endereco, cep, criado_em')
     .eq('id', id)
     .single() as { data: TutorRow | null; error: unknown }
 
@@ -94,13 +94,13 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
               {(tutor.cidade || tutor.estado) && (
                 <div className="flex items-center gap-2 text-sm text-slate-600">
                   <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
-                  {[tutor.bairro, tutor.cidade, tutor.estado].filter(Boolean).join(', ')}
+                  {[tutor.cidade, tutor.estado].filter(Boolean).join(', ')}
                 </div>
               )}
               {tutor.endereco && (
                 <div className="flex items-center gap-2 text-sm text-slate-600">
                   <User className="h-4 w-4 text-slate-400 shrink-0" />
-                  {tutor.endereco}{tutor.numero ? `, ${tutor.numero}` : ''}
+                  {tutor.endereco}
                 </div>
               )}
             </div>

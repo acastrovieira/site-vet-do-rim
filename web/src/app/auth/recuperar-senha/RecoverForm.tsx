@@ -23,8 +23,10 @@ export function RecoverForm() {
     setErrorMsg('')
 
     const supabase = createClient()
-    const redirectTo =
-      `${window.location.origin}/auth/callback?next=/auth/redefinir-senha`
+    // redirectTo deve ser exatamente a URL cadastrada no Supabase Redirect URLs.
+    // O Supabase adiciona automaticamente ?code=...&type=recovery ao final.
+    // O /auth/callback detecta type=recovery e redireciona para /auth/redefinir-senha.
+    const redirectTo = `${window.location.origin}/auth/callback`
 
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo,

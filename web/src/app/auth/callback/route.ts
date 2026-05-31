@@ -35,6 +35,11 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
+      // Recuperação de senha via PKCE (type=recovery ou next=/auth/redefinir-senha)
+      if (type === 'recovery' || explicitNext === '/auth/redefinir-senha') {
+        return NextResponse.redirect(`${origin}/auth/redefinir-senha`)
+      }
+
       if (explicitNext) {
         return NextResponse.redirect(`${origin}${explicitNext}`)
       }

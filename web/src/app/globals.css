@@ -129,11 +129,90 @@
     box-shadow: 0 0 24px rgba(201, 168, 76, 0.2), 0 0 4px rgba(201, 168, 76, 0.1);
   }
 
+  /* ── LOGO GLOW — Drop-shadow luminoso para a logo ──── */
+  .logo-glow {
+    filter: drop-shadow(0 0 12px rgba(201, 168, 76, 0.4)) drop-shadow(0 0 32px rgba(201, 168, 76, 0.15));
+    transition: filter 0.5s ease;
+  }
+  .logo-glow:hover {
+    filter: drop-shadow(0 0 18px rgba(201, 168, 76, 0.6)) drop-shadow(0 0 48px rgba(201, 168, 76, 0.25));
+  }
+
+  /* ── LOGO GLOW DARK — Mais intenso para fundos escuros ── */
+  .logo-glow-dark {
+    filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.5)) drop-shadow(0 0 40px rgba(212, 175, 55, 0.2)) drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    transition: filter 0.5s ease;
+  }
+  .logo-glow-dark:hover {
+    filter: drop-shadow(0 0 24px rgba(212, 175, 55, 0.7)) drop-shadow(0 0 56px rgba(212, 175, 55, 0.3)) drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+
+  /* ── TEXT GLOW — Texto com brilho sutil ──────────────── */
+  .text-glow {
+    text-shadow: 0 0 20px rgba(201, 168, 76, 0.3), 0 0 40px rgba(201, 168, 76, 0.1);
+  }
+
+  /* ── GRADIENT BORDER — Borda com gradiente animado ───── */
+  .gradient-border {
+    position: relative;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(201, 168, 76, 0.3) 0%, rgba(26, 46, 90, 0.3) 50%, rgba(201, 168, 76, 0.3) 100%);
+    background-size: 300% 300%;
+    animation: gradientShift 6s ease-in-out infinite;
+    z-index: -1;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    padding: 1px;
+  }
+
+  /* ── HOVER LIFT — Elevação suave no hover ────────────── */
+  .hover-lift {
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 0 30px rgba(201, 168, 76, 0.08);
+  }
+
   /* Animação de fade-up para seções */
   .animate-fade-up {
     animation: fadeUp 0.6s cubic-bezier(0.85, 0, 0.15, 1) both;
     will-change: transform, opacity;
     transform: translateZ(0);
+  }
+
+  /* ── PULSE GLOW — Glow dourado pulsante (para logo) ─── */
+  .animate-pulse-glow {
+    animation: pulseGlow 3s ease-in-out infinite;
+    will-change: filter;
+  }
+
+  /* ── FLOAT GENTLE — Flutuação elegante suave ─────────── */
+  .animate-float-gentle {
+    animation: floatGentle 8s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  /* ── SHIMMER GOLD — Shimmer dourado para badges/CTAs ── */
+  .shimmer-gold {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer-gold::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(212, 175, 55, 0.12) 40%, rgba(255, 215, 0, 0.2) 50%, rgba(212, 175, 55, 0.12) 60%, transparent 100%);
+    animation: shimmerGold 3s ease-in-out infinite;
   }
 
   /* Scroll reveal — ativa via JS adicionando .revealed */
@@ -148,7 +227,7 @@
     transform: translate3d(0, 0, 0);
   }
 
-  /* Aurora — fundo animado premium */
+  /* Aurora — fundo animado premium (aprimorado) */
   .aurora {
     position: absolute;
     inset: 0;
@@ -158,26 +237,26 @@
   .aurora::before {
     content: '';
     position: absolute;
-    top: -20%;
-    left: 10%;
-    width: 60%;
-    height: 60%;
-    background: radial-gradient(ellipse, rgba(30, 64, 175, 0.25) 0%, transparent 70%);
+    top: -25%;
+    left: 5%;
+    width: 70%;
+    height: 70%;
+    background: radial-gradient(ellipse, rgba(30, 64, 175, 0.35) 0%, rgba(26, 46, 90, 0.15) 40%, transparent 70%);
     animation: auroraMove 12s ease-in-out infinite alternate;
     border-radius: 50%;
-    filter: blur(40px);
+    filter: blur(50px);
   }
   .aurora::after {
     content: '';
     position: absolute;
-    top: 10%;
-    right: 5%;
-    width: 45%;
-    height: 50%;
-    background: radial-gradient(ellipse, rgba(201, 168, 76, 0.12) 0%, transparent 70%);
+    top: 5%;
+    right: 0%;
+    width: 55%;
+    height: 60%;
+    background: radial-gradient(ellipse, rgba(212, 175, 55, 0.18) 0%, rgba(201, 168, 76, 0.08) 40%, transparent 70%);
     animation: auroraMove 15s ease-in-out infinite alternate-reverse;
     border-radius: 50%;
-    filter: blur(50px);
+    filter: blur(60px);
   }
 
   /* Shimmer para elementos de loading/destaque */
@@ -200,6 +279,8 @@
   }
 }
 
+/* ── Keyframes ─────────────────────────────────────────── */
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translate3d(0, 20px, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
@@ -219,6 +300,29 @@
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(201, 168, 76, 0.4)) drop-shadow(0 0 32px rgba(201, 168, 76, 0.15)); }
+  50% { filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.6)) drop-shadow(0 0 48px rgba(212, 175, 55, 0.25)); }
+}
+
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-6px) rotate(0.5deg); }
+  50% { transform: translateY(-12px) rotate(0deg); }
+  75% { transform: translateY(-6px) rotate(-0.5deg); }
+}
+
+@keyframes shimmerGold {
+  0% { transform: translateX(-150%); }
+  100% { transform: translateX(150%); }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* ── Prose (artigos científicos) ───────────────────────── */

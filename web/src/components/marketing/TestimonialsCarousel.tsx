@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Star, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
 
 const depoimentos = [
   {
@@ -63,19 +63,29 @@ const depoimentos = [
 /**
  * Carrossel de depoimentos com auto-scroll e controles manuais.
  * Pausa no hover, retoma automaticamente ao sair.
+ * Agora com glow dourado, aspas decorativas e transições premium.
  */
 export function TestimonialsCarousel() {
   const [current, setCurrent] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const next = useCallback(() => {
-    setCurrent((c) => (c + 1) % depoimentos.length)
+  const goTo = useCallback((idx: number) => {
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrent(idx)
+      setIsTransitioning(false)
+    }, 200)
   }, [])
 
+  const next = useCallback(() => {
+    goTo((current + 1) % depoimentos.length)
+  }, [current, goTo])
+
   const prev = useCallback(() => {
-    setCurrent((c) => (c - 1 + depoimentos.length) % depoimentos.length)
-  }, [])
+    goTo((current - 1 + depoimentos.length) % depoimentos.length)
+  }, [current, goTo])
 
   useEffect(() => {
     if (paused) return
@@ -99,30 +109,56 @@ export function TestimonialsCarousel() {
       className="relative"
     >
       {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 overflow-hidden">
+      <div className={`grid grid-cols-1 md:grid-cols-3 gap-5 overflow-hidden transition-opacity duration-300 ${isTransitioning ? 'opacity-40' : 'opacity-100'}`}>
         {visible.map((dep, i) => (
           <article
             key={`${dep.nome}-${i}`}
             className={`relative p-6 rounded-2xl border transition-all duration-500 ${
               i === 1
-                ? 'border-gold-400/30 scale-105 shadow-2xl shadow-gold-400/10'
+                ? 'border-gold-400/30 scale-105 shadow-2xl'
                 : 'border-white/10 opacity-60 scale-95'
             }`}
-            style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(12px)' }}
+            style={{
+              background: i === 1
+                ? 'rgba(255,255,255,0.07)'
+                : 'rgba(255,255,255,0.03)',
+              backdropFilter: 'blur(12px)',
+              boxShadow: i === 1
+                ? '0 20px 60px rgba(0,0,0,0.3), 0 0 40px rgba(201,168,76,0.08)'
+                : 'none',
+            }}
           >
+            {/* Aspas decorativas */}
+            <Quote
+              className={`absolute top-4 right-4 w-8 h-8 transition-colors duration-300 ${
+                i === 1 ? 'text-gold-400/20' : 'text-white/5'
+              }`}
+              strokeWidth={1}
+              aria-hidden
+            />
+
+            {/* Glow de fundo no card ativo */}
+            {i === 1 && (
+              <div
+                className="absolute inset-0 rounded-2xl pointer-events-none"
+                style={{ background: 'radial-gradient(circle at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 60%)' }}
+                aria-hidden
+              />
+            )}
+
             {/* Estrelas */}
-            <div className="flex gap-0.5 mb-4" aria-label={`${dep.nota} estrelas`}>
+            <div className="flex gap-0.5 mb-4 relative" aria-label={`${dep.nota} estrelas`}>
               {Array.from({ length: dep.nota }).map((_, si) => (
                 <Star key={si} className="h-4 w-4 fill-gold-400 text-gold-400" aria-hidden />
               ))}
             </div>
 
-            <p className="text-sm text-white/75 leading-relaxed mb-5 italic">
+            <p className="text-sm text-white/75 leading-relaxed mb-5 italic relative">
               &ldquo;{dep.texto}&rdquo;
             </p>
 
-            <div className="flex items-center gap-3">
-              <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${dep.cor}`}>
+            <div className="flex items-center gap-3 relative">
+              <div className={`h-10 w-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${dep.cor} transition-transform duration-300 ${i === 1 ? 'scale-110' : ''}`}>
                 {dep.inicial}
               </div>
               <div>
@@ -139,7 +175,7 @@ export function TestimonialsCarousel() {
         <button
           onClick={prev}
           aria-label="Depoimento anterior"
-          className="p-2 rounded-full border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-all duration-200"
+          className="p-2.5 rounded-full border border-white/10 text-white/50 hover:text-white hover:border-gold-400/30 hover:bg-white/5 transition-all duration-300 hover:scale-110"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -148,10 +184,10 @@ export function TestimonialsCarousel() {
           {depoimentos.map((_, i) => (
             <button
               key={i}
-              onClick={() => setCurrent(i)}
+              onClick={() => goTo(i)}
               aria-label={`Ir para depoimento ${i + 1}`}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === current ? 'w-6 bg-gold-400' : 'w-1.5 bg-white/20'
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                i === current ? 'w-8 bg-gold-400 shadow-sm shadow-gold-400/30' : 'w-1.5 bg-white/20 hover:bg-white/40'
               }`}
             />
           ))}
@@ -160,7 +196,7 @@ export function TestimonialsCarousel() {
         <button
           onClick={next}
           aria-label="Próximo depoimento"
-          className="p-2 rounded-full border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-all duration-200"
+          className="p-2.5 rounded-full border border-white/10 text-white/50 hover:text-white hover:border-gold-400/30 hover:bg-white/5 transition-all duration-300 hover:scale-110"
         >
           <ChevronRight className="h-4 w-4" />
         </button>

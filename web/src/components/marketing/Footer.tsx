@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { Mail } from 'lucide-react'
+import { VetDoRimLogo } from '@/components/ui/VetDoRimLogo'
 
 // SVG do WhatsApp
 function IconWhatsApp({ className }: { className?: string }) {
@@ -36,27 +36,30 @@ const footerLinks = {
 
 /**
  * Footer premium do site Vet do Rim.
+ * Logo com glow dourado luminoso (sem mais brightness-0 invert).
+ * Links com hover dourado animado.
  */
 export function Footer() {
   return (
-    <footer className="bg-transparent border-t border-slate-200 dark:border-white/5 text-slate-500 dark:text-science-500 mt-auto relative z-10" role="contentinfo">
+    <footer
+      className="border-t border-slate-200 dark:border-white/5 text-slate-500 dark:text-science-500 mt-auto relative z-10"
+      style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(8,15,32,0.03) 100%)' }}
+      role="contentinfo"
+    >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-4 mb-4 group" aria-label="Vet do Rim">
-              <Image
-                src="/logo.svg"
-                alt="Vet do Rim"
-                width={128}
-                height={128}
-                className="w-16 h-16 sm:w-20 sm:h-20 object-contain dark:brightness-0 dark:invert shrink-0 transition-transform duration-300 group-hover:scale-105"
+              <VetDoRimLogo
+                className="w-16 h-16 sm:w-20 sm:h-20 group-hover:scale-105 transition-transform duration-300"
+                variant="auto"
               />
               <div>
-                <span className="block font-display font-bold text-lg text-slate-900 dark:text-white tracking-tight leading-none transition-colors duration-200 group-hover:text-blue-600 dark:group-hover:text-blue-100">
+                <span className="block font-display font-bold text-lg text-slate-900 dark:text-white tracking-tight leading-none transition-colors duration-200 group-hover:text-gold-500 dark:group-hover:text-gold-400">
                   Vet do Rim
                 </span>
-                <span className="block text-xs text-slate-500 dark:text-slate-400 tracking-wider font-medium mt-1">
+                <span className="block text-xs text-gold-500 dark:text-gold-400 tracking-wider font-semibold mt-1 transition-colors">
                   Nefrologia Veterinária
                 </span>
               </div>
@@ -65,10 +68,10 @@ export function Footer() {
               Nefrologia e urologia veterinária avançada. Ciência, tecnologia e
               atendimento humanizado.
             </p>
-            <div className="flex gap-3 mt-5">
+            <div className="flex gap-2 mt-5">
               <a
                 href="mailto:contato@vetdorim.com.br"
-                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-300 text-slate-400 hover:text-gold-500 dark:hover:text-gold-400 hover:scale-110"
                 aria-label="Enviar e-mail"
               >
                 <Mail className="h-4 w-4" aria-hidden />
@@ -77,7 +80,7 @@ export function Footer() {
                 href="https://www.instagram.com/vetdorim/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-pink-600 dark:hover:text-pink-400"
+                className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-300 text-slate-400 hover:text-pink-500 dark:hover:text-pink-400 hover:scale-110"
                 aria-label="Instagram @vetdorim"
               >
                 <IconInstagram className="h-4 w-4" />
@@ -86,7 +89,7 @@ export function Footer() {
                 href="https://wa.me/5527997987058"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-[#25D366]"
+                className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-300 text-slate-400 hover:text-[#25D366] hover:scale-110"
                 aria-label="WhatsApp"
               >
                 <IconWhatsApp className="h-4 w-4" />
@@ -96,17 +99,18 @@ export function Footer() {
 
           {/* Conteúdo */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-gold-500/70 dark:text-gold-400/50 mb-4">
               Conteúdo
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {footerLinks.conteudo.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-slate-600 dark:text-science-500 hover:text-slate-900 dark:hover:text-white transition-colors duration-200"
+                    className="relative text-sm text-slate-600 dark:text-science-500 hover:text-slate-900 dark:hover:text-white transition-colors duration-200 group/flink"
                   >
                     {link.label}
+                    <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-gold-400 group-hover/flink:w-full transition-all duration-300" />
                   </Link>
                 </li>
               ))}
@@ -115,17 +119,18 @@ export function Footer() {
 
           {/* Institucional */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-gold-500/70 dark:text-gold-400/50 mb-4">
               Institucional
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {footerLinks.institucional.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-slate-600 dark:text-science-500 hover:text-slate-900 dark:hover:text-white transition-colors duration-200"
+                    className="relative text-sm text-slate-600 dark:text-science-500 hover:text-slate-900 dark:hover:text-white transition-colors duration-200 group/flink"
                   >
                     {link.label}
+                    <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-gold-400 group-hover/flink:w-full transition-all duration-300" />
                   </Link>
                 </li>
               ))}
@@ -133,7 +138,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between gap-3 text-xs text-slate-500 dark:text-science-500">
+        <div className="mt-12 pt-6 border-t border-slate-200 dark:border-white/5 flex flex-col sm:flex-row justify-between gap-3 text-xs text-slate-500 dark:text-science-500">
           <p>© {new Date().getFullYear()} Vet do Rim. Todos os direitos reservados.</p>
           <p>
             Conteúdo de caráter educacional. Não substitui consulta veterinária presencial.

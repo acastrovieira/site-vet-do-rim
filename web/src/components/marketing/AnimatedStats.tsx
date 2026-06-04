@@ -9,13 +9,14 @@ interface StatItem {
   label: string
   icon: React.ComponentType<{ className?: string }>
   color: string
+  iconBg: string
 }
 
 const stats: StatItem[] = [
-  { value: 500, suffix: '+', label: 'Pacientes atendidos', icon: Users, color: 'text-blue-400 bg-blue-500/15' },
-  { value: 8, suffix: '', label: 'Ferramentas clínicas', icon: Wrench, color: 'text-emerald-400 bg-emerald-500/15' },
-  { value: 98, suffix: '%', label: 'Satisfação dos tutores', icon: Heart, color: 'text-rose-400 bg-rose-500/15' },
-  { value: 3, suffix: ' artigos', label: 'Conteúdo científico', icon: BookOpen, color: 'text-violet-400 bg-violet-500/15' },
+  { value: 500, suffix: '+', label: 'Pacientes atendidos', icon: Users, color: 'text-blue-500', iconBg: 'bg-blue-50' },
+  { value: 8, suffix: '', label: 'Ferramentas clínicas', icon: Wrench, color: 'text-emerald-500', iconBg: 'bg-emerald-50' },
+  { value: 98, suffix: '%', label: 'Satisfação dos tutores', icon: Heart, color: 'text-rose-500', iconBg: 'bg-rose-50' },
+  { value: 3, suffix: ' artigos', label: 'Conteúdo científico', icon: BookOpen, color: 'text-violet-500', iconBg: 'bg-violet-50' },
 ]
 
 function useCountUp(target: number, duration = 1800, started: boolean) {
@@ -38,40 +39,32 @@ function useCountUp(target: number, duration = 1800, started: boolean) {
   return count
 }
 
-function StatCounter({ value, suffix, label, icon: Icon, color, started, index }: StatItem & { started: boolean; index: number }) {
+function StatCounter({ value, suffix, label, icon: Icon, color, iconBg, started, index }: StatItem & { started: boolean; index: number }) {
   const count = useCountUp(value, 1800, started)
   return (
     <div
-      className="relative text-center p-6 rounded-2xl border border-white/[0.06] transition-all duration-500 hover:-translate-y-1 hover:border-gold-400/20 group"
+      className="relative text-center p-6 rounded-2xl bg-white border border-slate-100 transition-all duration-500 hover:-translate-y-1 hover:border-gold-400/30 hover:shadow-xl group"
       style={{
-        background: 'rgba(255,255,255,0.03)',
-        backdropFilter: 'blur(12px)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         transitionDelay: `${index * 100}ms`,
       }}
     >
-      {/* Glow de fundo no hover */}
-      <div
-        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: 'radial-gradient(circle at 50% 50%, rgba(201,168,76,0.06) 0%, transparent 70%)' }}
-        aria-hidden
-      />
-
       {/* Ícone */}
-      <div className={`mx-auto w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${color} transition-transform duration-300 group-hover:scale-110`}>
+      <div className={`mx-auto w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${iconBg} ${color} transition-transform duration-300 group-hover:scale-110`}>
         <Icon className="w-5 h-5" />
       </div>
 
       {/* Número */}
-      <p className="text-3xl sm:text-4xl font-bold font-display text-white tabular-nums text-glow">
+      <p className="text-3xl sm:text-4xl font-bold font-display text-brand-900 tabular-nums">
         {count}
-        <span className="text-gold-400">{suffix}</span>
+        <span className="text-gold-500">{suffix}</span>
       </p>
 
       {/* Label */}
-      <p className="text-sm text-white/50 mt-2 font-medium">{label}</p>
+      <p className="text-sm text-science-500 mt-2 font-medium">{label}</p>
 
       {/* Linha decorativa inferior */}
-      <div className="mt-4 mx-auto w-8 h-0.5 rounded-full bg-gold-400/20 group-hover:w-12 group-hover:bg-gold-400/40 transition-all duration-300" />
+      <div className="mt-4 mx-auto w-8 h-0.5 rounded-full bg-gold-200 group-hover:w-12 group-hover:bg-gold-400 transition-all duration-300" />
     </div>
   )
 }
@@ -79,7 +72,7 @@ function StatCounter({ value, suffix, label, icon: Icon, color, started, index }
 /**
  * Seção de estatísticas animadas com Intersection Observer.
  * Os contadores disparam apenas quando a seção entra na viewport.
- * Agora com glass-cards, ícones e glow dourado.
+ * Design clean medical com cards brancos e sombras sutis.
  */
 export function AnimatedStats() {
   const ref = useRef<HTMLDivElement>(null)

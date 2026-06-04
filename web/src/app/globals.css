@@ -259,6 +259,45 @@
     filter: blur(60px);
   }
 
+  /* Aurora LIGHT — para fundos claros (medical clean) */
+  .aurora-light {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .aurora-light::before {
+    content: '';
+    position: absolute;
+    top: -30%;
+    left: -5%;
+    width: 70%;
+    height: 80%;
+    background: radial-gradient(ellipse, rgba(26, 46, 90, 0.06) 0%, rgba(30, 64, 175, 0.03) 40%, transparent 70%);
+    animation: auroraMove 14s ease-in-out infinite alternate;
+    border-radius: 50%;
+    filter: blur(60px);
+  }
+  .aurora-light::after {
+    content: '';
+    position: absolute;
+    top: 10%;
+    right: -10%;
+    width: 60%;
+    height: 70%;
+    background: radial-gradient(ellipse, rgba(201, 168, 76, 0.06) 0%, rgba(212, 175, 55, 0.03) 40%, transparent 70%);
+    animation: auroraMove 18s ease-in-out infinite alternate-reverse;
+    border-radius: 50%;
+    filter: blur(70px);
+  }
+
+  /* Medical grid pattern — cruzes sutis para fundo clínico */
+  .medical-grid {
+    background-image:
+      radial-gradient(circle, rgba(26, 46, 90, 0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
   /* Shimmer para elementos de loading/destaque */
   .shimmer {
     position: relative;

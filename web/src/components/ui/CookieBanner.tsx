@@ -9,6 +9,7 @@ export function CookieBanner() {
     // Verifica se já aceitou
     const hasAccepted = localStorage.getItem('vetdorim_cookies_accepted')
     if (!hasAccepted) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true)
     }
   }, [])

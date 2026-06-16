@@ -1,4 +1,4 @@
-import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
+import { Inter, Playfair_Display } from 'next/font/google'
 import type { Metadata } from 'next'
 import { PostHogProvider } from '@/components/providers/PostHogProvider'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
@@ -12,10 +12,11 @@ const inter = Inter({
   display: 'swap',
 })
 
-const plusJakarta = Plus_Jakarta_Sans({
+const playfair = Playfair_Display({
   subsets: ['latin'],
-  variable: '--font-plus-jakarta',
+  variable: '--font-playfair',
   display: 'swap',
+  weight: ['400', '600', '700'],
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vetdorim.com.br'
@@ -81,7 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="pt-BR"
-      className={`${inter.variable} ${plusJakarta.variable} h-full antialiased scroll-smooth`}
+      className={`${inter.variable} ${playfair.variable} h-full antialiased scroll-smooth`}
     >
       <head>
         <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vtqemhmsyflhpxxptdls.supabase.co'} crossOrigin="anonymous" />

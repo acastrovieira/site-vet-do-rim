@@ -1,3 +1,5 @@
+import * as React from 'react'
+
 interface VetDoRimLogoProps {
   className?: string
   /**
@@ -21,6 +23,8 @@ interface VetDoRimLogoProps {
  * Sem dependência de arquivos PNG/SVG externos pesados.
  * 
  * Suporta o modo escuro automático e injeção de estilos de brilho (glow).
+ * Utiliza máscaras SVG dinâmicas com IDs exclusivos (React.useId) para
+ * garantir silhuetas 100% transparentes sobre qualquer fundo.
  */
 export function VetDoRimLogo({
   className = '',
@@ -29,6 +33,10 @@ export function VetDoRimLogo({
   animated = false,
   pulseGlow = false,
 }: VetDoRimLogoProps) {
+  const instanceId = React.useId().replace(/:/g, '')
+  const gatoMaskId = `gato-mask-${instanceId}`
+  const caoMaskId = `cao-mask-${instanceId}`
+
   const effectClasses: string[] = []
 
   if (variant === 'glow') {
@@ -48,7 +56,6 @@ export function VetDoRimLogo({
   // Define as classes de cores baseadas no variant
   const isWhite = variant === 'white'
   const kidneyColor = isWhite ? 'fill-white' : 'fill-[#0D1B2A] dark:fill-white'
-  const cutoutColor = isWhite ? 'fill-[#0A0A0C] dark:fill-[#0A0A0C]' : 'fill-[#F4F3EE] dark:fill-[#0A0A0C]'
   const textColor = isWhite ? 'fill-white' : 'fill-[#0D1B2A] dark:fill-[#F4F3EE]'
   const subtitleColor = isWhite ? 'fill-white/80' : 'fill-[#333333] dark:fill-[#F4F3EE]/80'
 
@@ -59,29 +66,47 @@ export function VetDoRimLogo({
       className={`select-none shrink-0 transition-all duration-500 ${effectClasses.join(' ')} ${className}`}
       aria-label="Vet do Rim — Nefrologia e Urologia Veterinária"
     >
+      <defs>
+        {/* Máscara do Rim Esquerdo (Gato) */}
+        <mask id={gatoMaskId}>
+          {/* Fundo branco mantém a forma do rim visível */}
+          <rect x="-300" y="-300" width="600" height="600" fill="white" />
+          {/* Silhueta preta corta/fura a forma do rim */}
+          <path
+            fill="black"
+            d="M -45,55 C -45,35 -35,25 -35,10 C -35,-2 -40,-10 -40,-20 C -40,-21 -38,-24 -36,-24 C -34,-24 -32,-21 -32,-20 C -32,-10 -25,-2 -25,10 C -25,25 -15,35 -15,55 Z"
+          />
+          <circle cx="-36" cy="-20" r="1.5" fill="black" />
+        </mask>
+
+        {/* Máscara do Rim Direito (Cachorro) */}
+        <mask id={caoMaskId}>
+          {/* Fundo branco mantém a forma do rim visível */}
+          <rect x="-300" y="-300" width="600" height="600" fill="white" />
+          {/* Silhueta preta corta/fura a forma do rim */}
+          <path
+            fill="black"
+            d="M 45,55 C 45,35 35,25 35,10 C 35,-2 40,-10 40,-20 C 40,-21 38,-24 36,-24 C 34,-24 32,-21 32,-20 C 32,-10 25,-2 25,10 C 25,25 15,35 15,55 Z"
+          />
+          <circle cx="36" cy="-20" r="1.5" fill="black" />
+        </mask>
+      </defs>
+
       {/* SÍMBOLO */}
       <g id="simbolo" transform="translate(400, 180)">
-        {/* Rim Esquerdo com Espaço Negativo do Gato */}
+        {/* Rim Esquerdo com Espaço Negativo do Gato recortado por Máscara */}
         <path
           className={`${kidneyColor} transition-colors duration-500`}
           d="M -15,-90 C -55,-90 -95,-60 -95,-15 C -95,25 -75,55 -35,55 C -25,55 -15,45 -15,30 C -15,5 -25,-15 -25,-35 C -25,-48 -20,-58 -15,-65 C -15,-75 -15,-90 -15,-90 Z"
+          mask={`url(#${gatoMaskId})`}
         />
-        <path
-          className={`${cutoutColor} transition-colors duration-500`}
-          d="M -45,55 C -45,35 -35,25 -35,10 C -35,-2 -40,-10 -40,-20 C -40,-21 -38,-24 -36,-24 C -34,-24 -32,-21 -32,-20 C -32,-10 -25,-2 -25,10 C -25,25 -15,35 -15,55 Z"
-        />
-        <circle cx="-36" cy="-20" r="1.5" className={`${cutoutColor} transition-colors duration-500`} />
 
-        {/* Rim Direito com Espaço Negativo do Cachorro */}
+        {/* Rim Direito com Espaço Negativo do Cachorro recortado por Máscara */}
         <path
           className={`${kidneyColor} transition-colors duration-500`}
           d="M 15,-90 C 55,-90 95,-60 95,-15 C 95,25 75,55 35,55 C 25,55 15,45 15,30 C 15,5 25,-15 25,-35 C 25,-48 20,-58 15,-65 C 15,-75 15,-90 15,-90 Z"
+          mask={`url(#${caoMaskId})`}
         />
-        <path
-          className={`${cutoutColor} transition-colors duration-500`}
-          d="M 45,55 C 45,35 35,25 35,10 C 35,-2 40,-10 40,-20 C 40,-21 38,-24 36,-24 C 34,-24 32,-21 32,-20 C 32,-10 25,-2 25,10 C 25,25 15,35 15,55 Z"
-        />
-        <circle cx="36" cy="-20" r="1.5" className={`${cutoutColor} transition-colors duration-500`} />
 
         {/* Linhas Vasculares Douradas */}
         <path

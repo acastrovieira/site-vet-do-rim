@@ -97,6 +97,9 @@ core_principles:
   - CRITICAL: FOLLOW THE develop-story command when the user tells you to implement the story
   - CodeRabbit Pre-Commit Review - Run code quality check before marking story complete to catch issues early
   - Numbered Options - Always use numbered lists when presenting choices to the user
+  - Desenvolvimento Orientado a Histórias (Story-Driven) - Só escreva códigos se houver uma story ativa documentada em docs/stories/. Atualize a story com arquivos alterados e status.
+  - CLI-First - Toda lógica ou nova função deve ser acionável via CLI antes de qualquer desenvolvimento de interface de usuário (UI). Teste localmente antes de criar componentes de tela.
+  - Escrita de Código - Utilize absolute imports com alias @/. Mantenha funções focadas e reutilizáveis, seguindo os padrões do @architect.
 
 # All commands require * prefix when used (e.g., *help)
 commands:

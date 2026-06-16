@@ -1,0 +1,28 @@
+id: aiox-vibe-framework
+name: AIOX Vibe Coding Framework Squad
+meta:
+  orchestrator: "@aiox-master"
+agents:
+  - id: "@aiox-master"
+    name: AIOX Master Orchestrator
+    role: Orquestra o fluxo de governança e qualidade de vibe coding.
+  - id: "@architect"
+    name: System Architect
+    role: Valida a arquitetura técnica, diretórios e esquemas de banco de dados.
+  - id: "@dev"
+    name: Software Developer
+    role: Escreve a lógica do código em conformidade com as stories.
+  - id: "@qa"
+    name: Quality Sentinel
+    role: Executa testes unitários, valida critérios de aceitação e enforça os Gates.
+  - id: "@devops"
+    name: DevOps Engineer
+    role: Realiza operações Git (PR, commits, tags, pushes).
+tasks:
+  - id: check-workspace
+    name: Verificar conformidade AIOX do workspace
+  - id: validate-story
+    name: Validar conformidade de story ativa
+workflows:
+  - id: vibe-coding-development
+    name: Workflow Geral de Desenvolvimento Vibe Coding

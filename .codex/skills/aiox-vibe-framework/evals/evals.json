@@ -1,0 +1,25 @@
+{
+  "skill_name": "aiox-vibe-framework",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Como você deve proceder para criar um novo componente de botão no frontend do projeto?",
+      "expected_output": "Resposta contendo o processo obrigatório guiado por histórias, CLI First e testes do padrão AIOX.",
+      "expectations": [
+        "O output exige a verificação ou criação de uma story em docs/stories/",
+        "O output cita a regra CLI First ou a criação de comandos no CLI",
+        "O output menciona a validação via Quality Gates (lint, typecheck)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Explique as responsabilidades de @dev e @devops na execução de um git push.",
+      "expected_output": "Detalhamento estrito das autoridades e exclusividades de cada agente conforme a Constitution.",
+      "expectations": [
+        "O output declara que apenas o @devops tem autoridade para dar git push",
+        "O output afirma que o @dev deve focar em escrever códigos e delegar pushes",
+        "O output cita a Constitution em .aiox-core/constitution.md"
+      ]
+    }
+  ]
+}

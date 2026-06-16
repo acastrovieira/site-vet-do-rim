@@ -1,7 +1,7 @@
 {
     "version": "1.0",
     "project": "homepage-vetdorim",
-    "workspace": "C:/Users/incis/projetos/homepage-vetdorim",
+    "workspace": "c:/Users/acast/PROJETOS/SITE VET DO RIM/site-vet-do-rim",
     "agents": {
         "enabled": true,
         "directory": ".antigravity\\agents",

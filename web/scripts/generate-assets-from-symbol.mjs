@@ -6,8 +6,8 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(__dirname, '..')
 
-// Source image: the new cropped symbol-only image provided by the user
-const SYMBOL_SRC = path.join(ROOT, 'public', 'logo.svg')
+// Source image: the gold symbol-only image provided by the user for favicons
+const SYMBOL_SRC = path.join(ROOT, 'public', 'logo', '5.png')
 const LOGO_PNG_PATH = path.join(ROOT, 'public', 'logo.png')
 
 async function resizePng(size) {

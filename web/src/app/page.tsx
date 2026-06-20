@@ -241,10 +241,17 @@ export default function HomePage() {
                     style={{ background: 'radial-gradient(circle, rgba(201, 168, 76, 0.4) 0%, rgba(26, 46, 90, 0.15) 50%, transparent 70%)' }}
                     aria-hidden
                   />
-                  <VetDoRimLogo
-                    className="w-48 h-48 sm:w-56 sm:h-56 lg:w-72 lg:h-72"
-                    variant="auto"
-                    animated
+                  {/* Logo vertical colorida no tema claro */}
+                  <img
+                    src="/logo-vertical.svg"
+                    alt="Vet do Rim"
+                    className="w-48 h-auto sm:w-56 lg:w-72 block dark:hidden hover:scale-102 transition-transform duration-300"
+                  />
+                  {/* Logo vertical branca no tema escuro */}
+                  <img
+                    src="/logo-vertical-white.svg"
+                    alt="Vet do Rim"
+                    className="w-48 h-auto sm:w-56 lg:w-72 hidden dark:block hover:scale-102 transition-transform duration-300"
                   />
                 </div>
               </div>

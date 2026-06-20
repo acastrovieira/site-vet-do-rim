@@ -43,16 +43,19 @@ export function Header() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-22 items-center justify-between py-3">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group" aria-label="Vet do Rim — Início">
-            <VetDoRimLogo className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 group-hover:scale-105 transition-transform duration-300" priority />
-            <div className="hidden sm:block">
-              <span className="block font-display font-bold text-lg leading-none tracking-tight text-slate-900 dark:text-white transition-colors group-hover:text-gold-500 dark:group-hover:text-gold-400">
-                Vet do Rim
-              </span>
-              <span className="block text-[11px] font-semibold uppercase tracking-widest mt-1 text-gold-500 dark:text-gold-400 transition-colors">
-                Nefrologia Veterinária
-              </span>
-            </div>
+          <Link href="/" className="flex items-center group h-12" aria-label="Vet do Rim — Início">
+            {/* Logo horizontal colorida no tema claro */}
+            <img 
+              src="/logo-horizontal.svg" 
+              alt="Vet do Rim" 
+              className="h-10 sm:h-12 w-auto block dark:hidden group-hover:scale-103 transition-all duration-300"
+            />
+            {/* Logo horizontal dourada no tema escuro */}
+            <img 
+              src="/logo-horizontal-gold.svg" 
+              alt="Vet do Rim" 
+              className="h-10 sm:h-12 w-auto hidden dark:block group-hover:scale-103 transition-all duration-300"
+            />
           </Link>
 
           {/* Nav Desktop */}

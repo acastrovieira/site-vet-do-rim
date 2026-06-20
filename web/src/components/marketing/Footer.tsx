@@ -50,19 +50,19 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="md:col-span-2">
-            <Link href="/" className="flex items-center gap-4 mb-4 group" aria-label="Vet do Rim">
-              <VetDoRimLogo
-                className="w-16 h-16 sm:w-20 sm:h-20 group-hover:scale-105 transition-transform duration-300"
-                variant="auto"
+            <Link href="/" className="flex items-center group mb-4 h-16" aria-label="Vet do Rim">
+              {/* Logo vertical colorida no tema claro */}
+              <img 
+                src="/logo-vertical.svg" 
+                alt="Vet do Rim" 
+                className="h-14 sm:h-16 w-auto block dark:hidden group-hover:scale-103 transition-all duration-300"
               />
-              <div>
-                <span className="block font-display font-bold text-lg text-slate-900 dark:text-white tracking-tight leading-none transition-colors duration-200 group-hover:text-gold-500 dark:group-hover:text-gold-400">
-                  Vet do Rim
-                </span>
-                <span className="block text-xs text-gold-500 dark:text-gold-400 tracking-wider font-semibold mt-1 transition-colors">
-                  Nefrologia Veterinária
-                </span>
-              </div>
+              {/* Logo vertical dourada no tema escuro */}
+              <img 
+                src="/logo-vertical-gold.svg" 
+                alt="Vet do Rim" 
+                className="h-14 sm:h-16 w-auto hidden dark:block group-hover:scale-103 transition-all duration-300"
+              />
             </Link>
             <p className="text-sm leading-relaxed max-w-xs text-slate-600 dark:text-science-500">
               Nefrologia e urologia veterinária avançada. Ciência, tecnologia e

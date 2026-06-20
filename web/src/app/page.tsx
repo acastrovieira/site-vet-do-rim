@@ -112,11 +112,8 @@ export default function HomePage() {
             HERO — Clinical Premium Light
         ══════════════════════════════════════════════════════════ */}
         <section
-          className="relative min-h-screen flex items-center overflow-hidden"
+          className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-[#FFFFFF] via-[#F0F4FA] to-[#EEF1F8] dark:from-[#0A0A0C] dark:via-[#0F1E40] dark:to-[#0A0A0C]"
           aria-labelledby="hero-heading"
-          style={{
-            background: 'linear-gradient(170deg, #FFFFFF 0%, #F0F4FA 35%, #E8EEF8 60%, #EEF1F8 100%)',
-          }}
         >
           {/* Aurora light — manchas suaves de cor */}
           <div className="aurora-light" aria-hidden />
@@ -246,7 +243,7 @@ export default function HomePage() {
                   />
                   <VetDoRimLogo
                     className="w-48 h-48 sm:w-56 sm:h-56 lg:w-72 lg:h-72"
-                    variant="color"
+                    variant="auto"
                     animated
                   />
                 </div>
@@ -279,9 +276,8 @@ export default function HomePage() {
         ══════════════════════════════════════════════════════════ */}
         <section
           id="especialidades"
-          className="py-24 relative overflow-hidden"
+          className="py-24 relative overflow-hidden bg-gradient-to-b from-[#FFFFFF] to-[#F8FAFC] dark:from-[#0A0A0C] dark:to-[#0A0A0C]"
           aria-labelledby="especialidades-heading"
-          style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)' }}
         >
           <div className="aurora-light" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -400,9 +396,8 @@ export default function HomePage() {
         ══════════════════════════════════════════════════════════ */}
         <section
           id="sobre"
-          className="py-24 relative overflow-hidden"
+          className="py-24 relative overflow-hidden bg-gradient-to-b from-[#FFFFFF] to-[#F8FAFC] dark:from-[#0A0A0C] dark:to-[#0A0A0C]"
           aria-labelledby="diferenciais-heading"
-          style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)' }}
         >
           <div className="aurora-light" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -485,9 +480,8 @@ export default function HomePage() {
             ARTIGOS EM DESTAQUE — Clean light
         ══════════════════════════════════════════════════════════ */}
         <section
-          className="py-24 relative overflow-hidden"
+          className="py-24 relative overflow-hidden bg-gradient-to-b from-[#FFFFFF] to-[#F8FAFC] dark:from-[#0A0A0C] dark:to-[#0A0A0C]"
           aria-labelledby="artigos-heading"
-          style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)' }}
         >
           <div className="aurora-light" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -568,9 +562,8 @@ export default function HomePage() {
             CTA FINAL — Clean premium
         ══════════════════════════════════════════════════════════ */}
         <section
-          className="py-24 relative overflow-hidden"
+          className="py-24 relative overflow-hidden bg-gradient-to-b from-[#F8FAFC] to-[#FFFFFF] dark:from-[#0A0A0C] dark:to-[#0A0A0C]"
           aria-labelledby="cta-heading"
-          style={{ background: 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)' }}
         >
           <div className="aurora-light" aria-hidden />
 

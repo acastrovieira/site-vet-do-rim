@@ -64,13 +64,14 @@ async function vectorizeTwoColor(inputPath, outputPath, colors) {
     const b = data[idx + 2];
     const a = data[idx + 3];
 
-    // Default: transparent
-    blueBuffer[idx] = 0; blueBuffer[idx+1] = 0; blueBuffer[idx+2] = 0; blueBuffer[idx+3] = 0;
-    goldBuffer[idx] = 0; goldBuffer[idx+1] = 0; goldBuffer[idx+2] = 0; goldBuffer[idx+3] = 0;
+    // Default: white background for potrace
+    blueBuffer[idx] = 255; blueBuffer[idx+1] = 255; blueBuffer[idx+2] = 255; blueBuffer[idx+3] = 255;
+    goldBuffer[idx] = 255; goldBuffer[idx+1] = 255; goldBuffer[idx+2] = 255; goldBuffer[idx+3] = 255;
 
-    if (a > 60) {
+    if (a > 30) {
       // If red channel is high, it's Gold; if low, it's Navy Blue
-      const isGold = r > 115;
+      // Gold is around rgb(191,157,90) - red is high. Navy is around rgb(13,41,73) - red is very low.
+      const isGold = r > 100;
       
       if (isGold) {
         goldBuffer[idx] = 0;
@@ -109,27 +110,40 @@ async function vectorizeTwoColor(inputPath, outputPath, colors) {
   console.log(`✓ Saved two-color SVG to ${outputPath}`);
 }
 
-// 2. Vectorize a Monochromatic PNG
-async function vectorizeMonochromatic(inputPath, outputPath, fillColor, isInverted = false) {
+// 2. Vectorize a Monochromatic PNG using alpha-masking
+async function vectorizeMonochromatic(inputPath, outputPath, fillColor) {
   console.log(`\nVectorizing monochromatic logo: ${path.basename(inputPath)}...`);
   
-  let sharpInstance = sharp(inputPath);
-  
-  if (isInverted) {
-    // For white logos, invert colors so the white shape becomes black (for potrace to trace it)
-    // We flatten onto black first, invert to get white on white? No.
-    // If we invert the raw pixels, white (255,255,255,255) becomes black (0,0,0,255).
-    // Transparent (0,0,0,0) inverted would become (255,255,255,255) which is opaque white!
-    // So inverting a transparent image naturally gives a black shape on white background! That's perfect.
-    sharpInstance = sharpInstance.negate({ alpha: false });
-  } else {
-    // For gold/navy/black on transparent background:
-    // Flatten onto white background to make transparent pixels white.
-    // The colored shape is dark enough to be traced as black by potrace.
-    sharpInstance = sharpInstance.flatten({ background: '#ffffff' });
+  const { data, info } = await sharp(inputPath)
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const { width, height } = info;
+  const total = width * height;
+
+  const bAndWBuffer = Buffer.alloc(total * 4);
+
+  for (let i = 0; i < total; i++) {
+    const idx = i * 4;
+    const a = data[idx + 3];
+
+    // threshold at 30 to get clean edges of the shape
+    if (a > 30) {
+      bAndWBuffer[idx] = 0;
+      bAndWBuffer[idx + 1] = 0;
+      bAndWBuffer[idx + 2] = 0;
+      bAndWBuffer[idx + 3] = 255; // solid black shape
+    } else {
+      bAndWBuffer[idx] = 255;
+      bAndWBuffer[idx + 1] = 255;
+      bAndWBuffer[idx + 2] = 255;
+      bAndWBuffer[idx + 3] = 255; // solid white background
+    }
   }
 
-  const processedBuffer = await sharpInstance.png().toBuffer();
+  const pngBuffer = await sharp(bAndWBuffer, {
+    raw: { width, height, channels: 4 }
+  }).png().toBuffer();
 
   return new Promise((resolve, reject) => {
     const params = {
@@ -138,12 +152,11 @@ async function vectorizeMonochromatic(inputPath, outputPath, fillColor, isInvert
       optTolerance: 0.2
     };
     
-    potrace.trace(processedBuffer, params, async (err, svgContent) => {
+    potrace.trace(pngBuffer, params, async (err, svgContent) => {
       if (err) return reject(err);
 
-      // Replace the black fill output from potrace with our brand fill color
       const cleanPaths = extractPath(svgContent);
-      const { viewBox, width, height } = getSvgSize(svgContent);
+      const { viewBox } = getSvgSize(svgContent);
 
       const finalSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox || `0 0 ${width} ${height}`}" width="100%" height="100%">
   <g fill="${fillColor}">
@@ -179,7 +192,7 @@ async function run() {
   const verticalWhitePng = path.join(logoDir, 'Monocromática - Fundo Escuro.png');
 
   const horizontalOrigPng = path.join(logoDir, 'Logotipo.png');
-  const horizontalGoldPng = path.join(logoDir, 'Monocromática - Azul Escuro (fundo claro).png'); // Tracing blue logo with gold fill color
+  const horizontalGoldPng = path.join(logoDir, 'Monocromática - Branca (2).png'); // This has gold color in Canva's upload
   const horizontalNavyPng = path.join(logoDir, 'Monocromática - Azul Escuro (fundo claro).png');
   const horizontalWhitePng = path.join(logoDir, 'Monocromática - Branca.png');
 
@@ -187,17 +200,22 @@ async function run() {
   await vectorizeTwoColor(verticalOrigPng, path.join(outDir, 'logo-vertical.svg'), brandColors);
   await vectorizeMonochromatic(verticalGoldPng, path.join(outDir, 'logo-vertical-gold.svg'), brandColors.gold);
   await vectorizeMonochromatic(verticalNavyPng, path.join(outDir, 'logo-vertical-navy.svg'), brandColors.blue);
-  await vectorizeMonochromatic(verticalWhitePng, path.join(outDir, 'logo-vertical-white.svg'), brandColors.white, true);
+  await vectorizeMonochromatic(verticalWhitePng, path.join(outDir, 'logo-vertical-white.svg'), brandColors.white);
 
   // Vectorize Horizontal variations
   await vectorizeTwoColor(horizontalOrigPng, path.join(outDir, 'logo-horizontal.svg'), brandColors);
   await vectorizeMonochromatic(horizontalGoldPng, path.join(outDir, 'logo-horizontal-gold.svg'), brandColors.gold);
   await vectorizeMonochromatic(horizontalNavyPng, path.join(outDir, 'logo-horizontal-navy.svg'), brandColors.blue);
-  await vectorizeMonochromatic(horizontalWhitePng, path.join(outDir, 'logo-horizontal-white.svg'), brandColors.white, true);
+  await vectorizeMonochromatic(horizontalWhitePng, path.join(outDir, 'logo-horizontal-white.svg'), brandColors.white);
 
   // Generate Watermark / Marca D'água (Semi-transparent logo symbol)
   console.log('\nGenerating watermark and decorative assets...');
-  const symbolSvgPath = path.join(ROOT, 'public', 'logo.svg'); // already created earlier
+  
+  // Vectorize the gold symbol from public/logo/5.png for the watermark
+  const symbolOrigPng = path.join(logoDir, '5.png'); // Gold symbol
+  const symbolSvgPath = path.join(outDir, 'logo.svg');
+  await vectorizeMonochromatic(symbolOrigPng, symbolSvgPath, brandColors.gold);
+  
   const symbolContent = await fs.readFile(symbolSvgPath, 'utf8');
   
   // Create a watermark SVG by setting opacity on the group

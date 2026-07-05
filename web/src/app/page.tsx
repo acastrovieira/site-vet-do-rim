@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   FlaskConical,
   Microscope,
@@ -9,6 +10,9 @@ import {
   CheckCircle2,
   BarChart3,
   Sparkles,
+  Shield,
+  Award,
+  Phone,
 } from 'lucide-react'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
@@ -16,7 +20,6 @@ import { AnimatedStats } from '@/components/marketing/AnimatedStats'
 import { FerramentasShowcase } from '@/components/marketing/FerramentasShowcase'
 import { TestimonialsCarousel } from '@/components/marketing/TestimonialsCarousel'
 import { ProductDemo } from '@/components/marketing/ProductDemo'
-import { VetDoRimLogo } from '@/components/ui/VetDoRimLogo'
 
 export const metadata: Metadata = {
   title: 'Nefrologia e Urologia Veterinária Avançada',
@@ -32,7 +35,7 @@ const organizationSchema = {
   url: 'https://vetdorim.com.br',
   description: 'Especialistas em nefrologia e urologia veterinária avançada.',
   medicalSpecialty: 'Nephrology',
-  sameAs: ['https://instagram.com/vetdorim', 'https://youtube.com/@vetdorim'],
+  sameAs: ['https://instagram.com/vetdorim'],
 }
 
 const especialidades = [
@@ -41,34 +44,42 @@ const especialidades = [
     title: 'Nefrologia Veterinária',
     description:
       'Diagnóstico e manejo clínico de doenças renais agudas e crônicas em cães e gatos, com estadiamento IRIS e protocolos baseados em evidências.',
+    color: '#2D5A4A',
+    bg: '#E8F2EE',
   },
   {
     icon: Microscope,
     title: 'Urologia Veterinária',
     description:
       'Avaliação e tratamento de urolitíase, cistite, obstrução uretral e anomalias do trato urinário com abordagem minimamente invasiva.',
+    color: '#2B4A7A',
+    bg: '#EEF3FA',
   },
   {
     icon: HeartPulse,
     title: 'Cuidados Paliativos Renais',
     description:
       'Suporte de qualidade de vida, nutrição renal especializada e fluidoterapia adaptada para pacientes em estadio avançado.',
+    color: '#7C3D4E',
+    bg: '#FBF0F3',
   },
   {
     icon: BarChart3,
     title: 'Lab Evolution (IA)',
     description:
       'Plataforma digital com dashboards clínicos, acompanhamento longitudinal de biomarcadores renais e assistência por inteligência artificial.',
+    color: '#4A5E56',
+    bg: '#F0F5F2',
   },
 ]
 
 const diferenciais = [
-  'Laudos com interpretação clínica detalhada',
-  'Protocolos baseados em diretrizes IRIS e ACVIM',
-  'Comunicação humanizada com tutores',
-  'Dashboard digital de acompanhamento',
-  'Educação continuada para vets parceiros',
-  'Telemedicina veterinária especializada',
+  { text: 'Laudos com interpretação clínica detalhada', icon: Shield },
+  { text: 'Protocolos baseados em diretrizes IRIS e ACVIM', icon: Award },
+  { text: 'Comunicação humanizada com tutores', icon: HeartPulse },
+  { text: 'Dashboard digital de acompanhamento', icon: BarChart3 },
+  { text: 'Educação continuada para vets parceiros', icon: BookOpen },
+  { text: 'Telemedicina veterinária especializada', icon: Phone },
 ]
 
 const artigosFeatured = [
@@ -79,6 +90,9 @@ const artigosFeatured = [
       'O sistema IRIS é a referência mundial para estadiar a Doença Renal Crônica em cães e gatos. Entenda como aplicar na prática clínica.',
     categoria: 'Nefrologia',
     leitura: '8 min',
+    icon: FlaskConical,
+    accentColor: '#2D5A4A',
+    accentBg: '#E8F2EE',
   },
   {
     slug: 'taxa-filtracao-glomerular-veterinaria',
@@ -87,6 +101,9 @@ const artigosFeatured = [
       'A Taxa de Filtração Glomerular é o melhor indicador da função renal. Saiba como interpretar e calcular em cães e gatos.',
     categoria: 'Diagnóstico',
     leitura: '10 min',
+    icon: Microscope,
+    accentColor: '#2B4A7A',
+    accentBg: '#EEF3FA',
   },
   {
     slug: 'manejo-nutricional-doenca-renal',
@@ -95,9 +112,57 @@ const artigosFeatured = [
       'Restrição de fósforo, proteína adequada e hidratação. Um guia completo sobre manejo nutricional renal baseado em evidências.',
     categoria: 'Nutrição',
     leitura: '12 min',
+    icon: BookOpen,
+    accentColor: '#8E7020',
+    accentBg: '#FAF7F2',
   },
 ]
 
+/* ── Componente de seção heading ──────────────────────────────── */
+function SectionHeading({
+  label,
+  title,
+  description,
+  light = false,
+}: {
+  label: string
+  title: string
+  description?: string
+  light?: boolean
+}) {
+  return (
+    <div className="text-center mb-14">
+      <p
+        className={`text-xs font-semibold uppercase tracking-[0.12em] mb-3 ${
+          light ? 'text-clinical-300' : 'text-clinical-600'
+        }`}
+      >
+        {label}
+      </p>
+      <div className={`section-divider mb-4 ${light ? 'section-divider-sand' : 'section-divider'}`} />
+      <h2
+        className={`font-display text-3xl sm:text-4xl font-bold ${
+          light ? 'text-white' : 'text-science-900'
+        }`}
+      >
+        {title}
+      </h2>
+      {description && (
+        <p
+          className={`mt-4 max-w-xl mx-auto leading-relaxed ${
+            light ? 'text-white/60' : 'text-science-500'
+          }`}
+        >
+          {description}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PÁGINA PRINCIPAL
+═══════════════════════════════════════════════════════════════ */
 export default function HomePage() {
   return (
     <>
@@ -108,72 +173,89 @@ export default function HomePage() {
       <Header />
 
       <main id="main-content">
-        {/* ══════════════════════════════════════════════════════════
+
+        {/* ════════════════════════════════════════════════════════
             HERO — Clinical Premium Light
-        ══════════════════════════════════════════════════════════ */}
+            Fundo off-white, logo dourada centralizada,
+            CTA verde clínico, texto grafite.
+        ════════════════════════════════════════════════════════ */}
         <section
-          className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-[#FFFFFF] via-[#F0F4FA] to-[#EEF1F8] dark:from-[#0A0A0C] dark:via-[#0F1E40] dark:to-[#0A0A0C]"
+          className="relative min-h-screen flex items-center overflow-hidden"
+          style={{
+            background: 'linear-gradient(160deg, #F7F9F8 0%, #F0F5F2 40%, #EAF1EC 100%)',
+          }}
           aria-labelledby="hero-heading"
         >
-          {/* Aurora light — manchas suaves de cor */}
+          {/* Aurora clínica muito discreta */}
           <div className="aurora-light" aria-hidden />
 
-          {/* Medical grid pattern sutil */}
-          <div className="absolute inset-0 medical-grid opacity-50" aria-hidden />
+          {/* Grid de pontos sutis */}
+          <div className="absolute inset-0 medical-grid" aria-hidden />
 
-          {/* Orbs decorativos sutis */}
-          <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full opacity-40 blur-[100px] pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(26, 46, 90, 0.08) 0%, transparent 70%)' }}
-            aria-hidden />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full opacity-30 blur-[80px] pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(201, 168, 76, 0.08) 0%, transparent 70%)' }}
-            aria-hidden />
+          {/* Luz difusa lateral direita */}
+          <div
+            className="absolute top-1/3 right-0 w-[600px] h-[600px] rounded-full pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgba(45,90,74,0.04) 0%, transparent 65%)',
+              filter: 'blur(80px)',
+            }}
+            aria-hidden
+          />
 
-          <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-32">
-            <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-              {/* Coluna de texto */}
+          <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-32 lg:py-40">
+            <div className="flex flex-col lg:flex-row items-center gap-14 lg:gap-20">
+
+              {/* ── Coluna de texto ──────────────────────────── */}
               <div className="flex-1 text-center lg:text-left">
-                {/* Badge */}
-                <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-brand-500/15 text-brand-500 dark:border-gold-400/25 dark:text-gold-400 text-xs font-semibold uppercase tracking-widest mb-10 animate-fade-up"
-                  style={{ background: 'rgba(26, 46, 90, 0.04)', backdropFilter: 'blur(12px)' }}>
-                  <span className="inline-block h-2 w-2 rounded-full bg-gold-400 animate-pulse" aria-hidden />
-                  Nefrologia & Urologia Veterinária
+
+                {/* Badge clínico */}
+                <div
+                  className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-[0.1em] mb-8 animate-fade-up"
+                  style={{
+                    background: '#E8F2EE',
+                    border: '1px solid rgba(45,90,74,0.15)',
+                    color: '#2D5A4A',
+                  }}
+                >
+                  <span
+                    className="inline-block h-1.5 w-1.5 rounded-full animate-pulse"
+                    style={{ background: '#2D5A4A' }}
+                    aria-hidden
+                  />
+                  Nefrologia &amp; Urologia Veterinária
                 </div>
 
                 {/* Headline */}
                 <h1
                   id="hero-heading"
-                  className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-brand-900 dark:text-white leading-[1.05] text-balance animate-fade-up"
-                  style={{ animationDelay: '0.1s' }}
+                  className="font-display text-5xl sm:text-6xl lg:text-[4.5rem] font-bold leading-[1.06] text-balance animate-fade-up"
+                  style={{ animationDelay: '0.08s', color: '#1A2B22' }}
                 >
-                  Cuidado renal{' '}
-                  <span className="text-gradient-gold">especializado</span>
-                  <br />
-                  para o seu animal
+                  Medicina renal{' '}
+                  <span className="text-gradient-clinical">especializada</span>
+                  <br className="hidden sm:block" />
+                  {' '}para o seu animal
                 </h1>
 
+                {/* Subtítulo */}
                 <p
-                  className="mt-6 text-lg sm:text-xl text-science-700 dark:text-science-100 max-w-2xl mx-auto lg:mx-0 leading-relaxed text-balance animate-fade-up"
-                  style={{ animationDelay: '0.2s' }}
+                  className="mt-6 text-lg sm:text-xl leading-relaxed text-balance max-w-2xl mx-auto lg:mx-0 animate-fade-up"
+                  style={{ animationDelay: '0.16s', color: '#4A5E56' }}
                 >
-                  Medicina veterinária de alta complexidade com rigor técnico científico,
-                  empatia e tecnologia de ponta. Doenças renais e urológicas tratadas com
-                  protocolos baseados em evidências.
+                  Diagnóstico preciso e manejo clínico individualizado de doenças
+                  renais e urológicas em cães e gatos — com protocolos IRIS, empatia
+                  genuína e tecnologia de acompanhamento.
                 </p>
 
                 {/* CTAs */}
                 <div
                   className="mt-10 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start animate-fade-up"
-                  style={{ animationDelay: '0.3s' }}
+                  style={{ animationDelay: '0.24s' }}
                 >
                   <Link
                     href="/ferramentas/calculadora-tfg"
-                    className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-sm transition-all duration-300 hover:-translate-y-1 active:translate-y-0 shimmer-gold"
-                    style={{
-                      background: 'linear-gradient(135deg, #C9A84C 0%, #D4AF37 50%, #B8932A 100%)',
-                      boxShadow: '0 8px 30px rgba(201,168,76,0.25)',
-                      color: '#0A0A0C',
-                    }}
+                    className="btn-primary shimmer-gold"
+                    id="hero-cta-primary"
                   >
                     <Sparkles className="h-4 w-4" aria-hidden />
                     Calcular TFG grátis
@@ -181,44 +263,48 @@ export default function HomePage() {
                   </Link>
                   <Link
                     href="/blog"
-                    className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border border-brand-500/20 text-brand-500 dark:border-white/20 dark:text-white font-semibold text-sm hover:bg-brand-500/5 dark:hover:bg-white/10 hover:-translate-y-1 transition-all duration-300 hover:border-brand-500/40 dark:hover:border-white/40"
+                    className="btn-secondary"
+                    id="hero-cta-secondary"
                   >
                     <BookOpen className="h-4 w-4" aria-hidden />
                     Explorar artigos
                   </Link>
                 </div>
 
+                {/* Credenciais */}
                 <p
-                  className="mt-10 text-xs text-science-500 dark:text-science-200 animate-fade-up"
-                  style={{ animationDelay: '0.4s' }}
+                  className="mt-8 text-xs animate-fade-up"
+                  style={{ animationDelay: '0.32s', color: '#8FA89E' }}
                 >
                   Referência em nefrologia veterinária · Protocolos IRIS e ACVIM · Educação continuada
                 </p>
 
-                {/* Redes sociais */}
+                {/* Sociais */}
                 <div
                   className="mt-5 flex items-center justify-center lg:justify-start gap-5 animate-fade-up"
-                  style={{ animationDelay: '0.5s' }}
+                  style={{ animationDelay: '0.38s' }}
                 >
                   <a
                     href="https://www.instagram.com/vetdorim/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label="Siga no Instagram @vetdorim"
-                    className="flex items-center gap-1.5 text-science-500 dark:text-science-200 hover:text-pink-500 transition-colors duration-200 text-xs font-medium"
+                    aria-label="Instagram @vetdorim"
+                    className="flex items-center gap-1.5 text-xs font-medium transition-colors duration-200 hover:text-pink-600"
+                    style={{ color: '#8FA89E' }}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden>
                       <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                     </svg>
                     @vetdorim
                   </a>
-                  <span className="text-science-200">·</span>
+                  <span style={{ color: '#C0DFD0' }}>·</span>
                   <a
                     href="https://wa.me/5527997987058"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="WhatsApp (27) 99798-7058"
-                    className="flex items-center gap-1.5 text-science-500 dark:text-science-200 hover:text-[#25D366] transition-colors duration-200 text-xs font-medium"
+                    className="flex items-center gap-1.5 text-xs font-medium transition-colors duration-200 hover:text-[#25D366]"
+                    style={{ color: '#8FA89E' }}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden>
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
@@ -229,162 +315,165 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Coluna da Logo — flutuante com glow suave */}
+              {/* ── Coluna da Logo ───────────────────────────── */}
               <div
                 className="flex-shrink-0 animate-fade-up"
-                style={{ animationDelay: '0.4s' }}
+                style={{ animationDelay: '0.3s' }}
               >
-                <div className="relative">
-                  {/* Glow de fundo atrás da logo */}
+                <div className="relative flex items-center justify-center">
+                  {/* Halo suave de fundo */}
                   <div
-                    className="absolute inset-0 scale-125 rounded-full blur-[80px] opacity-25"
-                    style={{ background: 'radial-gradient(circle, rgba(201, 168, 76, 0.4) 0%, rgba(26, 46, 90, 0.15) 50%, transparent 70%)' }}
+                    className="absolute inset-0 scale-110 rounded-full"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(45,90,74,0.08) 0%, transparent 65%)',
+                      filter: 'blur(40px)',
+                    }}
                     aria-hidden
                   />
-                  <VetDoRimLogo
-                    className="w-48 h-auto sm:w-56 lg:w-72 hover:scale-102 transition-transform duration-300"
-                    variant="auto"
-                    showText
-                    orientation="vertical"
+                  <Image
+                    src="/logo/Monocromática - Dourada.png"
+                    alt="Vet do Rim — Logo dourada"
+                    width={340}
+                    height={340}
+                    priority
+                    className="relative z-10 w-56 h-auto sm:w-72 lg:w-[340px] object-contain animate-float logo-glow"
+                    draggable={false}
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Wave de transição — para a seção branca seguinte */}
-          <div className="absolute bottom-0 inset-x-0 h-20 sm:h-28" aria-hidden>
-            <svg viewBox="0 0 1440 112" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" preserveAspectRatio="none">
-              <path d="M0 112L1440 112L1440 40C1200 90 960 112 720 95C480 78 240 30 0 55L0 112Z" fill="#ffffff" />
+          {/* Transição suave para seção stats */}
+          <div className="absolute bottom-0 inset-x-0 h-16" aria-hidden>
+            <svg viewBox="0 0 1440 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" preserveAspectRatio="none">
+              <path d="M0 64L1440 64L1440 24C1200 54 960 64 720 54C480 44 240 14 0 32L0 64Z" fill="#ffffff" />
             </svg>
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            STATS ANIMADOS — Light clean
-        ══════════════════════════════════════════════════════════ */}
+        {/* ════════════════════════════════════════════════════════
+            STATS — Branco limpo
+        ════════════════════════════════════════════════════════ */}
         <section
           aria-label="Números do Vet do Rim"
-          className="bg-white border-b border-slate-100"
+          className="bg-white"
+          style={{ borderBottom: '1px solid #E8F2EE' }}
         >
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <AnimatedStats />
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            ESPECIALIDADES — Clean medical cards
-        ══════════════════════════════════════════════════════════ */}
+        {/* ════════════════════════════════════════════════════════
+            ESPECIALIDADES — Off-white clínico
+        ════════════════════════════════════════════════════════ */}
         <section
           id="especialidades"
-          className="py-24 relative overflow-hidden bg-gradient-to-b from-[#FFFFFF] to-[#F8FAFC] dark:from-[#0A0A0C] dark:to-[#0A0A0C]"
+          className="py-24 relative overflow-hidden"
+          style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F0F5F2 100%)' }}
           aria-labelledby="especialidades-heading"
         >
           <div className="aurora-light" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-14">
-              <p className="text-xs font-semibold uppercase tracking-widest text-gold-500 mb-3">
-                Áreas de atuação
-              </p>
-              <h2
-                id="especialidades-heading"
-                className="font-display text-3xl sm:text-4xl font-bold text-brand-900"
-              >
-                Especialidades veterinárias
-              </h2>
-              <p className="mt-3 text-science-700 max-w-xl mx-auto">
-                Diagnóstico preciso e manejo clínico especializado para as condições mais
-                complexas do sistema renal e urinário.
-              </p>
-            </div>
+
+            <SectionHeading
+              label="Áreas de atuação"
+              title="Especialidades veterinárias"
+              description="Diagnóstico preciso e manejo clínico especializado para as condições mais complexas do sistema renal e urinário."
+            />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {especialidades.map(({ icon: Icon, title, description }) => (
+              {especialidades.map(({ icon: Icon, title, description, color, bg }) => (
                 <article
                   key={title}
-                  className="group p-6 rounded-2xl bg-white border border-slate-100 hover-lift hover:border-gold-400/30 hover:shadow-xl transition-all duration-300"
-                  style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+                  className="group p-6 rounded-2xl card-clinical"
                 >
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-gold-500 group-hover:bg-gold-500 group-hover:text-white transition-all duration-300">
+                  {/* Ícone com cor específica da especialidade */}
+                  <div
+                    className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110"
+                    style={{ background: bg, color: color }}
+                  >
                     <Icon className="h-6 w-6" strokeWidth={1.8} aria-hidden />
                   </div>
-                  <h3 className="font-display font-semibold text-brand-900 mb-2 text-sm leading-snug group-hover:text-gold-600 transition-colors duration-300">
+                  <h3
+                    className="font-display font-semibold mb-2 text-sm leading-snug transition-colors duration-300"
+                    style={{ color: '#1A2B22' }}
+                  >
                     {title}
                   </h3>
-                  <p className="text-sm text-science-700 leading-relaxed">
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B8880' }}>
                     {description}
                   </p>
+
+                  {/* Acento de cor no rodapé do card */}
+                  <div
+                    className="mt-5 h-0.5 w-8 rounded-full group-hover:w-14 transition-all duration-400"
+                    style={{ background: color, opacity: 0.4 }}
+                  />
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            DEMO ANIMADO — Seção com contraste (navy) para destacar
-        ══════════════════════════════════════════════════════════ */}
+        {/* ════════════════════════════════════════════════════════
+            DEMO — Navy institucional sóbrio (seção escura moderada)
+        ════════════════════════════════════════════════════════ */}
         <section
           id="demo"
           className="py-24 relative overflow-hidden"
           aria-labelledby="demo-heading"
-          style={{ background: 'linear-gradient(180deg, #0f1e40 0%, #1A2E5A 50%, #0f1e40 100%)' }}
+          style={{ background: 'linear-gradient(180deg, #1B3050 0%, #162640 100%)' }}
         >
           <div className="aurora" aria-hidden />
+          {/* Grid de pontos brancos muito sutis */}
+          <div
+            className="absolute inset-0 opacity-40 pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)',
+              backgroundSize: '28px 28px',
+            }}
+            aria-hidden
+          />
 
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-3">
-                Lab Evolution em ação
-              </p>
-              <h2
-                id="demo-heading"
-                className="font-display text-3xl sm:text-4xl font-bold text-white"
-              >
-                Veja como funciona
-              </h2>
-              <p className="mt-3 text-white/60 max-w-xl mx-auto">
-                Desde o cadastro do tutor até a interpretação do laudo por IA — tudo em uma
-                plataforma fluida e intuitiva.
-              </p>
-            </div>
-
+            <SectionHeading
+              label="Lab Evolution em ação"
+              title="Veja como funciona"
+              description="Desde o cadastro do tutor até a interpretação do laudo por IA — tudo em uma plataforma fluida e intuitiva."
+              light
+            />
             <ProductDemo />
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            FERRAMENTAS CLÍNICAS — Seção dark (contraste com lab)
-        ══════════════════════════════════════════════════════════ */}
+        {/* ════════════════════════════════════════════════════════
+            FERRAMENTAS — Verde clínico profundo
+        ════════════════════════════════════════════════════════ */}
         <section
           id="ferramentas"
           className="py-24 relative overflow-hidden"
           aria-labelledby="ferramentas-heading"
-          style={{ background: 'linear-gradient(180deg, #1A2E5A 0%, #152245 50%, #0f1e40 100%)' }}
+          style={{ background: 'linear-gradient(180deg, #162640 0%, #1A3830 100%)' }}
         >
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-3">
-                Ferramentas clínicas
-              </p>
-              <h2
-                id="ferramentas-heading"
-                className="font-display text-3xl sm:text-4xl font-bold text-white"
-              >
-                Ferramentas públicas e profissionais
-              </h2>
-              <p className="mt-3 text-white/60 max-w-xl mx-auto">
-                Calculadoras e recursos clínicos desenvolvidos para a rotina da nefrologia
-                veterinária. Parte funciona sem cadastro; ferramentas com conduta ou dosagem
-                exigem conta veterinária gratuita.
-              </p>
-            </div>
+          <div className="aurora" aria-hidden />
+          <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+
+            <SectionHeading
+              label="Ferramentas clínicas"
+              title="Ferramentas públicas e profissionais"
+              description="Calculadoras e recursos clínicos desenvolvidos para a rotina da nefrologia veterinária. Parte funciona sem cadastro; ferramentas com conduta ou dosagem exigem conta veterinária gratuita."
+              light
+            />
 
             <FerramentasShowcase />
 
             <div className="text-center mt-8">
               <Link
                 href="/ferramentas"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-gold-400 hover:gap-3 transition-all duration-200 hover:text-gold-200"
+                className="inline-flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:gap-3"
+                style={{ color: 'rgba(200,169,122,0.85)' }}
               >
                 Ver todas as ferramentas
                 <ArrowRight className="h-4 w-4" aria-hidden />
@@ -393,54 +482,61 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            DIFERENCIAIS — Clean light
-        ══════════════════════════════════════════════════════════ */}
+        {/* ════════════════════════════════════════════════════════
+            DIFERENCIAIS — Off-white limpo
+        ════════════════════════════════════════════════════════ */}
         <section
           id="sobre"
-          className="py-24 relative overflow-hidden bg-gradient-to-b from-[#FFFFFF] to-[#F8FAFC] dark:from-[#0A0A0C] dark:to-[#0A0A0C]"
+          className="py-24 relative overflow-hidden"
+          style={{ background: 'linear-gradient(180deg, #F0F5F2 0%, #FFFFFF 100%)' }}
           aria-labelledby="diferenciais-heading"
         >
           <div className="aurora-light" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+
+              {/* Texto */}
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-gold-500 mb-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-4" style={{ color: '#2D5A4A' }}>
                   Por que escolher
                 </p>
+                <div className="section-divider mb-5" style={{ margin: '0 0 1.25rem 0' }} />
                 <h2
                   id="diferenciais-heading"
-                  className="font-display text-3xl sm:text-4xl font-bold text-brand-900 mb-5"
+                  className="font-display text-3xl sm:text-4xl font-bold mb-5"
+                  style={{ color: '#1A2B22' }}
                 >
                   Medicina veterinária de ponta, com o cuidado que o seu animal merece
                 </h2>
-                <p className="text-science-700 leading-relaxed mb-8">
+                <p className="leading-relaxed mb-8" style={{ color: '#6B8880' }}>
                   Unimos rigor técnico científico baseado em protocolos internacionais IRIS e ACVIM
                   com um atendimento humanizado e tecnologia digital para acompanhamento contínuo.
                 </p>
                 <Link
                   href="/lab"
-                  className="inline-flex items-center gap-2 text-gold-600 font-semibold text-sm hover:gap-3 transition-all duration-200"
+                  className="inline-flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:gap-3"
+                  style={{ color: '#2D5A4A' }}
                 >
                   Conhecer o Lab Evolution
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </Link>
               </div>
 
+              {/* Diferenciais grid */}
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {diferenciais.map((item) => (
+                {diferenciais.map(({ text, icon: Icon }) => (
                   <li
-                    key={item}
-                    className="flex items-start gap-3 p-4 rounded-xl bg-white border border-slate-100 hover-lift hover:border-gold-400/30 transition-all duration-300"
-                    style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+                    key={text}
+                    className="flex items-start gap-3 p-4 rounded-xl card-clinical group"
                   >
-                    <CheckCircle2
-                      className="h-5 w-5 text-gold-500 mt-0.5 shrink-0"
-                      strokeWidth={2}
-                      aria-hidden
-                    />
-                    <span className="text-sm text-science-700 font-medium">
-                      {item}
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors duration-300 group-hover:bg-clinical-100"
+                      style={{ background: '#E8F2EE', color: '#2D5A4A' }}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={1.8} aria-hidden />
+                    </div>
+                    <span className="text-sm font-medium" style={{ color: '#4A5E56' }}>
+                      {text}
                     </span>
                   </li>
                 ))}
@@ -449,157 +545,193 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            DEPOIMENTOS — Soft navy (não tão dark)
-        ══════════════════════════════════════════════════════════ */}
+        {/* ════════════════════════════════════════════════════════
+            DEPOIMENTOS — Verde clínico médio (humanizado)
+        ════════════════════════════════════════════════════════ */}
         <section
           className="py-24 relative overflow-hidden"
           aria-labelledby="avaliacoes-heading"
-          style={{ background: 'linear-gradient(160deg, #1A2E5A 0%, #243B6A 50%, #1A2E5A 100%)' }}
+          style={{ background: 'linear-gradient(160deg, #234A3C 0%, #1A3830 100%)' }}
         >
           <div className="aurora" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-14">
-              <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-3">
-                Depoimentos
-              </p>
-              <h2
-                id="avaliacoes-heading"
-                className="font-display text-3xl sm:text-4xl font-bold text-white"
-              >
-                O que dizem os tutores
-              </h2>
-              <p className="mt-3 text-white/60 max-w-xl mx-auto">
-                Histórias reais de tutores que confiaram o cuidado de seus companheiros ao Vet do Rim.
-              </p>
-            </div>
-
+            <SectionHeading
+              label="Depoimentos"
+              title="O que dizem os tutores"
+              description="Histórias reais de tutores que confiaram o cuidado de seus companheiros ao Vet do Rim."
+              light
+            />
             <TestimonialsCarousel />
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            ARTIGOS EM DESTAQUE — Clean light
-        ══════════════════════════════════════════════════════════ */}
+        {/* ════════════════════════════════════════════════════════
+            ARTIGOS — Off-white clínico
+        ════════════════════════════════════════════════════════ */}
         <section
-          className="py-24 relative overflow-hidden bg-gradient-to-b from-[#FFFFFF] to-[#F8FAFC] dark:from-[#0A0A0C] dark:to-[#0A0A0C]"
+          className="py-24 relative overflow-hidden"
+          style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F7F9F8 100%)' }}
           aria-labelledby="artigos-heading"
         >
           <div className="aurora-light" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+
+            {/* Header da seção */}
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-gold-500 mb-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#2D5A4A' }}>
                   Conteúdo científico
                 </p>
+                <div className="section-divider mb-3" style={{ margin: '0 0 0.75rem 0' }} />
                 <h2
                   id="artigos-heading"
-                  className="font-display text-3xl font-bold text-brand-900"
+                  className="font-display text-3xl font-bold"
+                  style={{ color: '#1A2B22' }}
                 >
                   Artigos em destaque
                 </h2>
               </div>
               <Link
                 href="/blog"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-gold-600 hover:gap-2.5 transition-all duration-200 shrink-0"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold transition-all duration-200 hover:gap-2.5 shrink-0"
+                style={{ color: '#2D5A4A' }}
               >
                 Ver todos os artigos
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
             </div>
 
+            {/* Cards de artigos */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {artigosFeatured.map((artigo) => (
-                <article
-                  key={artigo.slug}
-                  className="group flex flex-col rounded-2xl bg-white border border-slate-100 overflow-hidden hover-lift hover:border-gold-400/30 hover:shadow-xl transition-all duration-300"
-                  style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
-                >
-                  <div
-                    className="h-40 flex items-center justify-center border-b border-slate-100 transition-all duration-300 relative overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, #EEF1F8 0%, #F8FAFC 100%)' }}
+              {artigosFeatured.map((artigo) => {
+                const Icon = artigo.icon
+                return (
+                  <article
+                    key={artigo.slug}
+                    className="group flex flex-col rounded-2xl card-clinical overflow-hidden bg-white"
                   >
+                    {/* Thumb */}
                     <div
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                      style={{ background: 'radial-gradient(circle at 50% 50%, rgba(201,168,76,0.06) 0%, transparent 70%)' }}
-                      aria-hidden
-                    />
-                    <Microscope
-                      className="h-12 w-12 text-brand-200 group-hover:text-gold-500 group-hover:scale-110 transition-all duration-300"
-                      strokeWidth={1.5}
-                      aria-hidden
-                    />
-                  </div>
-                  <div className="p-5 flex flex-col flex-1">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gold-50 text-gold-600 border border-gold-200">
-                        {artigo.categoria}
-                      </span>
-                      <span className="text-xs text-science-500">
-                        {artigo.leitura} de leitura
-                      </span>
-                    </div>
-                    <h3 className="font-display font-bold text-brand-900 text-base leading-snug mb-2 group-hover:text-gold-600 transition-colors duration-200">
-                      {artigo.title}
-                    </h3>
-                    <p className="text-sm text-science-700 leading-relaxed flex-1">
-                      {artigo.excerpt}
-                    </p>
-                    <Link
-                      href={`/blog/${artigo.slug}`}
-                      className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-gold-600 hover:gap-2.5 transition-all duration-200"
-                      aria-label={`Ler artigo: ${artigo.title}`}
+                      className="h-40 flex items-center justify-center relative overflow-hidden"
+                      style={{
+                        background: `linear-gradient(135deg, ${artigo.accentBg} 0%, #F7F9F8 100%)`,
+                        borderBottom: '1px solid #E0EAE4',
+                      }}
                     >
-                      Ler artigo
-                      <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-                    </Link>
-                  </div>
-                </article>
-              ))}
+                      <div
+                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400"
+                        style={{
+                          background: `radial-gradient(circle at 50% 50%, ${artigo.accentColor}0D 0%, transparent 65%)`,
+                        }}
+                        aria-hidden
+                      />
+                      <Icon
+                        className="h-12 w-12 transition-all duration-300 group-hover:scale-110"
+                        strokeWidth={1.4}
+                        style={{
+                          color: `${artigo.accentColor}60`,
+                        }}
+                        aria-hidden
+                      />
+                    </div>
+
+                    {/* Conteúdo */}
+                    <div className="p-5 flex flex-col flex-1">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span
+                          className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                          style={{
+                            background: artigo.accentBg,
+                            color: artigo.accentColor,
+                            border: `1px solid ${artigo.accentColor}25`,
+                          }}
+                        >
+                          {artigo.categoria}
+                        </span>
+                        <span className="text-xs" style={{ color: '#8FA89E' }}>
+                          {artigo.leitura} de leitura
+                        </span>
+                      </div>
+                      <h3
+                        className="font-display font-bold text-base leading-snug mb-2 transition-colors duration-200"
+                        style={{ color: '#1A2B22' }}
+                      >
+                        {artigo.title}
+                      </h3>
+                      <p className="text-sm leading-relaxed flex-1" style={{ color: '#6B8880' }}>
+                        {artigo.excerpt}
+                      </p>
+                      <Link
+                        href={`/blog/${artigo.slug}`}
+                        className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold transition-all duration-200 hover:gap-2.5"
+                        style={{ color: artigo.accentColor }}
+                        aria-label={`Ler artigo: ${artigo.title}`}
+                      >
+                        Ler artigo
+                        <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                      </Link>
+                    </div>
+                  </article>
+                )
+              })}
             </div>
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            CTA FINAL — Clean premium
-        ══════════════════════════════════════════════════════════ */}
+        {/* ════════════════════════════════════════════════════════
+            CTA FINAL — Clean institucional
+        ════════════════════════════════════════════════════════ */}
         <section
-          className="py-24 relative overflow-hidden bg-gradient-to-b from-[#F8FAFC] to-[#FFFFFF] dark:from-[#0A0A0C] dark:to-[#0A0A0C]"
+          className="py-24 relative overflow-hidden"
+          style={{ background: 'linear-gradient(180deg, #F7F9F8 0%, #EAF1EC 100%)' }}
           aria-labelledby="cta-heading"
         >
           <div className="aurora-light" aria-hidden />
-
           <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
             <div
-              className="rounded-3xl p-10 sm:p-14 bg-white border border-slate-100 gradient-border"
-              style={{ boxShadow: '0 4px 30px rgba(26, 46, 90, 0.06), 0 0 60px rgba(201,168,76,0.04)' }}
+              className="rounded-3xl p-10 sm:p-14 bg-white"
+              style={{
+                border: '1px solid rgba(45,90,74,0.12)',
+                boxShadow: '0 8px 40px rgba(45,90,74,0.08), 0 2px 8px rgba(45,90,74,0.04)',
+              }}
             >
+              {/* Símbolo da logo acima do título */}
+              <div className="flex justify-center mb-8">
+                <Image
+                  src="/logo/5.png"
+                  alt=""
+                  width={80}
+                  height={80}
+                  className="w-16 h-auto object-contain logo-glow"
+                  aria-hidden
+                  draggable={false}
+                />
+              </div>
+
               <h2
                 id="cta-heading"
-                className="font-display text-3xl sm:text-4xl font-bold text-brand-900 mb-4"
+                className="font-display text-3xl sm:text-4xl font-bold mb-4"
+                style={{ color: '#1A2B22' }}
               >
                 Gerencie seus pacientes renais com inteligência
               </h2>
-              <p className="text-science-700 text-lg mb-8 leading-relaxed">
-                O Lab Evolution centraliza laudos, histórico clínico e dashboards de biomarcadores
-                renais em uma plataforma segura e intuitiva.
+              <p className="text-lg mb-8 leading-relaxed" style={{ color: '#6B8880' }}>
+                O Lab Evolution centraliza laudos, histórico clínico e dashboards
+                de biomarcadores renais em uma plataforma segura e intuitiva.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/auth/login"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 hover:-translate-y-1 shimmer-gold"
-                  style={{
-                    background: 'linear-gradient(135deg, #C9A84C 0%, #D4AF37 50%, #B8932A 100%)',
-                    boxShadow: '0 6px 24px rgba(201,168,76,0.25)',
-                    color: '#0A0A0C',
-                  }}
+                  className="btn-primary shimmer-gold"
+                  id="cta-final-primary"
                 >
                   Acessar gratuitamente
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </Link>
                 <Link
                   href="/ferramentas/calculadora-tfg"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl border border-brand-500/20 bg-brand-50 text-brand-500 font-semibold text-sm hover:bg-brand-100 transition-all duration-300 hover:-translate-y-0.5"
+                  className="btn-secondary"
+                  id="cta-final-secondary"
                 >
                   Calcular TFG grátis
                 </Link>
@@ -607,6 +739,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
       </main>
 
       <Footer />

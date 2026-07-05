@@ -8,7 +8,8 @@ interface StatItem {
   suffix: string
   label: string
   icon: React.ComponentType<{ className?: string }>
-  gradient: string
+  iconColor: string
+  iconBg: string
 }
 
 const stats: StatItem[] = [
@@ -17,28 +18,32 @@ const stats: StatItem[] = [
     suffix: '+',
     label: 'Pacientes atendidos',
     icon: Users,
-    gradient: 'from-blue-400 to-blue-600',
+    iconColor: 'text-clinical-600',
+    iconBg: 'bg-clinical-50',
   },
   {
     value: 8,
     suffix: '',
     label: 'Ferramentas clínicas',
     icon: Wrench,
-    gradient: 'from-emerald-400 to-emerald-600',
+    iconColor: 'text-brand-500',
+    iconBg: 'bg-brand-50',
   },
   {
     value: 98,
     suffix: '%',
     label: 'Satisfação dos tutores',
     icon: Heart,
-    gradient: 'from-rose-400 to-rose-600',
+    iconColor: 'text-rose-600',
+    iconBg: 'bg-rose-50',
   },
   {
     value: 3,
     suffix: ' artigos',
     label: 'Conteúdo científico',
     icon: BookOpen,
-    gradient: 'from-violet-400 to-violet-600',
+    iconColor: 'text-sand-600',
+    iconBg: 'bg-sand-50',
   },
 ]
 
@@ -66,7 +71,8 @@ function StatCounter({
   suffix,
   label,
   icon: Icon,
-  gradient,
+  iconColor,
+  iconBg,
   started,
   index,
 }: StatItem & { started: boolean; index: number }) {
@@ -74,46 +80,34 @@ function StatCounter({
 
   return (
     <div
-      className="relative text-center p-7 rounded-2xl card-premium group overflow-hidden"
-      style={{
-        transitionDelay: `${index * 100}ms`,
-      }}
+      className="text-center p-7 rounded-2xl card-stat group"
+      style={{ transitionDelay: `${index * 80}ms` }}
     >
-      {/* Background glow sutil no hover */}
+      {/* Ícone */}
       <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"
-        style={{
-          background: 'radial-gradient(ellipse at center bottom, rgba(201,168,76,0.06) 0%, transparent 70%)',
-        }}
-        aria-hidden
-      />
-
-      {/* Ícone com gradiente */}
-      <div
-        className={`relative mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br ${gradient} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}
-        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
+        className={`mx-auto w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${iconBg} ${iconColor} transition-transform duration-300 group-hover:scale-110`}
       >
-        <Icon className="w-5 h-5 text-white" />
+        <Icon className="w-5 h-5" />
       </div>
 
       {/* Número */}
-      <p className="text-4xl sm:text-5xl font-bold font-display tabular-nums">
-        <span className="text-gradient-gold">{count}</span>
-        <span className="text-gold-400 text-3xl">{suffix}</span>
+      <p className="text-4xl sm:text-5xl font-bold font-display tabular-nums text-science-900">
+        {count}
+        <span className="text-clinical-600 text-3xl">{suffix}</span>
       </p>
 
       {/* Label */}
-      <p className="text-sm text-white/50 mt-2 font-medium tracking-wide">{label}</p>
+      <p className="text-sm text-science-500 mt-2 font-medium">{label}</p>
 
-      {/* Linha dourada inferior */}
-      <div className="mt-5 mx-auto w-8 h-px rounded-full bg-gradient-to-r from-transparent via-gold-500 to-transparent group-hover:w-14 transition-all duration-500" />
+      {/* Linha decorativa */}
+      <div className="mt-4 mx-auto w-8 h-0.5 rounded-full bg-clinical-200 group-hover:w-12 group-hover:bg-clinical-400 transition-all duration-400" />
     </div>
   )
 }
 
 /**
- * Seção de estatísticas animadas dark premium.
- * Contadores disparam quando a seção entra na viewport.
+ * Estatísticas animadas — design clínico clean.
+ * Contadores disparam ao entrar na viewport.
  */
 export function AnimatedStats() {
   const ref = useRef<HTMLDivElement>(null)
@@ -127,14 +121,14 @@ export function AnimatedStats() {
           observer.disconnect()
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.25 }
     )
     if (ref.current) observer.observe(ref.current)
     return () => observer.disconnect()
   }, [])
 
   return (
-    <div ref={ref} className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 py-14">
+    <div ref={ref} className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 py-12">
       {stats.map((stat, index) => (
         <StatCounter key={stat.label} {...stat} started={started} index={index} />
       ))}

@@ -13,85 +13,86 @@ const navLinks = [
 ]
 
 /**
- * Header premium dark com glassmorphism intenso.
- * Logo dourada PNG horizontal real.
- * Borda inferior dourada luminosa que intensifica ao rolar.
+ * Header clínico premium institucional.
+ * Fundo: branco translúcido (light), blur suave.
+ * Borda inferior verde discreta que aparece ao rolar.
+ * CTA: verde clínico sólido.
  */
 export function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 24)
+    const handler = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handler, { passive: true })
     return () => window.removeEventListener('scroll', handler)
   }, [])
 
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-500`}
+      className="fixed top-0 inset-x-0 z-50 transition-all duration-400"
       style={{
         background: scrolled
-          ? 'rgba(8, 12, 20, 0.88)'
-          : 'rgba(8, 12, 20, 0.6)',
-        backdropFilter: 'blur(28px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+          ? 'rgba(247, 249, 248, 0.95)'
+          : 'rgba(247, 249, 248, 0.8)',
+        backdropFilter: 'blur(20px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(160%)',
         borderBottom: scrolled
-          ? '1px solid rgba(201, 168, 76, 0.25)'
-          : '1px solid rgba(201, 168, 76, 0.1)',
+          ? '1px solid rgba(45, 90, 74, 0.12)'
+          : '1px solid rgba(45, 90, 74, 0.06)',
         boxShadow: scrolled
-          ? '0 4px 40px rgba(0,0,0,0.4), 0 1px 20px rgba(201,168,76,0.08)'
+          ? '0 2px 20px rgba(45, 90, 74, 0.07), 0 1px 4px rgba(0,0,0,0.04)'
           : 'none',
       }}
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
 
-          {/* Logo horizontal PNG real */}
+          {/* Logo PNG dourada — funciona perfeitamente sobre fundo claro */}
           <Link
             href="/"
-            className="flex items-center group relative"
+            className="flex items-center group"
             aria-label="Vet do Rim — Início"
           >
-            {/* Glow de fundo atrás da logo */}
-            <div
-              className="absolute inset-0 rounded-lg blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-500"
-              style={{ background: 'radial-gradient(ellipse, rgba(201,168,76,0.3) 0%, transparent 70%)' }}
-              aria-hidden
-            />
             <Image
               src="/logo/Monocromática - Dourada.png"
               alt="Vet do Rim"
-              width={240}
-              height={80}
+              width={200}
+              height={70}
               priority
-              className="h-12 w-auto object-contain relative z-10 logo-glow-dark transition-all duration-300 group-hover:scale-105"
-              style={{ filter: 'drop-shadow(0 0 8px rgba(201,168,76,0.35)) drop-shadow(0 0 20px rgba(201,168,76,0.15))' }}
+              className="h-11 w-auto object-contain transition-all duration-300 group-hover:opacity-85 group-hover:scale-[1.02]"
+              style={{
+                filter: 'drop-shadow(0 2px 8px rgba(45, 90, 74, 0.1))',
+              }}
               draggable={false}
             />
           </Link>
 
           {/* Nav Desktop */}
-          <nav className="hidden md:flex items-center gap-1" aria-label="Navegação principal">
+          <nav
+            className="hidden md:flex items-center gap-1"
+            aria-label="Navegação principal"
+          >
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 text-white/70 hover:text-white hover:bg-white/5 group/link"
+                className="relative px-4 py-2 rounded-lg text-sm font-medium text-science-700 hover:text-clinical-600 transition-colors duration-250 group/link"
               >
                 {link.label}
-                {/* Underline dourado */}
-                <span className="absolute bottom-0.5 left-4 right-4 h-px bg-gradient-to-r from-transparent via-gold-400 to-transparent scale-x-0 group-hover/link:scale-x-100 transition-transform duration-300" />
+                <span className="absolute bottom-0.5 left-4 right-4 h-px bg-clinical-500 scale-x-0 group-hover/link:scale-x-100 transition-transform duration-250 origin-left" />
               </Link>
             ))}
+
             <ThemeToggle className="ml-1" />
+
             <Link
               href="/auth/login"
-              className="ml-3 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg flex items-center gap-2 shimmer-gold"
+              className="ml-3 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-250 hover:-translate-y-0.5 flex items-center gap-2 shimmer-gold"
               style={{
-                background: 'linear-gradient(135deg, #C9A84C 0%, #D4AF37 50%, #B8932A 100%)',
-                boxShadow: '0 4px 20px rgba(201, 168, 76, 0.3)',
-                color: '#080C14',
+                background: '#2D5A4A',
+                boxShadow: '0 4px 14px rgba(45, 90, 74, 0.25)',
+                color: '#FFFFFF',
               }}
             >
               Entrar
@@ -99,11 +100,11 @@ export function Header() {
             </Link>
           </nav>
 
-          {/* Mobile menu toggle */}
+          {/* Mobile toggle */}
           <div className="flex md:hidden items-center gap-2">
             <ThemeToggle />
             <button
-              className="p-2 rounded-lg transition-colors text-white/70 hover:bg-white/5 hover:text-white border border-white/10"
+              className="p-2 rounded-lg text-science-700 hover:bg-clinical-50 hover:text-clinical-700 border border-science-200 transition-colors duration-200"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-expanded={menuOpen}
               aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
@@ -116,8 +117,7 @@ export function Header() {
         {/* Mobile menu */}
         {menuOpen && (
           <nav
-            className="md:hidden pb-5 pt-2 flex flex-col gap-1 border-t px-2"
-            style={{ borderColor: 'rgba(201, 168, 76, 0.15)' }}
+            className="md:hidden pb-5 pt-2 flex flex-col gap-1 border-t border-clinical-100 px-2"
             aria-label="Navegação mobile"
           >
             {navLinks.map((link) => (
@@ -125,7 +125,7 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="px-4 py-3 rounded-lg text-sm font-medium transition-colors text-white/70 hover:text-white hover:bg-white/5"
+                className="px-4 py-3 rounded-lg text-sm font-medium text-science-700 hover:text-clinical-700 hover:bg-clinical-50 transition-colors duration-200"
               >
                 {link.label}
               </Link>
@@ -133,11 +133,11 @@ export function Header() {
             <Link
               href="/auth/login"
               onClick={() => setMenuOpen(false)}
-              className="mt-2 mx-2 py-3 text-center rounded-xl text-sm font-bold transition-all shimmer-gold flex items-center justify-center gap-2"
+              className="mt-2 mx-2 py-3 text-center rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
               style={{
-                background: 'linear-gradient(135deg, #C9A84C 0%, #D4AF37 50%, #B8932A 100%)',
-                color: '#080C14',
-                boxShadow: '0 4px 20px rgba(201, 168, 76, 0.25)',
+                background: '#2D5A4A',
+                color: '#FFFFFF',
+                boxShadow: '0 4px 16px rgba(45, 90, 74, 0.2)',
               }}
             >
               Entrar no Lab

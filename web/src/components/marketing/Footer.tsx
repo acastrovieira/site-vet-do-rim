@@ -33,25 +33,27 @@ const footerLinks = {
 }
 
 /**
- * Footer premium dark com logo dourada PNG vertical.
- * Fundo mais escuro que o corpo, com linha divisória dourada.
+ * Footer institucional clínico — Server Component puro (sem handlers JS).
+ * Fundo: verde clínico escuro #1A3830.
+ * Logo dourada PNG — excelente contraste sobre verde.
+ * Hover via CSS puro (group/Tailwind).
  */
 export function Footer() {
   return (
     <footer
       className="relative z-10 mt-auto overflow-hidden"
       style={{
-        background: 'linear-gradient(180deg, #060A12 0%, #040710 100%)',
-        borderTop: '1px solid rgba(201, 168, 76, 0.15)',
+        background: 'linear-gradient(180deg, #1A3830 0%, #122820 100%)',
+        borderTop: '1px solid rgba(200, 169, 122, 0.12)',
       }}
       role="contentinfo"
     >
-      {/* Aurora sutil no footer */}
+      {/* Luz difusa sutil no topo */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-48 pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-40 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 70%)',
-          filter: 'blur(40px)',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 65%)',
+          filter: 'blur(30px)',
         }}
         aria-hidden
       />
@@ -59,65 +61,76 @@ export function Footer() {
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
 
-          {/* Brand — logo PNG dourada vertical */}
+          {/* Brand — logo PNG dourada */}
           <div className="md:col-span-2">
-            <Link href="/" className="inline-block group mb-6" aria-label="Vet do Rim">
-              <div className="relative">
-                {/* Glow atrás da logo */}
-                <div
-                  className="absolute inset-0 scale-110 blur-2xl opacity-30 group-hover:opacity-50 transition-opacity duration-500"
-                  style={{ background: 'radial-gradient(ellipse, rgba(201,168,76,0.4) 0%, transparent 70%)' }}
-                  aria-hidden
-                />
-                <Image
-                  src="/logo/Monocromática - Dourada.png"
-                  alt="Vet do Rim"
-                  width={180}
-                  height={180}
-                  className="relative z-10 w-36 h-auto object-contain logo-glow-dark group-hover:scale-105 transition-transform duration-300"
-                  draggable={false}
-                />
-              </div>
+            <Link href="/" className="inline-block mb-6 group" aria-label="Vet do Rim">
+              <Image
+                src="/logo/Monocromática - Dourada.png"
+                alt="Vet do Rim"
+                width={160}
+                height={160}
+                className="w-32 h-auto object-contain logo-glow-dark group-hover:scale-105 transition-transform duration-300"
+                draggable={false}
+              />
             </Link>
 
-            <p className="text-sm leading-relaxed max-w-xs text-white/45">
-              Nefrologia e urologia veterinária avançada. Ciência, tecnologia e
-              atendimento humanizado para cães e gatos.
+            <p
+              className="text-sm leading-relaxed max-w-xs"
+              style={{ color: 'rgba(200,230,215,0.5)' }}
+            >
+              Nefrologia e urologia veterinária avançada. Ciência, empatia e
+              tecnologia para cuidar de cães e gatos com excelência.
             </p>
 
-            {/* Ícones sociais */}
+            {/* Ícones sociais — hover via CSS group */}
             <div className="flex gap-2 mt-6">
+              {/* E-mail */}
               <a
                 href="mailto:contato@vetdorim.com.br"
-                className="p-2.5 rounded-xl border border-white/8 text-white/40 hover:text-gold-400 hover:border-gold-400/30 hover:bg-gold-400/5 transition-all duration-300 hover:scale-110"
+                className="group/icon p-2.5 rounded-xl transition-all duration-250 hover:scale-110"
+                style={{ border: '1px solid rgba(200,230,215,0.1)' }}
                 aria-label="Enviar e-mail"
               >
-                <Mail className="h-4 w-4" aria-hidden />
+                <Mail
+                  className="h-4 w-4 transition-colors duration-250"
+                  style={{ color: 'rgba(200,230,215,0.4)' }}
+                />
               </a>
+              {/* Instagram */}
               <a
                 href="https://www.instagram.com/vetdorim/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-xl border border-white/8 text-white/40 hover:text-pink-400 hover:border-pink-400/30 hover:bg-pink-400/5 transition-all duration-300 hover:scale-110"
+                className="p-2.5 rounded-xl transition-all duration-250 hover:scale-110"
+                style={{ border: '1px solid rgba(200,230,215,0.1)' }}
                 aria-label="Instagram @vetdorim"
               >
-                <IconInstagram className="h-4 w-4" />
+                <IconInstagram
+                  className="h-4 w-4 transition-colors duration-250 opacity-40"
+                />
               </a>
+              {/* WhatsApp */}
               <a
                 href="https://wa.me/5527997987058"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-xl border border-white/8 text-white/40 hover:text-[#25D366] hover:border-[#25D366]/30 hover:bg-[#25D366]/5 transition-all duration-300 hover:scale-110"
+                className="p-2.5 rounded-xl transition-all duration-250 hover:scale-110"
+                style={{ border: '1px solid rgba(200,230,215,0.1)' }}
                 aria-label="WhatsApp"
               >
-                <IconWhatsApp className="h-4 w-4" />
+                <IconWhatsApp
+                  className="h-4 w-4 transition-colors duration-250 opacity-40"
+                />
               </a>
             </div>
           </div>
 
           {/* Conteúdo */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-500/60 mb-5">
+            <h3
+              className="text-xs font-semibold uppercase tracking-[0.15em] mb-5"
+              style={{ color: 'rgba(200,169,122,0.6)' }}
+            >
               Conteúdo
             </h3>
             <ul className="space-y-3">
@@ -125,10 +138,10 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="relative text-sm text-white/40 hover:text-white transition-colors duration-200 group/flink"
+                    className="text-sm transition-colors duration-200 hover:opacity-90"
+                    style={{ color: 'rgba(200,230,215,0.45)' }}
                   >
                     {link.label}
-                    <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-gradient-to-r from-gold-400 to-gold-600 group-hover/flink:w-full transition-all duration-300" />
                   </Link>
                 </li>
               ))}
@@ -137,7 +150,10 @@ export function Footer() {
 
           {/* Institucional */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-500/60 mb-5">
+            <h3
+              className="text-xs font-semibold uppercase tracking-[0.15em] mb-5"
+              style={{ color: 'rgba(200,169,122,0.6)' }}
+            >
               Institucional
             </h3>
             <ul className="space-y-3">
@@ -145,10 +161,10 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="relative text-sm text-white/40 hover:text-white transition-colors duration-200 group/flink"
+                    className="text-sm transition-colors duration-200 hover:opacity-90"
+                    style={{ color: 'rgba(200,230,215,0.45)' }}
                   >
                     {link.label}
-                    <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-gradient-to-r from-gold-400 to-gold-600 group-hover/flink:w-full transition-all duration-300" />
                   </Link>
                 </li>
               ))}
@@ -156,15 +172,16 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Divisória dourada */}
+        {/* Rodapé */}
         <div
-          className="mt-12 pt-6 flex flex-col sm:flex-row justify-between gap-3 text-xs text-white/25"
-          style={{ borderTop: '1px solid rgba(201, 168, 76, 0.1)' }}
+          className="mt-12 pt-6 flex flex-col sm:flex-row justify-between gap-3 text-xs"
+          style={{
+            borderTop: '1px solid rgba(200,230,215,0.08)',
+            color: 'rgba(200,230,215,0.28)',
+          }}
         >
           <p>© {new Date().getFullYear()} Vet do Rim. Todos os direitos reservados.</p>
-          <p>
-            Conteúdo educacional. Não substitui consulta veterinária presencial.
-          </p>
+          <p>Conteúdo educacional. Não substitui consulta veterinária presencial.</p>
         </div>
       </div>
     </footer>

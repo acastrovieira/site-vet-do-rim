@@ -25,6 +25,11 @@ export interface Database {
           role: UserRole
           full_name: string | null
           document: string | null
+          phone: string | null
+          address: string | null
+          ai_quota_limit: number | null
+          ai_quota_used: number | null
+          ai_quota_reset_date: string | null
           created_at: string | null
         }
         Insert: {
@@ -32,6 +37,11 @@ export interface Database {
           role: UserRole
           full_name?: string | null
           document?: string | null
+          phone?: string | null
+          address?: string | null
+          ai_quota_limit?: number | null
+          ai_quota_used?: number | null
+          ai_quota_reset_date?: string | null
           created_at?: string | null
         }
         Update: {
@@ -39,8 +49,14 @@ export interface Database {
           role?: UserRole
           full_name?: string | null
           document?: string | null
+          phone?: string | null
+          address?: string | null
+          ai_quota_limit?: number | null
+          ai_quota_used?: number | null
+          ai_quota_reset_date?: string | null
           created_at?: string | null
         }
+        Relationships: []
       }
       tutores: {
         Row: {
@@ -74,6 +90,7 @@ export interface Database {
           atualizado_em?: string
         }
         Update: Partial<Database['public']['Tables']['tutores']['Insert']>
+        Relationships: []
       }
       pets: {
         Row: {
@@ -86,6 +103,7 @@ export interface Database {
           idade_meses: number | null
           peso_atual: number | null
           status_paciente: string
+          data_obito: string | null
           criado_em: string
           atualizado_em: string
         }
@@ -99,10 +117,58 @@ export interface Database {
           idade_meses?: number | null
           peso_atual?: number | null
           status_paciente?: string
+          data_obito?: string | null
           criado_em?: string
           atualizado_em?: string
         }
         Update: Partial<Database['public']['Tables']['pets']['Insert']>
+        Relationships: []
+      }
+      triagens: {
+        Row: {
+          id: string
+          pet_id: string
+          tutor_id: string | null
+          status: string
+          observacoes: string | null
+          criado_em: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          pet_id: string
+          tutor_id?: string | null
+          status?: string
+          observacoes?: string | null
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Update: Partial<Database['public']['Tables']['triagens']['Insert']>
+        Relationships: []
+      }
+      follow_ups: {
+        Row: {
+          id: string
+          triagem_id: string
+          opt_out: boolean
+          canal: string | null
+          scheduled_at: string | null
+          sent_at: string | null
+          criado_em: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          triagem_id: string
+          opt_out?: boolean
+          canal?: string | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Update: Partial<Database['public']['Tables']['follow_ups']['Insert']>
+        Relationships: []
       }
       colaboradores: {
         Row: {
@@ -134,6 +200,7 @@ export interface Database {
           atualizado_em?: string
         }
         Update: Partial<Database['public']['Tables']['colaboradores']['Insert']>
+        Relationships: []
       }
       laudos_pdf: {
         Row: {
@@ -165,6 +232,7 @@ export interface Database {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['laudos_pdf']['Insert']>
+        Relationships: []
       }
     }
     Views: Record<string, never>

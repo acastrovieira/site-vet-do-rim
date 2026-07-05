@@ -269,6 +269,8 @@ DROP POLICY IF EXISTS "vet_update_own_laudos"  ON public.laudos_pdf;
 DROP POLICY IF EXISTS "admin_all_laudos"       ON public.laudos_pdf;
 DROP POLICY IF EXISTS "auth_select_laudos"     ON public.laudos_pdf;
 DROP POLICY IF EXISTS "auth_insert_laudos"     ON public.laudos_pdf;
+DROP POLICY IF EXISTS "auth_update_laudos"     ON public.laudos_pdf;
+DROP POLICY IF EXISTS "admin_delete_laudos"    ON public.laudos_pdf;
 
 CREATE POLICY "auth_select_laudos" ON public.laudos_pdf
   FOR SELECT TO authenticated USING (true);

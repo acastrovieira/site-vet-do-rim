@@ -148,7 +148,7 @@ export function ResetForm() {
             type="button"
             onClick={() => setShowPw((v) => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            aria-label={showPw ? 'Ocultar senha' : 'Mostrar senha'}
+            aria-label={showPw ? 'Ocultar campo de senha' : 'Mostrar campo de senha'}
           >
             {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>

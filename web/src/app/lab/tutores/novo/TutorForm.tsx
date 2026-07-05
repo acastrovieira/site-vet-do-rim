@@ -3,7 +3,7 @@
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { User, Phone, Mail, MapPin, Loader2 } from 'lucide-react'
+import { User, Phone, MapPin, Loader2 } from 'lucide-react'
 import { useToast } from '@/components/ui/Toast'
 
 async function salvarTutorAPI(formData: {

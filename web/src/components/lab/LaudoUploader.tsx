@@ -4,7 +4,7 @@ import { useState, useCallback, useTransition, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   Upload, FileText, Loader2, CheckCircle2, AlertTriangle,
-  ChevronDown, ChevronUp, Zap, FlaskConical
+  ChevronDown, ChevronUp, Zap, FlaskConical, MessageCircle
 } from 'lucide-react'
 
 interface HemogramaResult {
@@ -39,6 +39,10 @@ interface HemogramaResult {
   data_coleta: string
   data_resultado: string
 }
+
+const SUPPORT_HREF = `https://wa.me/5527997987058?text=${encodeURIComponent(
+  'Ola! Tive uma falha ao processar um laudo no Lab Evolution e preciso de suporte. Nao enviarei dados do paciente por aqui.',
+)}`
 
 function ValueRow({ label, value, unit }: { label: string; value: number | null; unit?: string }) {
   return (
@@ -91,13 +95,12 @@ export function LaudoUploader({ petId }: { petId: string }) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       
-      const { data: rawData } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('ai_quota_used, ai_quota_limit')
         .eq('id', user.id)
         .single()
         
-      const data = rawData as unknown as { ai_quota_used: number; ai_quota_limit: number };
         
       if (data) {
         setAiQuota({
@@ -129,6 +132,16 @@ export function LaudoUploader({ petId }: { petId: string }) {
     setResult(null)
   }, [])
 
+  const clearPdf = useCallback(() => {
+    setPdfFile(null)
+    setPdfUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
+    setResult(null)
+    setStatus('idle')
+  }, [])
+
   // Cleanup: revoga blob URL ao desmontar o componente
   useEffect(() => {
     return () => {
@@ -155,15 +168,18 @@ export function LaudoUploader({ petId }: { petId: string }) {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) throw new Error('Sessão expirada. Faça login novamente.')
 
-        const fileName = `${user.id}/${Date.now()}_${pdfFile.name.replace(/\s/g, '_')}`
+        const safeName = pdfFile.name
+          .normalize('NFKD')
+          .replace(/[^\w.-]+/g, '_')
+          .replace(/^_+|_+$/g, '') || 'laudo.pdf'
+        const fileName = `${user.id}/${Date.now()}_${safeName}`
         const { error: uploadError } = await supabase.storage
           .from('laudos')
           .upload(fileName, pdfFile, { contentType: 'application/pdf', upsert: false })
         if (uploadError) throw new Error(`Upload falhou: ${uploadError.message}`)
 
         // 2. Cria registro no banco (cast necessário pelas limitações do client Supabase)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: laudo, error: insertError } = await (supabase as unknown as { from: (t: string) => any })
+        const { data: laudo, error: insertError } = await supabase
           .from('laudos_pdf')
           .insert({
             pet_id: petId,
@@ -175,16 +191,21 @@ export function LaudoUploader({ petId }: { petId: string }) {
           })
           .select('id')
           .single() as { data: { id: string } | null; error: Error | null }
-        if (insertError || !laudo) throw new Error('Erro ao registrar laudo.')
+        if (insertError || !laudo) {
+          await supabase.storage.from('laudos').remove([fileName])
+          throw new Error('Erro ao registrar laudo.')
+        }
 
         // 3. Dispara Edge Function
         setStatus('analyzing')
         const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) throw new Error('Sessão expirada. Faça login novamente.')
         const fnRes = await supabase.functions.invoke('parse-laudo', {
           body: { laudoId: laudo.id },
-          headers: { Authorization: `Bearer ${session?.access_token}` },
+          headers: { Authorization: `Bearer ${session.access_token}` },
         })
-        if (fnRes.error) throw new Error(fnRes.error.message)
+        if (fnRes.error) throw new Error(fnRes.data?.error || fnRes.error.message)
+        if (fnRes.data?.error) throw new Error(fnRes.data.error)
         if (!fnRes.data?.data) throw new Error('Resposta inválida da IA.')
 
         setResult(fnRes.data.data as HemogramaResult)
@@ -234,13 +255,13 @@ export function LaudoUploader({ petId }: { petId: string }) {
         /* Side-by-side: PDF viewer + resultado */
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* PDF Viewer */}
-          <div className="rounded-2xl border border-slate-100 overflow-hidden bg-slate-50">
+          <div className="order-2 lg:order-1 rounded-2xl border border-slate-100 overflow-hidden bg-slate-50">
             <div className="flex items-center gap-2 px-4 py-3 bg-white border-b border-slate-100">
               <FileText className="h-4 w-4 text-slate-400" aria-hidden />
               <span className="text-sm font-medium text-slate-700 truncate flex-1">{pdfFile.name}</span>
               <button
                 type="button"
-                onClick={() => { setPdfFile(null); setPdfUrl(null); setResult(null); setStatus('idle') }}
+                onClick={clearPdf}
                 className="text-xs text-slate-400 hover:text-red-500 transition-colors"
               >
                 Trocar
@@ -250,14 +271,13 @@ export function LaudoUploader({ petId }: { petId: string }) {
               <iframe
                 src={pdfUrl}
                 title="Visualizador de laudo PDF"
-                className="w-full"
-                style={{ height: '600px' }}
+                className="h-[50dvh] min-h-72 w-full lg:h-[600px]"
               />
             )}
           </div>
 
           {/* Painel de resultado */}
-          <div className="space-y-4">
+          <div className="order-1 lg:order-2 space-y-4">
             {/* Botão analisar */}
             {status === 'idle' || status === 'error' ? (
               <div className="space-y-2">
@@ -270,7 +290,9 @@ export function LaudoUploader({ petId }: { petId: string }) {
                   <Zap className="h-4 w-4" aria-hidden />
                   {aiQuota !== null && aiQuota.used >= aiQuota.limit 
                     ? 'Limite Gratuito Atingido' 
-                    : 'Analisar com IA (GPT-4o)'}
+                    : status === 'error'
+                      ? 'Tentar novamente'
+                      : 'Analisar com IA (GPT-4o)'}
                 </button>
                 {aiQuota && (
                   <p className="text-center text-xs text-slate-500">
@@ -294,9 +316,25 @@ export function LaudoUploader({ petId }: { petId: string }) {
             ) : null}
 
             {errorMsg && (
-              <div role="alert" className="flex items-start gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700">
-                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                {errorMsg}
+              <div role="alert" className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div className="space-y-2">
+                    <p>{errorMsg}</p>
+                    <p className="text-xs text-red-600">
+                      Se a falha persistir, tente reenviar o PDF ou acione o suporte para analise manual. Evite enviar dados sensiveis pelo WhatsApp.
+                    </p>
+                    <a
+                      href={SUPPORT_HREF}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" aria-hidden />
+                      Falar com suporte
+                    </a>
+                  </div>
+                </div>
               </div>
             )}
 

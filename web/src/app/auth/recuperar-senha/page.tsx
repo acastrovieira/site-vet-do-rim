@@ -14,17 +14,11 @@ export default function RecuperarSenhaPage() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-science-50 to-white px-4 py-12">
       {/* Logo */}
       <Link href="/" className="flex flex-col items-center gap-2 mb-10 group" aria-label="Vet do Rim — Voltar ao site">
-        {/* Logo vertical colorida no tema claro */}
-        <img 
-          src="/logo-vertical.svg" 
-          alt="Vet do Rim" 
-          className="h-20 sm:h-24 w-auto block dark:hidden group-hover:scale-103 transition-all duration-300"
-        />
-        {/* Logo vertical dourada no tema escuro */}
-        <img 
-          src="/logo-vertical-gold.svg" 
-          alt="Vet do Rim" 
-          className="h-20 sm:h-24 w-auto hidden dark:block group-hover:scale-103 transition-all duration-300"
+        <VetDoRimLogo
+          className="h-24 w-40 group-hover:scale-103 transition-all duration-300"
+          variant="auto"
+          showText
+          orientation="vertical"
         />
         <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">Lab Evolution</span>
       </Link>

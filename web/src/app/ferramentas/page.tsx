@@ -6,9 +6,9 @@ import { Activity, ChevronRight, Lock, FlaskConical, Droplets, TestTube, Scale, 
 
 
 export const metadata: Metadata = {
-  title: 'Ferramentas Clínicas Gratuitas — Nefrologia Veterinária | Vet do Rim',
+  title: 'Ferramentas Clínicas — Nefrologia Veterinária | Vet do Rim',
   description:
-    'Ferramentas gratuitas de nefrologia veterinária: Estadiamento IRIS da DRC, Injúria Renal Aguda, Fluidoterapia e Reposição Eletrolítica para cães e gatos.',
+    'Ferramentas de nefrologia veterinária: calculadoras públicas, recursos freemium e ferramentas profissionais com login veterinário para cães e gatos.',
   keywords: [
     'ferramentas nefrologia veterinária',
     'estadiamento IRIS DRC',
@@ -31,6 +31,8 @@ const activeTools = [
     tags: ['IRIS 2023', 'Proteinúria', 'Pressão arterial', 'Progressão'],
     iconBg: 'bg-gold-50',
     iconColor: 'text-gold-500',
+    access: 'Sem cadastro',
+    cta: 'Acessar ferramenta',
   },
   {
     href: '/ferramentas/injuria-renal-aguda',
@@ -42,6 +44,8 @@ const activeTools = [
     tags: ['IRIS AKI', 'KDIGO', 'Oligúria', 'Urgência renal'],
     iconBg: 'bg-red-50',
     iconColor: 'text-red-500',
+    access: 'Login vet',
+    cta: 'Entrar para acessar',
   },
   {
     href: '/ferramentas/planilha-laboratorial',
@@ -53,7 +57,8 @@ const activeTools = [
     tags: ['Hemograma', 'Bioquímica', 'Urinálise', 'PDF Gratuito'],
     iconBg: 'bg-emerald-50',
     iconColor: 'text-emerald-500',
-    badge: 'Freemium',
+    access: 'Freemium',
+    cta: 'Acessar ferramenta',
   },
   {
     href: '/ferramentas/fluidoterapia',
@@ -65,6 +70,8 @@ const activeTools = [
     tags: ['Manutenção', 'Déficit hídrico', 'Bolus de choque', 'AAHA/AAFP'],
     iconBg: 'bg-sky-50',
     iconColor: 'text-sky-500',
+    access: 'Login vet',
+    cta: 'Entrar para acessar',
   },
   {
     href: '/ferramentas/reposicao-eletrolitica',
@@ -76,6 +83,8 @@ const activeTools = [
     tags: ['Hipocalemia', 'Acidose metabólica', 'Hipocalcemia', 'DiBartola'],
     iconBg: 'bg-violet-50',
     iconColor: 'text-violet-500',
+    access: 'Login vet',
+    cta: 'Entrar para acessar',
   },
   {
     href: '/ferramentas/controle-de-peso',
@@ -87,6 +96,8 @@ const activeTools = [
     tags: ['Peso corporal', 'ECC WSAVA', 'Histórico', 'CSV Gratuito'],
     iconBg: 'bg-teal-50',
     iconColor: 'text-teal-600',
+    access: 'Sem cadastro',
+    cta: 'Acessar ferramenta',
   },
   {
     href: '/ferramentas/dieta-renal',
@@ -98,6 +109,8 @@ const activeTools = [
     tags: ['Dieta renal', 'ECC ajuste', 'Multimarca', 'Cão e Gato'],
     iconBg: 'bg-orange-50',
     iconColor: 'text-orange-500',
+    access: 'Sem cadastro',
+    cta: 'Acessar ferramenta',
   },
 ]
 
@@ -110,7 +123,7 @@ export default function FerramentasPage() {
         <section className="mx-auto max-w-3xl px-4 sm:px-6 text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/20 text-xs font-semibold text-gold-400 mb-5">
             <Activity className="h-3.5 w-3.5" aria-hidden />
-            Ferramentas Clínicas Gratuitas
+            Ferramentas clínicas
           </div>
           <h1 className="font-display text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white tracking-tight text-gradient-brand dark:text-gradient-gold mb-4">
             Ferramentas de Nefrologia
@@ -119,7 +132,8 @@ export default function FerramentasPage() {
             Calculadoras e modelos clínicos baseados nas diretrizes{' '}
             <strong className="text-slate-900 dark:text-white">IRIS 2023</strong> e{' '}
             <strong className="text-slate-900 dark:text-white">ACVIM</strong> para apoio ao diagnóstico
-            e estadiamento da doença renal crônica em cães e gatos.
+            e estadiamento da doença renal crônica em cães e gatos. Algumas ferramentas são públicas;
+            calculadoras com conduta ou dosagem exigem login veterinário.
           </p>
         </section>
 
@@ -138,13 +152,17 @@ export default function FerramentasPage() {
                     <div className={`p-2.5 rounded-xl ${tool.iconBg} bg-opacity-10 border border-white/5`}>
                       <Icon className={`h-5 w-5 ${tool.iconColor}`} strokeWidth={1.75} aria-hidden />
                     </div>
-                    {'badge' in tool && tool.badge === 'Freemium' ? (
+                    {tool.access === 'Freemium' ? (
                       <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-gold-400/10 text-gold-400 border border-gold-400/20">
-                        ✨ Freemium
+                        Freemium
+                      </span>
+                    ) : tool.access === 'Login vet' ? (
+                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-sky-400/10 border border-sky-400/20 text-sky-400">
+                        Login vet
                       </span>
                     ) : (
                       <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-400">
-                        Gratuito
+                        Sem cadastro
                       </span>
                     )}
                   </div>
@@ -168,7 +186,7 @@ export default function FerramentasPage() {
                     ))}
                   </div>
                   <div className="flex items-center gap-1 text-sm font-semibold text-gold-400 group-hover:gap-2 transition-all duration-200">
-                    Acessar ferramenta
+                    {tool.cta}
                     <ChevronRight className="h-4 w-4" aria-hidden />
                   </div>
                 </Link>

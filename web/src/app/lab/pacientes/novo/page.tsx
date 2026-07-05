@@ -20,8 +20,7 @@ export default async function NovoPacientePage({ searchParams }: PageProps) {
   const { tutor_id: defaultTutorId } = await searchParams
 
   // Carrega lista de tutores no server para popular o select
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: tutores } = await (supabase as any)
+  const { data: tutores } = await supabase
     .from('tutores')
     .select('id, nome')
     .order('nome', { ascending: true })

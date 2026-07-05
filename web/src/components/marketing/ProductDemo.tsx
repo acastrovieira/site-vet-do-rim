@@ -284,7 +284,7 @@ function SceneHistorico() {
           { data: 'Fev/26', creat: '3.0', tfg: '21.3', cor: 'text-amber-400' },
           { data: 'Mar/26', creat: '2.9', tfg: '22.5', cor: 'text-amber-400' },
           { data: 'Abr/26', creat: '2.8', tfg: '23.4', cor: 'text-emerald-400' },
-        ].map(({ data, creat, tfg, cor }, i) => (
+        ].map(({ data, tfg, cor }, i) => (
           <motion.div
             key={data}
             initial={{ opacity: 0, x: -8 }}

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { FlaskConical, AlertTriangle, Info, ExternalLink, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { AlertTriangle, Info, ExternalLink, ArrowRight, CheckCircle2 } from 'lucide-react'
 
 type Tab = 'potassio' | 'bicarbonato' | 'calcio' | 'fosforo' | 'magnesio'
 

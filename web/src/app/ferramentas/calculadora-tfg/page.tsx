@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
 import { TFGCalculator } from '@/components/ferramentas/TFGCalculator'
@@ -33,7 +34,8 @@ const appSchema = {
 export default function CalculadoraTFGPage() {
   return (
     <>
-      <script
+      <Script
+        id="calculadora-tfg-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
       />

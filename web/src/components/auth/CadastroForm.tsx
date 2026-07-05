@@ -3,7 +3,6 @@
 import { useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff, Loader2, UserPlus, CheckCircle2 } from 'lucide-react'
-import type { UserRole } from '@/types/database'
 
 /**
  * Formulário de cadastro com Supabase Auth.
@@ -23,16 +22,17 @@ export function CadastroForm() {
     const email = form.get('email') as string
     const password = form.get('password') as string
     const fullName = form.get('full_name') as string
-    const role = form.get('role') as UserRole
+    const requestedRole = form.get('role') === 'vet' ? 'vet' : 'tutor'
 
     startTransition(async () => {
-      const supabase = createClient()
+      try {
+        const supabase = createClient()
 
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { full_name: fullName, role },
+          data: { full_name: fullName, requested_role: requestedRole },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
@@ -46,7 +46,10 @@ export function CadastroForm() {
         return
       }
 
-      setSuccess(true)
+        setSuccess(true)
+      } catch {
+        setError('Nao foi possivel criar a conta agora. Verifique sua conexao e tente novamente.')
+      }
     })
   }
 
@@ -59,6 +62,8 @@ export function CadastroForm() {
         </h2>
         <p className="text-sm text-slate-500">
           Enviamos um link de confirmação para o seu email. Verifique a caixa de entrada (e o spam).
+          {' '}
+          Solicitacoes de acesso veterinario dependem de aprovacao administrativa.
         </p>
       </div>
     )
@@ -140,7 +145,7 @@ export function CadastroForm() {
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors"
-            aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+            aria-label={showPassword ? 'Ocultar campo de senha' : 'Mostrar campo de senha'}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>

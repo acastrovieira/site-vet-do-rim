@@ -16,9 +16,9 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
 
   if (!mounted) {
     return (
-      <button className={`p-2 rounded-xl border border-transparent opacity-0 ${className}`} aria-hidden="true">
+      <span className={`block p-2 rounded-xl border border-transparent opacity-0 ${className}`} aria-hidden="true">
         <div className="w-5 h-5" />
-      </button>
+      </span>
     )
   }
 

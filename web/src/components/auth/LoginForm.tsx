@@ -5,11 +5,25 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff, Loader2, LogIn } from 'lucide-react'
 
+type AuthProfile = {
+  role: string | null
+}
+
+interface LoginFormProps {
+  redirectTo?: string
+}
+
+function safeRelativePath(path: string | undefined) {
+  if (!path || !path.startsWith('/') || path.startsWith('//')) return ''
+  if (path.startsWith('/auth/')) return ''
+  return path
+}
+
 /**
  * Formulário de login com Supabase Auth.
  * Redireciona para /lab após autenticação bem-sucedida.
  */
-export function LoginForm() {
+export function LoginForm({ redirectTo }: LoginFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [showPassword, setShowPassword] = useState(false)
@@ -24,20 +38,50 @@ export function LoginForm() {
     const password = form.get('password') as string
 
     startTransition(async () => {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      try {
+        const supabase = createClient()
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
 
-      if (error) {
-        setError(
-          error.message === 'Invalid login credentials'
-            ? 'Email ou senha incorretos. Tente novamente.'
-            : error.message
-        )
-        return
+        if (error) {
+          setError(
+            error.message === 'Invalid login credentials'
+              ? 'Email ou senha incorretos. Tente novamente.'
+              : error.message
+          )
+          return
+        }
+
+        const desiredPath = safeRelativePath(redirectTo)
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        let role: string | null = null
+        if (user) {
+          const { data: rawProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+          const profile = rawProfile as AuthProfile | null
+
+          role = profile?.role ?? null
+        }
+
+        const destination = role === 'tutor'
+          ? (desiredPath && !desiredPath.startsWith('/lab') && !desiredPath.startsWith('/admin')
+              ? desiredPath
+              : '/portal')
+          : (desiredPath && !desiredPath.startsWith('/portal') ? desiredPath : '/lab')
+
+        router.push(destination)
+        router.refresh()
+      } catch (loginError) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Login flow failed', loginError)
+        }
+        setError('Nao foi possivel concluir o login agora. Verifique sua conexao e tente novamente.')
       }
-
-      router.push('/lab')
-      router.refresh()
     })
   }
 
@@ -88,7 +132,7 @@ export function LoginForm() {
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors"
-            aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+            aria-label={showPassword ? 'Ocultar campo de senha' : 'Mostrar campo de senha'}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>

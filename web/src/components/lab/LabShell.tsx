@@ -148,7 +148,8 @@ export function LabShell({ children, user, profile }: LabShellProps) {
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 rounded-lg text-slate-600 dark:text-science-200 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
-            aria-label="Abrir menu"
+            aria-expanded={sidebarOpen}
+            aria-label={sidebarOpen ? 'Fechar menu' : 'Abrir menu'}
           >
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>

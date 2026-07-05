@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
 
 /**
- * Formulário de recuperação de senha.
+ * FormulÃ¡rio de recuperaÃ§Ã£o de senha.
  * Chama supabase.auth.resetPasswordForEmail() com redirectTo apontando
  * para /auth/callback?next=/auth/redefinir-senha.
  */
@@ -35,15 +35,13 @@ export function RecoverForm() {
     if (error) {
       console.error('[RecoverForm] resetPasswordForEmail error:', error)
       setStatus('error')
-      // Mensagens amigáveis por código de erro Supabase
+      // Mensagens amigÃ¡veis por cÃ³digo de erro Supabase
       if (error.message?.includes('rate limit') || error.message?.includes('429')) {
         setErrorMsg('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.')
-      } else if (error.message?.includes('not found') || error.message?.includes('invalid')) {
-        setErrorMsg('E-mail não encontrado. Verifique o endereço e tente novamente.')
       } else if (error.message?.includes('redirect')) {
-        setErrorMsg('Erro de configuração de redirecionamento. Contate o suporte.')
+        setErrorMsg('Erro de configuraÃ§Ã£o de redirecionamento. Contate o suporte.')
       } else {
-        setErrorMsg(`Erro ao enviar: ${error.message ?? 'Tente novamente em instantes.'}`)
+        setErrorMsg('Nao foi possivel processar a solicitacao agora. Tente novamente em instantes.')
       }
     } else {
       setStatus('sent')
@@ -60,7 +58,7 @@ export function RecoverForm() {
           redefinir sua senha.
         </p>
         <p className="text-xs text-slate-400 mt-2">
-          Não recebeu?{' '}
+          NÃ£o recebeu?{' '}
           <button
             type="button"
             onClick={() => setStatus('idle')}
@@ -116,7 +114,7 @@ export function RecoverForm() {
                    hover:bg-brand-600 active:scale-[0.98] transition-all duration-150
                    disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {status === 'loading' ? 'Enviando...' : 'Enviar link de recuperação'}
+        {status === 'loading' ? 'Enviando...' : 'Enviar link de recuperaÃ§Ã£o'}
       </button>
 
       <div className="text-center">

@@ -23,6 +23,7 @@ const ferramentas = [
     cor: 'from-blue-500/20 to-blue-600/10 border-blue-500/20',
     iconCor: 'text-blue-400',
     badge: 'Mais usado',
+    cta: 'Acessar',
   },
   {
     icon: FlaskConical,
@@ -32,6 +33,7 @@ const ferramentas = [
     cor: 'from-violet-500/20 to-violet-600/10 border-violet-500/20',
     iconCor: 'text-violet-400',
     badge: null,
+    cta: 'Acessar',
   },
   {
     icon: Scale,
@@ -41,15 +43,17 @@ const ferramentas = [
     cor: 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/20',
     iconCor: 'text-emerald-400',
     badge: null,
+    cta: 'Acessar',
   },
   {
     icon: HeartPulse,
     title: 'Dieta Renal',
-    description: 'Cálculo de nécessidades nutricionais individualizadas para nefropatas.',
+    description: 'Cálculo de necessidades nutricionais individualizadas para nefropatas.',
     href: '/ferramentas/dieta-renal',
     cor: 'from-rose-500/20 to-rose-600/10 border-rose-500/20',
     iconCor: 'text-rose-400',
     badge: null,
+    cta: 'Acessar',
   },
   {
     icon: Droplets,
@@ -58,7 +62,8 @@ const ferramentas = [
     href: '/ferramentas/fluidoterapia',
     cor: 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/20',
     iconCor: 'text-cyan-400',
-    badge: null,
+    badge: 'Login vet',
+    cta: 'Entrar',
   },
   {
     icon: Zap,
@@ -67,7 +72,8 @@ const ferramentas = [
     href: '/ferramentas/injuria-renal-aguda',
     cor: 'from-amber-500/20 to-amber-600/10 border-amber-500/20',
     iconCor: 'text-amber-400',
-    badge: 'Novo',
+    badge: 'Login vet',
+    cta: 'Entrar',
   },
   {
     icon: ClipboardList,
@@ -76,7 +82,8 @@ const ferramentas = [
     href: '/ferramentas/planilha-laboratorial',
     cor: 'from-gold-400/20 to-gold-500/10 border-gold-400/20',
     iconCor: 'text-gold-400',
-    badge: null,
+    badge: 'Freemium',
+    cta: 'Acessar',
   },
   {
     icon: BarChart3,
@@ -85,7 +92,8 @@ const ferramentas = [
     href: '/ferramentas/reposicao-eletrolitica',
     cor: 'from-pink-500/20 to-pink-600/10 border-pink-500/20',
     iconCor: 'text-pink-400',
-    badge: null,
+    badge: 'Login vet',
+    cta: 'Entrar',
   },
 ]
 
@@ -97,7 +105,7 @@ export function FerramentasShowcase() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {ferramentas.map(({ icon: Icon, title, description, href, cor, iconCor, badge }) => (
+      {ferramentas.map(({ icon: Icon, title, description, href, cor, iconCor, badge, cta }) => (
         <Link
           key={title}
           href={href}
@@ -132,7 +140,7 @@ export function FerramentasShowcase() {
           </div>
 
           <div className="mt-auto flex items-center gap-1 text-xs font-semibold text-white/40 group-hover:text-white/70 transition-colors duration-200">
-            Acessar
+            {cta}
             <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" />
           </div>
         </Link>

@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import path from 'node:path'
 
 const nextConfig: NextConfig = {
   // ── Segurança ─────────────────────────────────────────────
@@ -26,6 +27,10 @@ const nextConfig: NextConfig = {
   // ── Performance ───────────────────────────────────────────
   // Compressão gzip habilitada
   compress: true,
+
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
 
   // ── Experimental ─────────────────────────────────────────
   experimental: {

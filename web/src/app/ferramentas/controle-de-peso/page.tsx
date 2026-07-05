@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
 import { ControlePesoTool } from '@/components/ferramentas/ControlePesoTool'
@@ -34,7 +35,8 @@ const appSchema = {
 export default function ControlePesoPage() {
   return (
     <>
-      <script
+      <Script
+        id="controle-peso-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
       />

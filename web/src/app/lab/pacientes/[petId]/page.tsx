@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server'
 import { TutorPetActions } from '@/app/lab/tutores/[id]/TutorPetActions'
 import {
   ArrowLeft,
-  PawPrint,
   User,
   Scale,
   FlaskConical,

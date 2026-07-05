@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import matter from 'gray-matter'
+import { parse as parseYaml } from 'yaml'
 
 const POSTS_DIR = path.join(process.cwd(), 'src', 'content', 'blog')
 
@@ -22,6 +22,19 @@ export interface Post {
   content: string
 }
 
+function parsePost(raw: string): { frontmatter: PostFrontmatter; content: string } {
+  const normalized = raw.replace(/^\uFEFF/, '').trimStart()
+  const match = normalized.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/)
+  if (!match) {
+    throw new Error('Frontmatter ausente ou invalido no post MDX.')
+  }
+
+  return {
+    frontmatter: parseYaml(match[1]) as PostFrontmatter,
+    content: match[2],
+  }
+}
+
 /**
  * Retorna todos os posts do blog ordenados por data (mais recente primeiro).
  */
@@ -33,10 +46,10 @@ export function getAllPosts(): Post[] {
   const posts = files.map((filename) => {
     const slug = filename.replace(/\.mdx$/, '')
     const raw = fs.readFileSync(path.join(POSTS_DIR, filename), 'utf-8')
-    const { data, content } = matter(raw)
+    const { frontmatter, content } = parsePost(raw)
     return {
       slug,
-      frontmatter: data as PostFrontmatter,
+      frontmatter,
       content,
     }
   })
@@ -56,10 +69,10 @@ export function getPostBySlug(slug: string): Post {
     throw new Error(`Post não encontrado: ${slug}`)
   }
   const raw = fs.readFileSync(filePath, 'utf-8')
-  const { data, content } = matter(raw)
+  const { frontmatter, content } = parsePost(raw)
   return {
     slug,
-    frontmatter: data as PostFrontmatter,
+    frontmatter,
     content,
   }
 }

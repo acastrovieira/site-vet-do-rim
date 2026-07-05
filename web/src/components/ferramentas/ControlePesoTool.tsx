@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   salvarPeso,
   listarPesos,
@@ -145,7 +145,7 @@ function InputField({
 // ─── Componente Principal ──────────────────────────────────────────────────
 
 export function ControlePesoTool() {
-  const [registros, setRegistros] = useState<RegistroPeso[]>(() => listarPesos())
+  const [registros, setRegistros] = useState<RegistroPeso[]>([])
   const [form, setForm] = useState<FormState>(FORM_INICIAL)
   const [erros, setErros] = useState<Partial<Record<keyof FormState, string>>>({})
   const [mostrarForm, setMostrarForm] = useState(false)
@@ -156,6 +156,11 @@ export function ControlePesoTool() {
   const carregarRegistros = useCallback(() => {
     setRegistros(listarPesos())
   }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(carregarRegistros, 0)
+    return () => window.clearTimeout(timer)
+  }, [carregarRegistros])
 
   function validar(): boolean {
     const e: typeof erros = {}

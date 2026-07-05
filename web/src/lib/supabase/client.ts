@@ -2,6 +2,7 @@
 
 import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '@/types/database'
+import { requirePublicEnv } from '@/lib/env'
 
 /**
  * Cria um cliente Supabase para uso em Client Components.
@@ -9,7 +10,7 @@ import type { Database } from '@/types/database'
  */
 export function createClient() {
   return createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    requirePublicEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    requirePublicEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
   )
 }

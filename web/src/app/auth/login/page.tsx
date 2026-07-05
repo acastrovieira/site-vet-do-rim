@@ -10,7 +10,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default function LoginPage() {
+interface LoginPageProps {
+  searchParams?: Promise<{
+    redirectTo?: string | string[]
+  }>
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams
+  const redirectTo = Array.isArray(params?.redirectTo)
+    ? params?.redirectTo[0]
+    : params?.redirectTo
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-science-50 dark:bg-[#0A0A0C] px-4 py-12 relative transition-colors duration-300">
       {/* Botão flutuante de tema */}
@@ -20,17 +31,11 @@ export default function LoginPage() {
 
       {/* Logo + marca */}
       <Link href="/" className="flex flex-col items-center gap-2 mb-10 group" aria-label="Vet do Rim — Voltar ao site">
-        {/* Logo vertical colorida no tema claro */}
-        <img 
-          src="/logo-vertical.svg" 
-          alt="Vet do Rim" 
-          className="h-20 sm:h-24 w-auto block dark:hidden group-hover:scale-103 transition-all duration-300"
-        />
-        {/* Logo vertical dourada no tema escuro */}
-        <img 
-          src="/logo-vertical-gold.svg" 
-          alt="Vet do Rim" 
-          className="h-20 sm:h-24 w-auto hidden dark:block group-hover:scale-103 transition-all duration-300"
+        <VetDoRimLogo
+          className="h-24 w-40 group-hover:scale-103 transition-all duration-300"
+          variant="auto"
+          showText
+          orientation="vertical"
         />
         <span className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-science-500">Lab Evolution</span>
       </Link>
@@ -40,7 +45,7 @@ export default function LoginPage() {
         <div className="glass-card rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl shadow-slate-200/50 dark:shadow-none p-8">
           <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white mb-1">Entrar na plataforma</h1>
           <p className="text-sm text-slate-500 dark:text-science-200 mb-8">Acesse o painel clínico do Lab Evolution</p>
-          <LoginForm />
+          <LoginForm redirectTo={redirectTo} />
         </div>
 
         <p className="text-center text-sm text-slate-400 mt-4">

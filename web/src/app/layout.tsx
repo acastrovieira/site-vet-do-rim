@@ -20,6 +20,7 @@ const playfair = Playfair_Display({
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vetdorim.com.br'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -30,15 +31,10 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      { url: '/logo.svg', type: 'image/svg+xml' },
       { url: '/favicon.png', type: 'image/png', sizes: '32x32' },
     ],
     apple: [
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-      { url: '/logo.svg', type: 'image/svg+xml' }
-    ],
-    other: [
-      { rel: 'mask-icon', url: '/logo.svg', color: '#1A2E5A' },
     ],
   },
   description:
@@ -62,13 +58,13 @@ export const metadata: Metadata = {
     title: 'Vet do Rim — Nefrologia e Urologia Veterinária',
     description:
       'Especialistas em nefrologia e urologia veterinária. Atendimento humanizado, medicina de ponta.',
-    images: [{ url: '/logo.svg', width: 512, height: 512, alt: 'Vet do Rim — Nefrologia Veterinária' }],
+    images: [{ url: '/icon-512.png', width: 512, height: 512, alt: 'Vet do Rim — Nefrologia Veterinária' }],
   },
   twitter: {
     card: 'summary',
     title: 'Vet do Rim — Nefrologia e Urologia Veterinária',
     description: 'Especialistas em nefrologia e urologia veterinária.',
-    images: ['/logo.svg'],
+    images: ['/icon-512.png'],
   },
   robots: {
     index: true,
@@ -82,11 +78,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="pt-BR"
+      data-scroll-behavior="smooth"
       className={`${inter.variable} ${playfair.variable} h-full antialiased scroll-smooth`}
+      suppressHydrationWarning
     >
       <head>
-        <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vtqemhmsyflhpxxptdls.supabase.co'} crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vtqemhmsyflhpxxptdls.supabase.co'} />
+        {supabaseUrl && <link rel="preconnect" href={supabaseUrl} crossOrigin="anonymous" />}
+        {supabaseUrl && <link rel="dns-prefetch" href={supabaseUrl} />}
       </head>
       <body className="min-h-full flex flex-col transition-colors duration-300">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

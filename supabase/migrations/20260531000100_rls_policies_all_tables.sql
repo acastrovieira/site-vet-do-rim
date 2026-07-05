@@ -15,6 +15,7 @@ DROP POLICY IF EXISTS "auth_insert_tutores"  ON public.tutores;
 DROP POLICY IF EXISTS "auth_update_tutores"  ON public.tutores;
 DROP POLICY IF EXISTS "auth_delete_tutores"  ON public.tutores;
 DROP POLICY IF EXISTS "admin_all_tutores"    ON public.tutores;
+DROP POLICY IF EXISTS "admin_delete_tutores" ON public.tutores;
 
 -- Garante RLS ativa
 ALTER TABLE public.tutores ENABLE ROW LEVEL SECURITY;
@@ -63,6 +64,7 @@ DROP POLICY IF EXISTS "auth_insert_pets"  ON public.pets;
 DROP POLICY IF EXISTS "auth_update_pets"  ON public.pets;
 DROP POLICY IF EXISTS "auth_delete_pets"  ON public.pets;
 DROP POLICY IF EXISTS "admin_all_pets"    ON public.pets;
+DROP POLICY IF EXISTS "admin_delete_pets" ON public.pets;
 
 ALTER TABLE public.pets ENABLE ROW LEVEL SECURITY;
 

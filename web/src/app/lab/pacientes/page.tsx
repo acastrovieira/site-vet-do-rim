@@ -12,8 +12,7 @@ export const metadata: Metadata = {
 export default async function PacientesPage() {
   const supabase = await createClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: pets, error } = await (supabase as any)
+  const { data: pets, error } = await supabase
     .from('pets')
     .select('id, nome, especie, raca, status_paciente, criado_em, tutores(nome)')
     .order('criado_em', { ascending: false })

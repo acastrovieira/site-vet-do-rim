@@ -50,7 +50,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
     if (!user) { setPersonalStatus('error'); setPersonalMsg('Sessão expirada.'); return }
     const { error } = await supabase
       .from('profiles')
-      .update({ full_name: fullName.trim() || null } as never)
+      .update({ full_name: fullName.trim() || null })
       .eq('id', user.id)
     if (error) {
       setPersonalStatus('error')
@@ -83,7 +83,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
     // Atualiza telefone e endereço em profiles
     const { error } = await supabase
       .from('profiles')
-      .update({ phone: phone.trim() || null, address: address.trim() || null } as never)
+      .update({ phone: phone.trim() || null, address: address.trim() || null })
       .eq('id', user.id)
 
     if (error) {
@@ -255,7 +255,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                 type="button"
                 onClick={() => setShowPw((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                aria-label={showPw ? 'Ocultar senha' : 'Mostrar senha'}
+                aria-label={showPw ? 'Ocultar campo de senha' : 'Mostrar campo de senha'}
               >
                 {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>

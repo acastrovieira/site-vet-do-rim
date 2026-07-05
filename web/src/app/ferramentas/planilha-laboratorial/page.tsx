@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
 import { FreeLabApp } from '@/components/ferramentas/lab-free/FreeLabApp'
@@ -38,7 +39,8 @@ const schema = {
 export default function PlanilhaLaboratorialPage() {
   return (
     <>
-      <script
+      <Script
+        id="planilha-laboratorial-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />

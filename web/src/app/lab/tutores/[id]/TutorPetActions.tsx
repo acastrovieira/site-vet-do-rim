@@ -67,7 +67,7 @@ export function TutorPetActions({ pet, tutorNome }: TutorPetActionsProps) {
           status_paciente: 'obito',
           data_obito: dataObito || null,
           atualizado_em: new Date().toISOString(),
-        } as never)
+        })
         .eq('id', pet.id)
 
       if (!error) {
@@ -81,7 +81,7 @@ export function TutorPetActions({ pet, tutorNome }: TutorPetActionsProps) {
           const triagemIds = triagens.map((t: { id: string }) => t.id)
           await supabase
             .from('follow_ups')
-            .update({ opt_out: true } as never)
+            .update({ opt_out: true })
             .in('triagem_id', triagemIds)
         }
       }
@@ -98,7 +98,7 @@ export function TutorPetActions({ pet, tutorNome }: TutorPetActionsProps) {
         .update({
           status_paciente: 'inativo',
           atualizado_em: new Date().toISOString(),
-        } as never)
+        })
         .eq('id', pet.id)
       setDeleteModal(false)
       router.refresh()
@@ -145,8 +145,8 @@ export function TutorPetActions({ pet, tutorNome }: TutorPetActionsProps) {
 
       {/* ── Modal de Óbito ── */}
       {obitModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" role="dialog" aria-modal aria-labelledby="obito-modal-title">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8 relative">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-3 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal aria-labelledby="obito-modal-title">
+          <div className="relative w-full max-w-lg max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-8">
             <button
               onClick={() => setObitModal(false)}
               className="absolute top-5 right-5 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
@@ -210,7 +210,7 @@ export function TutorPetActions({ pet, tutorNome }: TutorPetActionsProps) {
               </p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => setObitModal(false)}
@@ -233,8 +233,8 @@ export function TutorPetActions({ pet, tutorNome }: TutorPetActionsProps) {
 
       {/* ── Modal de Exclusão ── */}
       {deleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" role="dialog" aria-modal aria-labelledby="delete-modal-title">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-3 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal aria-labelledby="delete-modal-title">
+          <div className="relative w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-8">
             <button
               onClick={() => setDeleteModal(false)}
               className="absolute top-5 right-5 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
@@ -270,7 +270,7 @@ export function TutorPetActions({ pet, tutorNome }: TutorPetActionsProps) {
               />
             </div>
 
-            <div className="flex gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => setDeleteModal(false)}

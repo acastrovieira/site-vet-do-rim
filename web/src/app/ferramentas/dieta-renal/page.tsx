@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
 import { DietaRenalCalculator } from '@/components/ferramentas/DietaRenalCalculator'
@@ -36,7 +37,8 @@ const appSchema = {
 export default function DietaRenalPage() {
   return (
     <>
-      <script
+      <Script
+        id="dieta-renal-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
       />

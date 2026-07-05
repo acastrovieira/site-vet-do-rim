@@ -1,77 +1,99 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-/**
- * POST /api/tutores
- * Cria um novo tutor. Retorna { ok, id } ou { ok: false, error, code }.
- */
+const UF_RE = /^[A-Z]{2}$/
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function badRequest(error: string) {
+  return NextResponse.json({ ok: false, error, code: 'VALIDATION' }, { status: 400 })
+}
+
+function requiredString(value: unknown, field: string) {
+  if (typeof value !== 'string') throw new Error(`${field} invalido`)
+  const trimmed = value.trim()
+  if (!trimmed) throw new Error(`${field} e obrigatorio`)
+  return trimmed
+}
+
+function optionalString(value: unknown, field: string) {
+  if (value === null || value === undefined) return null
+  if (typeof value !== 'string') throw new Error(`${field} invalido`)
+  return value.trim() || null
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
 
-    // Valida sessão
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ ok: false, error: 'Não autenticado', code: 'UNAUTHENTICATED' }, { status: 401 })
+      return NextResponse.json({ ok: false, error: 'Nao autenticado', code: 'UNAUTHENTICATED' }, { status: 401 })
     }
 
     const body = await request.json() as {
-      nome: string
-      telefone: string
-      email: string | null
-      cpf: string | null
-      cep: string | null
-      endereco: string | null
-      cidade: string | null
-      estado: string | null
+      nome?: unknown
+      telefone?: unknown
+      email?: unknown
+      cpf?: unknown
+      cep?: unknown
+      endereco?: unknown
+      cidade?: unknown
+      estado?: unknown
     }
 
-    const { nome, telefone } = body
-    if (!nome?.trim() || !telefone?.trim()) {
-      return NextResponse.json({ ok: false, error: 'Nome e telefone são obrigatórios', code: 'VALIDATION' }, { status: 400 })
-    }
+    const nome = requiredString(body.nome, 'Nome')
+    const telefone = requiredString(body.telefone, 'Telefone')
+    const email = optionalString(body.email, 'Email')
+    const cpf = optionalString(body.cpf, 'CPF')
+    const cep = optionalString(body.cep, 'CEP')
+    const endereco = optionalString(body.endereco, 'Endereco')
+    const cidade = optionalString(body.cidade, 'Cidade')
+    const estado = optionalString(body.estado, 'Estado')
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    if (email && !EMAIL_RE.test(email)) return badRequest('Email invalido')
+    if (estado && !UF_RE.test(estado)) return badRequest('Estado invalido')
+
+    const { data, error } = await supabase
       .from('tutores')
       .insert({
-        nome: nome.trim(),
-        telefone: telefone.trim(),
-        email: body.email ?? null,
-        cpf: body.cpf ?? null,
-        cep: body.cep ?? null,
-        endereco: body.endereco ?? null,
-        cidade: body.cidade ?? null,
-        estado: body.estado ?? null,
+        nome,
+        telefone,
+        email,
+        cpf,
+        cep,
+        endereco,
+        cidade,
+        estado,
       })
       .select('id')
-      .single() as { data: { id: string } | null; error: { message: string; code: string; details: string; hint: string } | null }
+      .single()
 
     if (error || !data) {
       console.error('[POST /api/tutores]', {
         message: error?.message,
         code: error?.code,
         details: error?.details,
-        hint: error?.hint,
         userId: user.id,
       })
 
-      // RLS denial: code 42501 ou message contains "row-level"
       const isRLS = error?.code === '42501' || error?.message?.toLowerCase().includes('row-level')
       return NextResponse.json(
         {
           ok: false,
-          error: error?.message ?? 'Erro desconhecido',
+          error: isRLS ? 'Permissao insuficiente para criar tutor.' : 'Nao foi possivel criar o tutor.',
           code: isRLS ? 'RLS_DENIED' : (error?.code ?? 'UNKNOWN'),
-          hint: error?.hint ?? null,
         },
-        { status: 500 }
+        { status: isRLS ? 403 : 500 }
       )
     }
 
     return NextResponse.json({ ok: true, id: data.id })
   } catch (err) {
     console.error('[POST /api/tutores] Unexpected error:', err)
+    if (err instanceof SyntaxError) return badRequest('JSON invalido')
+    if (err instanceof Error && (err.message.endsWith('invalido') || err.message.endsWith('obrigatorio'))) {
+      return badRequest(err.message)
+    }
     return NextResponse.json({ ok: false, error: 'Erro interno inesperado', code: 'INTERNAL' }, { status: 500 })
   }
 }

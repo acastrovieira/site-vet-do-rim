@@ -6,7 +6,6 @@ import { Zap, AlertTriangle, CheckCircle2, Info, ExternalLink, ArrowRight } from
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Species  = 'cao' | 'gato'
 type UOStatus = 'normal' | 'oliguria' | 'anuria' | 'nao_avaliado'
 
 interface AKIResult {

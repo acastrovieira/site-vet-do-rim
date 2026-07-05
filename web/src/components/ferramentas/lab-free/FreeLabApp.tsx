@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { FreePatient } from '@/lib/lab-free/types'
 import { getPatients } from '@/lib/lab-free/storage'
 import { FreePatientList } from './FreePatientList'
@@ -16,13 +16,18 @@ type View = 'list' | 'dashboard'
  */
 export function FreeLabApp() {
   const [view, setView] = useState<View>('list')
-  const [patients, setPatients] = useState<FreePatient[]>(() => getPatients())
+  const [patients, setPatients] = useState<FreePatient[]>([])
   const [currentPatient, setCurrentPatient] = useState<FreePatient | null>(null)
   const [showForm, setShowForm] = useState(false)
 
   const refreshPatients = useCallback(() => {
     setPatients(getPatients())
   }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(refreshPatients, 0)
+    return () => window.clearTimeout(timer)
+  }, [refreshPatients])
 
   function handleSelectPatient(p: FreePatient) {
     setCurrentPatient(p)

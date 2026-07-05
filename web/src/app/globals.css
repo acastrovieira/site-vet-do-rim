@@ -8,21 +8,31 @@
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-playfair), Georgia, serif;
 
-  /* ── Paleta "Clinical Premium" — Verde Clínico + Areia + Off-White ── */
+  /* ── Paleta "Navy Premium" — Azul Marinho + Azul Clínico ── */
 
-  /* Clinical green — cor primária de ação */
-  --color-clinical-50:  #F0F7F4;
-  --color-clinical-100: #E0EFE8;
-  --color-clinical-200: #C0DFD0;
-  --color-clinical-300: #8FC4AC;
-  --color-clinical-400: #5DA88A;
-  --color-clinical-500: #3A8C6E;
-  --color-clinical-600: #2D5A4A;
-  --color-clinical-700: #234A3C;
-  --color-clinical-800: #1A3830;
-  --color-clinical-900: #122820;
+  /* Azul marinho profundo — cor estrutural e de ação */
+  --color-navy-50:  #EEF3FA;
+  --color-navy-100: #D5E2F3;
+  --color-navy-200: #ACC5E7;
+  --color-navy-300: #6F98D1;
+  --color-navy-400: #3E71B8;
+  --color-navy-500: #1E4D8C;
+  --color-navy-600: #1A3A6B;
+  --color-navy-700: #152F58;
+  --color-navy-800: #0F2244;
+  --color-navy-900: #091530;
 
-  /* Dourado sóbrio — acento decorativo (não dominante) */
+  /* Azul claro clínico — acento vibrante */
+  --color-sky-50:  #EDF6FF;
+  --color-sky-100: #DBEFFE;
+  --color-sky-200: #BAE0FD;
+  --color-sky-300: #7DC4F9;
+  --color-sky-400: #38A4F5;
+  --color-sky-500: #0E87E0;
+  --color-sky-600: #0068BF;
+  --color-sky-700: #00529A;
+
+  /* Dourado sóbrio — logo e acento decorativo */
   --color-sand-50:  #FAF7F2;
   --color-sand-100: #F5F0E8;
   --color-sand-200: #EBE0CC;
@@ -32,44 +42,55 @@
   --color-sand-600: #8E7020;
   --color-sand-700: #6B5318;
 
-  /* Navy institucional — seções de contraste (sóbrio, não neon) */
+  /* Aliases brand (compatibilidade com código existente) */
   --color-brand-50:  #EEF3FA;
-  --color-brand-100: #D6E2F2;
-  --color-brand-200: #ADC5E5;
-  --color-brand-500: #2B4A7A;
-  --color-brand-700: #1B3050;
-  --color-brand-800: #142540;
-  --color-brand-900: #0C1830;
+  --color-brand-100: #D5E2F3;
+  --color-brand-200: #ACC5E7;
+  --color-brand-500: #1E4D8C;
+  --color-brand-700: #0F2244;
+  --color-brand-800: #091530;
+  --color-brand-900: #050D20;
 
-  /* Neutrals clínicos */
-  --color-science-50:  #F7F9F8;
-  --color-science-100: #F0F5F2;
-  --color-science-200: #E0EAE4;
-  --color-science-400: #8FA89E;
-  --color-science-500: #6B8880;
-  --color-science-700: #4A5E56;
-  --color-science-900: #1A2B22;
+  /* Neutrals clínicos — texto e superfícies */
+  --color-science-50:  #F5F8FF;
+  --color-science-100: #EBF1FC;
+  --color-science-200: #D4E2F5;
+  --color-science-400: #7A9BC8;
+  --color-science-500: #4F72A6;
+  --color-science-700: #2B4A7A;
+  --color-science-900: #0D1F3C;
 
-  /* Alias gold (compatibilidade) */
+  /* Gold aliases */
   --color-gold-400: #C8A97A;
   --color-gold-500: #B8922A;
   --color-gold-600: #8E7020;
+
+  /* Clinical aliases → navy */
+  --color-clinical-50:  #EEF3FA;
+  --color-clinical-100: #D5E2F3;
+  --color-clinical-200: #ACC5E7;
+  --color-clinical-500: #1E4D8C;
+  --color-clinical-600: #1A3A6B;
+  --color-clinical-700: #152F58;
+  --color-clinical-800: #0F2244;
+  --color-clinical-900: #091530;
 }
 
 /* ── Base ───────────────────────────────────────────────── */
 @layer base {
   :root {
-    --bg-main: #F7F9F8;
-    --bg-alt: #F0F5F2;
-    --text-heading: #1A2B22;
-    --text-body: #4A5E56;
-    --text-muted: #8FA89E;
+    --bg-main: #F5F8FF;
+    --bg-alt: #EBF1FC;
+    --text-heading: #0D1F3C;
+    --text-body: #2B4A7A;
+    --text-muted: #7A9BC8;
     --card-bg: #FFFFFF;
-    --card-border: #E0EAE4;
-    --card-shadow: rgba(45, 90, 74, 0.07);
-    --clinical-primary: #2D5A4A;
-    --clinical-primary-hover: #234A3C;
-    --clinical-accent-bg: #E8F2EE;
+    --card-border: #D4E2F5;
+    --card-shadow: rgba(30, 77, 140, 0.08);
+    --navy-primary: #1A3A6B;
+    --navy-primary-hover: #152F58;
+    --navy-accent-bg: #EEF3FA;
+    --sky-accent: #0E87E0;
   }
 
   html {
@@ -90,24 +111,14 @@
     color: var(--text-heading);
   }
 
-  :target {
-    scroll-margin-top: 5rem;
-  }
+  :target { scroll-margin-top: 5rem; }
 
-  /* Scrollbar clínica discreta */
   ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: #F0F5F2; }
-  ::-webkit-scrollbar-thumb {
-    background: #C0DFD0;
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover { background: #8FC4AC; }
+  ::-webkit-scrollbar-track { background: #EBF1FC; }
+  ::-webkit-scrollbar-thumb { background: #ACC5E7; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6F98D1; }
 
-  /* Selection clínica */
-  ::selection {
-    background: rgba(45, 90, 74, 0.12);
-    color: #1A2B22;
-  }
+  ::selection { background: rgba(30, 77, 140, 0.12); color: #0D1F3C; }
 }
 
 /* ── Utilities ─────────────────────────────────────────── */
@@ -116,16 +127,30 @@
 
   /* ── GRADIENTES DE TEXTO ──────────────────────────────── */
 
-  /* Verde clínico */
-  .text-gradient-clinical {
-    background: linear-gradient(135deg, #3A8C6E 0%, #2D5A4A 60%, #1A3830 100%);
+  /* Azul marinho */
+  .text-gradient-navy {
+    background: linear-gradient(135deg, #3E71B8 0%, #1A3A6B 60%, #091530 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* Dourado sóbrio */
-  .text-gradient-sand {
+  /* Azul claro vibrante */
+  .text-gradient-sky {
+    background: linear-gradient(135deg, #38A4F5 0%, #0E87E0 50%, #0068BF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Alias compatibilidade */
+  .text-gradient-clinical {
+    background: linear-gradient(135deg, #3E71B8 0%, #1A3A6B 60%, #091530 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-gold {
     background: linear-gradient(135deg, #D8C8A4 0%, #C8A97A 50%, #B8922A 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -134,43 +159,59 @@
 
   /* ── CARDS CLÍNICOS ──────────────────────────────────── */
 
-  /* Card padrão */
   .card-clinical {
     background: #FFFFFF;
     border: 1px solid var(--card-border);
-    box-shadow: 0 1px 4px var(--card-shadow), 0 0 0 0 transparent;
+    box-shadow: 0 2px 8px var(--card-shadow);
     transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
   }
   .card-clinical:hover {
-    border-color: rgba(45, 90, 74, 0.22);
-    box-shadow: 0 6px 24px rgba(45, 90, 74, 0.09), 0 1px 4px rgba(45, 90, 74, 0.05);
+    border-color: rgba(30, 77, 140, 0.28);
+    box-shadow: 0 8px 28px rgba(30, 77, 140, 0.12), 0 2px 6px rgba(30, 77, 140, 0.06);
     transform: translateY(-3px);
   }
 
-  /* Card suave (para stat) */
   .card-stat {
     background: #FFFFFF;
-    border: 1px solid #E8F2EE;
-    box-shadow: 0 2px 8px rgba(45, 90, 74, 0.05);
+    border: 1px solid #D4E2F5;
+    box-shadow: 0 2px 8px rgba(30, 77, 140, 0.06);
     transition: all 0.3s ease;
   }
   .card-stat:hover {
-    border-color: rgba(45, 90, 74, 0.2);
-    box-shadow: 0 8px 28px rgba(45, 90, 74, 0.1);
+    border-color: rgba(30, 77, 140, 0.25);
+    box-shadow: 0 8px 28px rgba(30, 77, 140, 0.1);
     transform: translateY(-2px);
   }
 
-  /* Glass claro — para seções dark leves */
+  /* Alias compatibilidade */
+  .card-premium {
+    background: #FFFFFF;
+    border: 1px solid var(--card-border);
+    box-shadow: 0 2px 8px var(--card-shadow);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .card-premium:hover {
+    border-color: rgba(30, 77, 140, 0.28);
+    box-shadow: 0 8px 28px rgba(30, 77, 140, 0.12), 0 2px 6px rgba(30, 77, 140, 0.06);
+    transform: translateY(-3px);
+  }
+
   .glass-light {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.07);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
   }
 
   /* ── BOTÕES ──────────────────────────────────────────── */
 
-  /* Primário — verde clínico sólido */
+  /* Primário — navy sólido */
   .btn-primary {
     display: inline-flex;
     align-items: center;
@@ -182,8 +223,8 @@
     font-size: 0.875rem;
     letter-spacing: 0.01em;
     color: #FFFFFF;
-    background: var(--clinical-primary);
-    box-shadow: 0 4px 16px rgba(45, 90, 74, 0.22), 0 1px 3px rgba(45, 90, 74, 0.15);
+    background: var(--navy-primary);
+    box-shadow: 0 4px 18px rgba(26, 58, 107, 0.28), 0 1px 3px rgba(26, 58, 107, 0.15);
     transition: all 0.25s ease;
     position: relative;
     overflow: hidden;
@@ -192,17 +233,17 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, rgba(255,255,255,0.08) 0%, transparent 100%);
+    background: linear-gradient(to bottom, rgba(255,255,255,0.09) 0%, transparent 100%);
     pointer-events: none;
   }
   .btn-primary:hover {
-    background: var(--clinical-primary-hover);
-    box-shadow: 0 6px 22px rgba(45, 90, 74, 0.3), 0 1px 3px rgba(45, 90, 74, 0.15);
+    background: var(--navy-primary-hover);
+    box-shadow: 0 6px 24px rgba(26, 58, 107, 0.35), 0 1px 3px rgba(26, 58, 107, 0.15);
     transform: translateY(-2px);
   }
   .btn-primary:active { transform: translateY(0); }
 
-  /* Secundário — outline sóbrio */
+  /* Secundário — outline navy */
   .btn-secondary {
     display: inline-flex;
     align-items: center;
@@ -212,18 +253,18 @@
     border-radius: 0.75rem;
     font-weight: 600;
     font-size: 0.875rem;
-    color: var(--clinical-primary);
-    border: 1.5px solid rgba(45, 90, 74, 0.25);
+    color: var(--navy-primary);
+    border: 1.5px solid rgba(26, 58, 107, 0.28);
     background: transparent;
     transition: all 0.25s ease;
   }
   .btn-secondary:hover {
-    background: var(--clinical-accent-bg);
-    border-color: rgba(45, 90, 74, 0.4);
+    background: #EEF3FA;
+    border-color: rgba(26, 58, 107, 0.45);
     transform: translateY(-1px);
   }
 
-  /* Botão ghost sobre fundo escuro */
+  /* Ghost sobre fundo escuro */
   .btn-ghost-light {
     display: inline-flex;
     align-items: center;
@@ -233,14 +274,14 @@
     border-radius: 0.75rem;
     font-weight: 600;
     font-size: 0.875rem;
-    color: rgba(255,255,255,0.85);
-    border: 1.5px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.88);
+    border: 1.5px solid rgba(255,255,255,0.22);
+    background: rgba(255,255,255,0.07);
     transition: all 0.25s ease;
   }
   .btn-ghost-light:hover {
-    background: rgba(255,255,255,0.12);
-    border-color: rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(255,255,255,0.38);
     color: #FFFFFF;
   }
 
@@ -250,20 +291,17 @@
   }
   .hover-lift:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(45, 90, 74, 0.1);
+    box-shadow: 0 14px 36px rgba(26, 58, 107, 0.12);
   }
 
-  /* ── FADE UP ─────────────────────────────────────────── */
+  /* ── ANIMAÇÕES ───────────────────────────────────────── */
   .animate-fade-up {
     animation: fadeUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
     will-change: transform, opacity;
   }
 
-  .animate-fade-in {
-    animation: fadeIn 0.55s ease both;
-  }
+  .animate-fade-in { animation: fadeIn 0.55s ease both; }
 
-  /* ── SCROLL REVEAL ───────────────────────────────────── */
   .scroll-reveal {
     opacity: 0;
     transform: translate3d(0, 24px, 0);
@@ -271,61 +309,43 @@
                 transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform, opacity;
   }
-  .scroll-reveal.revealed {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
+  .scroll-reveal.revealed { opacity: 1; transform: translate3d(0, 0, 0); }
 
-  /* ── FLOAT SUAVE ─────────────────────────────────────── */
-  .animate-float {
-    animation: float 7s ease-in-out infinite;
-  }
+  .animate-float { animation: float 7s ease-in-out infinite; }
+  .animate-float-gentle { animation: floatGentle 9s ease-in-out infinite; }
+  .animate-float-slow { animation: floatSlow 14s ease-in-out infinite; }
+  .animate-pulse-glow-intense { animation: floatGentle 9s ease-in-out infinite; }
+  .animate-pulse-glow { animation: floatGentle 9s ease-in-out infinite; }
 
-  /* ── LOGO GLOW (versão clínica — discreta) ───────────── */
+  /* ── LOGO GLOW ───────────────────────────────────────── */
   .logo-glow {
-    filter: drop-shadow(0 4px 16px rgba(45, 90, 74, 0.15))
+    filter: drop-shadow(0 4px 16px rgba(26, 58, 107, 0.18))
             drop-shadow(0 1px 4px rgba(0,0,0,0.08));
     transition: filter 0.4s ease;
   }
   .logo-glow:hover {
-    filter: drop-shadow(0 6px 24px rgba(45, 90, 74, 0.22))
+    filter: drop-shadow(0 6px 24px rgba(26, 58, 107, 0.28))
             drop-shadow(0 2px 6px rgba(0,0,0,0.1));
   }
 
-  /* Logo glow para fundo escuro — dourado sóbrio */
   .logo-glow-dark {
-    filter: drop-shadow(0 4px 20px rgba(200, 169, 122, 0.3))
+    filter: drop-shadow(0 4px 20px rgba(200, 169, 122, 0.35))
             drop-shadow(0 1px 4px rgba(0,0,0,0.2));
     transition: filter 0.4s ease;
   }
   .logo-glow-dark:hover {
-    filter: drop-shadow(0 6px 28px rgba(200, 169, 122, 0.45))
+    filter: drop-shadow(0 6px 28px rgba(200, 169, 122, 0.5))
             drop-shadow(0 2px 6px rgba(0,0,0,0.25));
   }
 
-  /* Alias compatibilidade */
-  .logo-ultra-glow { filter: drop-shadow(0 4px 20px rgba(200, 169, 122, 0.3)); }
-  .animate-pulse-glow-intense { animation: floatGentle 9s ease-in-out infinite; }
-  .animate-pulse-glow { animation: floatGentle 9s ease-in-out infinite; }
+  .logo-ultra-glow { filter: drop-shadow(0 4px 20px rgba(200, 169, 122, 0.35)); }
+  .text-glow { text-shadow: 0 2px 16px rgba(26, 58, 107, 0.15); }
 
-  /* ── TEXT GLOW (clínico — sem excesso) ──────────────── */
-  .text-glow {
-    text-shadow: 0 2px 16px rgba(45, 90, 74, 0.12);
-  }
-
-  /* ── FLOAT GENTIL (para logo) ────────────────────────── */
-  .animate-float-gentle {
-    animation: floatGentle 9s ease-in-out infinite;
-  }
-  .animate-float-slow {
-    animation: floatSlow 14s ease-in-out infinite;
-  }
-
-  /* ── DIVISÓRIA CLÍNICA ───────────────────────────────── */
+  /* ── DIVISÓRIA ───────────────────────────────────────── */
   .section-divider {
     width: 48px;
     height: 2px;
-    background: linear-gradient(90deg, transparent, #2D5A4A, transparent);
+    background: linear-gradient(90deg, transparent, #1A3A6B, transparent);
     margin: 0 auto;
     border-radius: 2px;
   }
@@ -336,7 +356,6 @@
     margin: 0 auto;
     border-radius: 2px;
   }
-  /* alias gold = sand */
   .section-divider-gold {
     width: 48px;
     height: 2px;
@@ -345,7 +364,7 @@
     border-radius: 2px;
   }
 
-  /* ── BADGE CLÍNICO ───────────────────────────────────────── */
+  /* ── BADGE ───────────────────────────────────────────── */
   .badge-clinical {
     display: inline-flex;
     align-items: center;
@@ -356,18 +375,18 @@
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--clinical-primary);
-    background: var(--clinical-accent-bg);
-    border: 1px solid rgba(45, 90, 74, 0.15);
+    color: #1A3A6B;
+    background: #EEF3FA;
+    border: 1px solid rgba(26, 58, 107, 0.18);
   }
 
-  /* ── MEDICAL GRID (pontos em baixa opacidade) ────────── */
+  /* ── MEDICAL GRID ────────────────────────────────────── */
   .medical-grid {
-    background-image: radial-gradient(circle, rgba(45, 90, 74, 0.05) 1px, transparent 1px);
+    background-image: radial-gradient(circle, rgba(30, 77, 140, 0.055) 1px, transparent 1px);
     background-size: 28px 28px;
   }
 
-  /* ── AURORA CLÍNICA (muito discreta, luz difusa off-white) */
+  /* ── AURORA CLÍNICA (fundo claro) ────────────────────── */
   .aurora-light {
     position: absolute;
     inset: 0;
@@ -382,8 +401,8 @@
     width: 65%;
     height: 70%;
     background: radial-gradient(ellipse,
-      rgba(45, 90, 74, 0.045) 0%,
-      rgba(60, 140, 110, 0.02) 45%,
+      rgba(30, 77, 140, 0.06) 0%,
+      rgba(14, 135, 224, 0.025) 45%,
       transparent 70%
     );
     animation: auroraMove 18s ease-in-out infinite alternate;
@@ -398,8 +417,8 @@
     width: 55%;
     height: 60%;
     background: radial-gradient(ellipse,
-      rgba(200, 169, 122, 0.04) 0%,
-      rgba(200, 169, 122, 0.015) 45%,
+      rgba(200, 169, 122, 0.05) 0%,
+      rgba(200, 169, 122, 0.02) 45%,
       transparent 70%
     );
     animation: auroraMove 22s ease-in-out infinite alternate-reverse;
@@ -422,7 +441,7 @@
     width: 70%;
     height: 70%;
     background: radial-gradient(ellipse,
-      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.05) 0%,
       transparent 65%
     );
     animation: auroraMove 16s ease-in-out infinite alternate;
@@ -430,7 +449,7 @@
     filter: blur(60px);
   }
 
-  /* ── SHIMMER (botão CTA, versão sóbria) ─────────────── */
+  /* ── SHIMMER (botão CTA sóbrio) ──────────────────────── */
   .shimmer-gold {
     position: relative;
     overflow: hidden;
@@ -442,16 +461,16 @@
     background: linear-gradient(
       105deg,
       transparent 20%,
-      rgba(255, 255, 255, 0.12) 45%,
-      rgba(255, 255, 255, 0.18) 50%,
-      rgba(255, 255, 255, 0.12) 55%,
+      rgba(255, 255, 255, 0.14) 45%,
+      rgba(255, 255, 255, 0.2) 50%,
+      rgba(255, 255, 255, 0.14) 55%,
       transparent 80%
     );
     animation: shimmerSober 3.5s ease-in-out infinite;
     pointer-events: none;
   }
 
-  /* ── GRADIENT BORDER SUTIL ───────────────────────────── */
+  /* ── GRADIENT BORDER ─────────────────────────────────── */
   .gradient-border {
     position: relative;
   }
@@ -461,9 +480,9 @@
     inset: -1px;
     border-radius: inherit;
     background: linear-gradient(135deg,
-      rgba(45, 90, 74, 0.3) 0%,
+      rgba(26, 58, 107, 0.3) 0%,
       rgba(200, 169, 122, 0.2) 50%,
-      rgba(45, 90, 74, 0.3) 100%
+      rgba(26, 58, 107, 0.3) 100%
     );
     z-index: -1;
     padding: 1px;
@@ -473,7 +492,6 @@
     -webkit-mask-composite: xor;
   }
 
-  /* ── SHIMMER genérico ────────────────────────────────── */
   .shimmer {
     position: relative;
     overflow: hidden;
@@ -482,23 +500,9 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.07) 50%, transparent 100%);
     animation: shimmer 2.5s ease-in-out infinite;
   }
-
-  /* Alias compatibilidade card-premium — CSS direto (sem @apply) */
-  .card-premium {
-    background: #FFFFFF;
-    border: 1px solid var(--card-border);
-    box-shadow: 0 1px 4px var(--card-shadow), 0 0 0 0 transparent;
-    transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-  }
-  .card-premium:hover {
-    border-color: rgba(45, 90, 74, 0.22);
-    box-shadow: 0 6px 24px rgba(45, 90, 74, 0.09), 0 1px 4px rgba(45, 90, 74, 0.05);
-    transform: translateY(-3px);
-  }
-  .glass-card { background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); }
 }
 
 /* ── Keyframes ─────────────────────────────────────────── */
@@ -546,20 +550,13 @@
   100% { transform: translateX(150%); }
 }
 
-@keyframes orbFloat {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25%       { transform: translate(2%, -4%) scale(1.04); }
-  50%       { transform: translate(-3%, 3%) scale(0.97); }
-  75%       { transform: translate(4%, 1%) scale(1.03); }
-}
-
-/* ── Prose (artigos científicos) ───────────────────────── */
+/* ── Prose ─────────────────────────────────────────────── */
 .prose-vet {
-  --tw-prose-body: #4A5E56;
-  --tw-prose-headings: #1A2B22;
-  --tw-prose-links: #2D5A4A;
-  --tw-prose-bold: #1A2B22;
-  --tw-prose-quotes: #8FA89E;
-  --tw-prose-code: #2D5A4A;
+  --tw-prose-body: #2B4A7A;
+  --tw-prose-headings: #0D1F3C;
+  --tw-prose-links: #1A3A6B;
+  --tw-prose-bold: #0D1F3C;
+  --tw-prose-quotes: #7A9BC8;
+  --tw-prose-code: #1A3A6B;
   max-width: 72ch;
 }

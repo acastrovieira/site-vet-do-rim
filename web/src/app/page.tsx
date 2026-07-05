@@ -44,16 +44,16 @@ const especialidades = [
     title: 'Nefrologia Veterinária',
     description:
       'Diagnóstico e manejo clínico de doenças renais agudas e crônicas em cães e gatos, com estadiamento IRIS e protocolos baseados em evidências.',
-    color: '#2D5A4A',
-    bg: '#E8F2EE',
+    color: '#1A3A6B',
+    bg: '#EEF3FA',
   },
   {
     icon: Microscope,
     title: 'Urologia Veterinária',
     description:
       'Avaliação e tratamento de urolitíase, cistite, obstrução uretral e anomalias do trato urinário com abordagem minimamente invasiva.',
-    color: '#2B4A7A',
-    bg: '#EEF3FA',
+    color: '#0068BF',
+    bg: '#EDF6FF',
   },
   {
     icon: HeartPulse,
@@ -68,8 +68,8 @@ const especialidades = [
     title: 'Lab Evolution (IA)',
     description:
       'Plataforma digital com dashboards clínicos, acompanhamento longitudinal de biomarcadores renais e assistência por inteligência artificial.',
-    color: '#4A5E56',
-    bg: '#F0F5F2',
+    color: '#2B4A7A',
+    bg: '#EBF1FC',
   },
 ]
 
@@ -91,8 +91,8 @@ const artigosFeatured = [
     categoria: 'Nefrologia',
     leitura: '8 min',
     icon: FlaskConical,
-    accentColor: '#2D5A4A',
-    accentBg: '#E8F2EE',
+    accentColor: '#1A3A6B',
+    accentBg: '#EEF3FA',
   },
   {
     slug: 'taxa-filtracao-glomerular-veterinaria',
@@ -102,8 +102,8 @@ const artigosFeatured = [
     categoria: 'Diagnóstico',
     leitura: '10 min',
     icon: Microscope,
-    accentColor: '#2B4A7A',
-    accentBg: '#EEF3FA',
+    accentColor: '#0068BF',
+    accentBg: '#EDF6FF',
   },
   {
     slug: 'manejo-nutricional-doenca-renal',
@@ -134,7 +134,7 @@ function SectionHeading({
     <div className="text-center mb-14">
       <p
         className={`text-xs font-semibold uppercase tracking-[0.12em] mb-3 ${
-          light ? 'text-clinical-300' : 'text-clinical-600'
+          light ? 'text-sky-300' : 'text-navy-600'
         }`}
       >
         {label}
@@ -182,7 +182,7 @@ export default function HomePage() {
         <section
           className="relative min-h-screen flex items-center overflow-hidden"
           style={{
-            background: 'linear-gradient(160deg, #F7F9F8 0%, #F0F5F2 40%, #EAF1EC 100%)',
+            background: 'linear-gradient(160deg, #F5F8FF 0%, #EBF1FC 45%, #E2ECFA 100%)',
           }}
           aria-labelledby="hero-heading"
         >
@@ -208,18 +208,18 @@ export default function HomePage() {
               {/* ── Coluna de texto ──────────────────────────── */}
               <div className="flex-1 text-center lg:text-left">
 
-                {/* Badge clínico */}
+                {/* Badge navy */}
                 <div
                   className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-[0.1em] mb-8 animate-fade-up"
                   style={{
-                    background: '#E8F2EE',
-                    border: '1px solid rgba(45,90,74,0.15)',
-                    color: '#2D5A4A',
+                    background: '#EEF3FA',
+                    border: '1px solid rgba(26,58,107,0.18)',
+                    color: '#1A3A6B',
                   }}
                 >
                   <span
                     className="inline-block h-1.5 w-1.5 rounded-full animate-pulse"
-                    style={{ background: '#2D5A4A' }}
+                    style={{ background: '#1E4D8C' }}
                     aria-hidden
                   />
                   Nefrologia &amp; Urologia Veterinária
@@ -229,10 +229,10 @@ export default function HomePage() {
                 <h1
                   id="hero-heading"
                   className="font-display text-5xl sm:text-6xl lg:text-[4.5rem] font-bold leading-[1.06] text-balance animate-fade-up"
-                  style={{ animationDelay: '0.08s', color: '#1A2B22' }}
+                  style={{ animationDelay: '0.08s', color: '#0D1F3C' }}
                 >
                   Medicina renal{' '}
-                  <span className="text-gradient-clinical">especializada</span>
+                  <span className="text-gradient-sky">especializada</span>
                   <br className="hidden sm:block" />
                   {' '}para o seu animal
                 </h1>
@@ -240,7 +240,7 @@ export default function HomePage() {
                 {/* Subtítulo */}
                 <p
                   className="mt-6 text-lg sm:text-xl leading-relaxed text-balance max-w-2xl mx-auto lg:mx-0 animate-fade-up"
-                  style={{ animationDelay: '0.16s', color: '#4A5E56' }}
+                  style={{ animationDelay: '0.16s', color: '#2B4A7A' }}
                 >
                   Diagnóstico preciso e manejo clínico individualizado de doenças
                   renais e urológicas em cães e gatos — com protocolos IRIS, empatia
@@ -274,7 +274,7 @@ export default function HomePage() {
                 {/* Credenciais */}
                 <p
                   className="mt-8 text-xs animate-fade-up"
-                  style={{ animationDelay: '0.32s', color: '#8FA89E' }}
+                  style={{ animationDelay: '0.32s', color: '#7A9BC8' }}
                 >
                   Referência em nefrologia veterinária · Protocolos IRIS e ACVIM · Educação continuada
                 </p>
@@ -331,8 +331,8 @@ export default function HomePage() {
                     aria-hidden
                   />
                   <Image
-                    src="/logo/Monocromática - Dourada.png"
-                    alt="Vet do Rim — Logo dourada"
+                    src="/logo/Monocrom%C3%A1tica%20-%20Azul%20Escuro%20(fundo%20claro).png"
+                    alt="Vet do Rim — Logo azul"
                     width={340}
                     height={340}
                     priority
@@ -358,7 +358,7 @@ export default function HomePage() {
         <section
           aria-label="Números do Vet do Rim"
           className="bg-white"
-          style={{ borderBottom: '1px solid #E8F2EE' }}
+          style={{ borderBottom: '1px solid #D4E2F5' }}
         >
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <AnimatedStats />
@@ -371,7 +371,7 @@ export default function HomePage() {
         <section
           id="especialidades"
           className="py-24 relative overflow-hidden"
-          style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F0F5F2 100%)' }}
+          style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #EBF1FC 100%)' }}
           aria-labelledby="especialidades-heading"
         >
           <div className="aurora-light" aria-hidden />
@@ -424,7 +424,7 @@ export default function HomePage() {
           id="demo"
           className="py-24 relative overflow-hidden"
           aria-labelledby="demo-heading"
-          style={{ background: 'linear-gradient(180deg, #1B3050 0%, #162640 100%)' }}
+          style={{ background: 'linear-gradient(180deg, #1A3A6B 0%, #0F2244 100%)' }}
         >
           <div className="aurora" aria-hidden />
           {/* Grid de pontos brancos muito sutis */}
@@ -455,7 +455,7 @@ export default function HomePage() {
           id="ferramentas"
           className="py-24 relative overflow-hidden"
           aria-labelledby="ferramentas-heading"
-          style={{ background: 'linear-gradient(180deg, #162640 0%, #1A3830 100%)' }}
+          style={{ background: 'linear-gradient(180deg, #0F2244 0%, #091530 100%)' }}
         >
           <div className="aurora" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -488,7 +488,7 @@ export default function HomePage() {
         <section
           id="sobre"
           className="py-24 relative overflow-hidden"
-          style={{ background: 'linear-gradient(180deg, #F0F5F2 0%, #FFFFFF 100%)' }}
+          style={{ background: 'linear-gradient(180deg, #EBF1FC 0%, #FFFFFF 100%)' }}
           aria-labelledby="diferenciais-heading"
         >
           <div className="aurora-light" aria-hidden />
@@ -497,25 +497,25 @@ export default function HomePage() {
 
               {/* Texto */}
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-4" style={{ color: '#2D5A4A' }}>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-4" style={{ color: '#1A3A6B' }}>
                   Por que escolher
                 </p>
                 <div className="section-divider mb-5" style={{ margin: '0 0 1.25rem 0' }} />
                 <h2
                   id="diferenciais-heading"
                   className="font-display text-3xl sm:text-4xl font-bold mb-5"
-                  style={{ color: '#1A2B22' }}
+                  style={{ color: '#0D1F3C' }}
                 >
                   Medicina veterinária de ponta, com o cuidado que o seu animal merece
                 </h2>
-                <p className="leading-relaxed mb-8" style={{ color: '#6B8880' }}>
+                <p className="leading-relaxed mb-8" style={{ color: '#4F72A6' }}>
                   Unimos rigor técnico científico baseado em protocolos internacionais IRIS e ACVIM
                   com um atendimento humanizado e tecnologia digital para acompanhamento contínuo.
                 </p>
                 <Link
                   href="/lab"
                   className="inline-flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:gap-3"
-                  style={{ color: '#2D5A4A' }}
+                  style={{ color: '#1A3A6B' }}
                 >
                   Conhecer o Lab Evolution
                   <ArrowRight className="h-4 w-4" aria-hidden />
@@ -530,12 +530,12 @@ export default function HomePage() {
                     className="flex items-start gap-3 p-4 rounded-xl card-clinical group"
                   >
                     <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors duration-300 group-hover:bg-clinical-100"
-                      style={{ background: '#E8F2EE', color: '#2D5A4A' }}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors duration-300"
+                      style={{ background: '#EEF3FA', color: '#1A3A6B' }}
                     >
                       <Icon className="h-4 w-4" strokeWidth={1.8} aria-hidden />
                     </div>
-                    <span className="text-sm font-medium" style={{ color: '#4A5E56' }}>
+                    <span className="text-sm font-medium" style={{ color: '#2B4A7A' }}>
                       {text}
                     </span>
                   </li>
@@ -551,7 +551,7 @@ export default function HomePage() {
         <section
           className="py-24 relative overflow-hidden"
           aria-labelledby="avaliacoes-heading"
-          style={{ background: 'linear-gradient(160deg, #234A3C 0%, #1A3830 100%)' }}
+          style={{ background: 'linear-gradient(160deg, #1A3A6B 0%, #0F2244 100%)' }}
         >
           <div className="aurora" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -579,14 +579,14 @@ export default function HomePage() {
             {/* Header da seção */}
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#2D5A4A' }}>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#1A3A6B' }}>
                   Conteúdo científico
                 </p>
                 <div className="section-divider mb-3" style={{ margin: '0 0 0.75rem 0' }} />
                 <h2
                   id="artigos-heading"
                   className="font-display text-3xl font-bold"
-                  style={{ color: '#1A2B22' }}
+                  style={{ color: '#0D1F3C' }}
                 >
                   Artigos em destaque
                 </h2>
@@ -683,7 +683,7 @@ export default function HomePage() {
         ════════════════════════════════════════════════════════ */}
         <section
           className="py-24 relative overflow-hidden"
-          style={{ background: 'linear-gradient(180deg, #F7F9F8 0%, #EAF1EC 100%)' }}
+          style={{ background: 'linear-gradient(180deg, #EBF1FC 0%, #F5F8FF 100%)' }}
           aria-labelledby="cta-heading"
         >
           <div className="aurora-light" aria-hidden />
@@ -691,14 +691,14 @@ export default function HomePage() {
             <div
               className="rounded-3xl p-10 sm:p-14 bg-white"
               style={{
-                border: '1px solid rgba(45,90,74,0.12)',
-                boxShadow: '0 8px 40px rgba(45,90,74,0.08), 0 2px 8px rgba(45,90,74,0.04)',
+                border: '1px solid rgba(26,58,107,0.14)',
+                boxShadow: '0 8px 40px rgba(26,58,107,0.08), 0 2px 8px rgba(26,58,107,0.04)',
               }}
             >
               {/* Símbolo da logo acima do título */}
               <div className="flex justify-center mb-8">
                 <Image
-                  src="/logo/5.png"
+                  src="/logo/5-navy.png"
                   alt=""
                   width={80}
                   height={80}
@@ -711,11 +711,11 @@ export default function HomePage() {
               <h2
                 id="cta-heading"
                 className="font-display text-3xl sm:text-4xl font-bold mb-4"
-                style={{ color: '#1A2B22' }}
+                style={{ color: '#0D1F3C' }}
               >
                 Gerencie seus pacientes renais com inteligência
               </h2>
-              <p className="text-lg mb-8 leading-relaxed" style={{ color: '#6B8880' }}>
+              <p className="text-lg mb-8 leading-relaxed" style={{ color: '#4F72A6' }}>
                 O Lab Evolution centraliza laudos, histórico clínico e dashboards
                 de biomarcadores renais em uma plataforma segura e intuitiva.
               </p>

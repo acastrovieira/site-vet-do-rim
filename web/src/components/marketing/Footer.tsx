@@ -43,8 +43,8 @@ export function Footer() {
     <footer
       className="relative z-10 mt-auto overflow-hidden"
       style={{
-        background: 'linear-gradient(180deg, #1A3830 0%, #122820 100%)',
-        borderTop: '1px solid rgba(200, 169, 122, 0.12)',
+        background: 'linear-gradient(180deg, #0F2244 0%, #091530 100%)',
+        borderTop: '1px solid rgba(200, 169, 122, 0.15)',
       }}
       role="contentinfo"
     >

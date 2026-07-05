@@ -55,14 +55,14 @@ export function Header() {
             aria-label="Vet do Rim — Início"
           >
             <Image
-              src="/logo/Monocromática - Dourada.png"
+              src="/logo/Monocrom%C3%A1tica%20-%20Azul%20Escuro%20(fundo%20claro).png"
               alt="Vet do Rim"
               width={200}
               height={70}
               priority
               className="h-11 w-auto object-contain transition-all duration-300 group-hover:opacity-85 group-hover:scale-[1.02]"
               style={{
-                filter: 'drop-shadow(0 2px 8px rgba(45, 90, 74, 0.1))',
+                filter: 'drop-shadow(0 2px 8px rgba(26, 58, 107, 0.12))',
               }}
               draggable={false}
             />
@@ -77,10 +77,10 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="relative px-4 py-2 rounded-lg text-sm font-medium text-science-700 hover:text-clinical-600 transition-colors duration-250 group/link"
+                className="relative px-4 py-2 rounded-lg text-sm font-medium text-science-700 hover:text-navy-600 transition-colors duration-250 group/link"
               >
                 {link.label}
-                <span className="absolute bottom-0.5 left-4 right-4 h-px bg-clinical-500 scale-x-0 group-hover/link:scale-x-100 transition-transform duration-250 origin-left" />
+                <span className="absolute bottom-0.5 left-4 right-4 h-px bg-navy-500 scale-x-0 group-hover/link:scale-x-100 transition-transform duration-250 origin-left" />
               </Link>
             ))}
 
@@ -90,8 +90,8 @@ export function Header() {
               href="/auth/login"
               className="ml-3 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-250 hover:-translate-y-0.5 flex items-center gap-2 shimmer-gold"
               style={{
-                background: '#2D5A4A',
-                boxShadow: '0 4px 14px rgba(45, 90, 74, 0.25)',
+                background: '#1A3A6B',
+                boxShadow: '0 4px 14px rgba(26, 58, 107, 0.28)',
                 color: '#FFFFFF',
               }}
             >
@@ -135,9 +135,9 @@ export function Header() {
               onClick={() => setMenuOpen(false)}
               className="mt-2 mx-2 py-3 text-center rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
               style={{
-                background: '#2D5A4A',
+                background: '#1A3A6B',
                 color: '#FFFFFF',
-                boxShadow: '0 4px 16px rgba(45, 90, 74, 0.2)',
+                boxShadow: '0 4px 16px rgba(26, 58, 107, 0.22)',
               }}
             >
               Entrar no Lab

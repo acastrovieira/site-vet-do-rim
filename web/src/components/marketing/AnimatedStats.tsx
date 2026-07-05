@@ -18,16 +18,16 @@ const stats: StatItem[] = [
     suffix: '+',
     label: 'Pacientes atendidos',
     icon: Users,
-    iconColor: 'text-clinical-600',
-    iconBg: 'bg-clinical-50',
+    iconColor: 'text-navy-600',
+    iconBg: 'bg-navy-50',
   },
   {
     value: 8,
     suffix: '',
     label: 'Ferramentas clínicas',
     icon: Wrench,
-    iconColor: 'text-brand-500',
-    iconBg: 'bg-brand-50',
+    iconColor: 'text-sky-600',
+    iconBg: 'bg-sky-50',
   },
   {
     value: 98,
@@ -93,14 +93,14 @@ function StatCounter({
       {/* Número */}
       <p className="text-4xl sm:text-5xl font-bold font-display tabular-nums text-science-900">
         {count}
-        <span className="text-clinical-600 text-3xl">{suffix}</span>
+        <span style={{ color: '#1A3A6B' }} className="text-3xl">{suffix}</span>
       </p>
 
       {/* Label */}
       <p className="text-sm text-science-500 mt-2 font-medium">{label}</p>
 
       {/* Linha decorativa */}
-      <div className="mt-4 mx-auto w-8 h-0.5 rounded-full bg-clinical-200 group-hover:w-12 group-hover:bg-clinical-400 transition-all duration-400" />
+      <div className="mt-4 mx-auto w-8 h-0.5 rounded-full group-hover:w-12 transition-all duration-400" style={{ background: '#1A3A6B', opacity: 0.35 }} />
     </div>
   )
 }

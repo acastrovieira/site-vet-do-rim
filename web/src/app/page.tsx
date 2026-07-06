@@ -486,35 +486,148 @@ export default function HomePage() {
         </section>
 
         {/* ════════════════════════════════════════════════════════
-            DIFERENCIAIS — Off-white limpo
+            SOBRE A DRA. — Foto + Bio profissional
         ════════════════════════════════════════════════════════ */}
         <section
           id="sobre"
           className="py-24 relative overflow-hidden"
           style={{ background: 'linear-gradient(180deg, #EBF1FC 0%, #FFFFFF 100%)' }}
-          aria-labelledby="diferenciais-heading"
+          aria-labelledby="sobre-heading"
         >
           <div className="aurora-light" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-              {/* Texto */}
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-4" style={{ color: '#1A3A6B' }}>
-                  Por que escolher
+              {/* ── Foto da Dra. ──────────────────────────────────── */}
+              <div className="relative flex justify-center lg:justify-start order-2 lg:order-1">
+
+                {/* Decoração: retângulo navy atrás da foto */}
+                <div
+                  className="absolute -bottom-6 -left-6 w-3/4 h-4/5 rounded-2xl hidden lg:block"
+                  style={{ background: '#EEF3FA', border: '1px solid #D4E2F5' }}
+                  aria-hidden
+                />
+
+                {/* Foto — slot para imagem real */}
+                <div
+                  className="relative z-10 w-full max-w-sm lg:max-w-none rounded-2xl overflow-hidden"
+                  style={{
+                    boxShadow: '0 20px 60px rgba(26,58,107,0.15), 0 4px 16px rgba(26,58,107,0.08)',
+                    border: '3px solid rgba(200,169,122,0.2)',
+                    aspectRatio: '3/4',
+                  }}
+                >
+                  {/* TODO: Substituir pelo componente Image quando a foto estiver disponível:
+                      <Image src="/images/dr-aline-perfil.jpg" alt="Dra. Aline Castro Vieira" fill className="object-cover object-top" />
+                  */}
+                  <div
+                    className="w-full h-full flex flex-col items-center justify-center gap-4 relative"
+                    style={{ background: 'linear-gradient(160deg, #EBF1FC 0%, #D4E2F5 100%)' }}
+                  >
+                    {/* Placeholder visual elegante */}
+                    <div
+                      className="w-32 h-32 rounded-full flex items-center justify-center"
+                      style={{ background: 'rgba(26,58,107,0.08)', border: '2px dashed rgba(26,58,107,0.2)' }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-14 h-14" viewBox="0 0 24 24" fill="none" stroke="rgba(26,58,107,0.35)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </div>
+                    <p className="text-xs font-medium text-center px-6" style={{ color: 'rgba(26,58,107,0.4)' }}>
+                      Foto da Dra. Aline<br />será exibida aqui
+                    </p>
+                  </div>
+
+                  {/* Badge dourado — CRM */}
+                  <div
+                    className="absolute bottom-5 left-5 right-5 rounded-xl px-4 py-3 flex items-center gap-3"
+                    style={{
+                      background: 'rgba(12,30,61,0.88)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1px solid rgba(200,169,122,0.25)',
+                    }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(200,169,122,0.15)' }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#C8A97A" strokeWidth="1.8" aria-hidden>
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold" style={{ color: '#C8A97A' }}>CRMV-ES 3854</p>
+                      <p className="text-xs" style={{ color: 'rgba(200,225,255,0.6)' }}>Nefrologia &amp; Urologia Veterinária</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Bio profissional ──────────────────────────────── */}
+              <div className="order-1 lg:order-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-3" style={{ color: '#1A3A6B' }}>
+                  Conheça a especialista
                 </p>
                 <div className="section-divider mb-5" style={{ margin: '0 0 1.25rem 0' }} />
                 <h2
-                  id="diferenciais-heading"
+                  id="sobre-heading"
                   className="font-display text-3xl sm:text-4xl font-bold mb-5"
                   style={{ color: '#0D1F3C' }}
                 >
-                  Medicina veterinária de ponta, com o cuidado que o seu animal merece
+                  Dra. Aline Castro Vieira
                 </h2>
-                <p className="leading-relaxed mb-8" style={{ color: '#4F72A6' }}>
-                  Unimos rigor técnico científico baseado em protocolos internacionais IRIS e ACVIM
-                  com um atendimento humanizado e tecnologia digital para acompanhamento contínuo.
+                <p className="text-base leading-relaxed mb-4" style={{ color: '#4F72A6' }}>
+                  Médica veterinária especialista em <strong style={{ color: '#1A3A6B' }}>nefrologia e urologia de pequenos animais</strong>,
+                  com atuação focada em diagnóstico precoce, estadiamento IRIS e manejo clínico individualizado de
+                  cães e gatos com doenças renais e urológicas.
                 </p>
+                <p className="text-base leading-relaxed mb-8" style={{ color: '#4F72A6' }}>
+                  Fundadora do <strong style={{ color: '#1A3A6B' }}>Lab Evolution</strong>, plataforma digital que une tecnologia,
+                  inteligência artificial e empatia clínica para oferecer ao tutor um acompanhamento contínuo e
+                  transparente da saúde do seu animal.
+                </p>
+
+                {/* Credenciais */}
+                <ul className="space-y-3 mb-8">
+                  {[
+                    'Residente em Clínica Médica de Pequenos Animais',
+                    'Especialista em Nefrologia e Urologia Veterinária',
+                    'Protocolo IRIS e ACVIM para DRC em cães e gatos',
+                    'Telemedicina veterinária especializada',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-3">
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                        style={{ background: '#EEF3FA' }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="#1A3A6B" strokeWidth="2.5" aria-hidden>
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
+                      <span className="text-sm" style={{ color: '#2B4A7A' }}>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Diferenciais compactos */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                  {diferenciais.slice(0, 4).map(({ text, icon: Icon }) => (
+                    <div
+                      key={text}
+                      className="flex items-start gap-3 p-3 rounded-xl card-clinical group"
+                    >
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                        style={{ background: '#EEF3FA', color: '#1A3A6B' }}
+                      >
+                        <Icon className="h-3.5 w-3.5" strokeWidth={1.8} aria-hidden />
+                      </div>
+                      <span className="text-xs font-medium" style={{ color: '#2B4A7A' }}>{text}</span>
+                    </div>
+                  ))}
+                </div>
+
                 <Link
                   href="/lab"
                   className="inline-flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:gap-3"
@@ -524,26 +637,6 @@ export default function HomePage() {
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </Link>
               </div>
-
-              {/* Diferenciais grid */}
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {diferenciais.map(({ text, icon: Icon }) => (
-                  <li
-                    key={text}
-                    className="flex items-start gap-3 p-4 rounded-xl card-clinical group"
-                  >
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors duration-300"
-                      style={{ background: '#EEF3FA', color: '#1A3A6B' }}
-                    >
-                      <Icon className="h-4 w-4" strokeWidth={1.8} aria-hidden />
-                    </div>
-                    <span className="text-sm font-medium" style={{ color: '#2B4A7A' }}>
-                      {text}
-                    </span>
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
         </section>

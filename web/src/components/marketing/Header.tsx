@@ -13,10 +13,11 @@ const navLinks = [
 ]
 
 /**
- * Header clínico premium institucional.
- * Fundo: branco translúcido (light), blur suave.
- * Borda inferior verde discreta que aparece ao rolar.
- * CTA: verde clínico sólido.
+ * Header navy premium institucional.
+ * Fundo: navy profundo #0C1E3D → sólido e coeso com o footer.
+ * Logo: dourada — contraste perfeito sobre navy.
+ * Nav links: branco translúcido → hover branco puro com underline dourado.
+ * CTA: dourado sólido (autoridade + elegância).
  */
 export function Header() {
   const [scrolled, setScrolled] = useState(false)
@@ -33,22 +34,22 @@ export function Header() {
       className="fixed top-0 inset-x-0 z-50 transition-all duration-400"
       style={{
         background: scrolled
-          ? 'rgba(247, 249, 248, 0.95)'
-          : 'rgba(247, 249, 248, 0.8)',
+          ? 'rgba(12, 30, 61, 0.98)'
+          : 'rgba(12, 30, 61, 0.94)',
         backdropFilter: 'blur(20px) saturate(160%)',
         WebkitBackdropFilter: 'blur(20px) saturate(160%)',
         borderBottom: scrolled
-          ? '1px solid rgba(45, 90, 74, 0.12)'
-          : '1px solid rgba(45, 90, 74, 0.06)',
+          ? '1px solid rgba(200, 169, 122, 0.18)'
+          : '1px solid rgba(200, 169, 122, 0.08)',
         boxShadow: scrolled
-          ? '0 2px 20px rgba(45, 90, 74, 0.07), 0 1px 4px rgba(0,0,0,0.04)'
-          : 'none',
+          ? '0 4px 32px rgba(9, 21, 48, 0.4), 0 1px 4px rgba(0,0,0,0.15)'
+          : '0 1px 16px rgba(9, 21, 48, 0.2)',
       }}
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-24 items-center justify-between">
 
-          {/* Logo PNG dourada — funciona perfeitamente sobre fundo claro */}
+          {/* Logo dourada — máximo contraste e elegância sobre navy */}
           <Link
             href="/"
             className="flex items-center group"
@@ -62,7 +63,7 @@ export function Header() {
               priority
               className="h-14 w-auto object-contain transition-all duration-300 group-hover:opacity-90 group-hover:scale-[1.02]"
               style={{
-                filter: 'drop-shadow(0 2px 10px rgba(200, 169, 122, 0.25))',
+                filter: 'drop-shadow(0 2px 12px rgba(200, 169, 122, 0.4))',
               }}
               draggable={false}
             />
@@ -77,22 +78,28 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="relative px-4 py-2 rounded-lg text-sm font-medium text-science-700 hover:text-navy-600 transition-colors duration-250 group/link"
+                className="relative px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-250 group/link"
+                style={{ color: 'rgba(220, 235, 255, 0.75)' }}
               >
                 {link.label}
-                <span className="absolute bottom-0.5 left-4 right-4 h-px bg-navy-500 scale-x-0 group-hover/link:scale-x-100 transition-transform duration-250 origin-left" />
+                {/* Underline dourado no hover */}
+                <span
+                  className="absolute bottom-0.5 left-4 right-4 h-px scale-x-0 group-hover/link:scale-x-100 transition-transform duration-250 origin-left"
+                  style={{ background: '#C8A97A' }}
+                />
               </Link>
             ))}
 
             <ThemeToggle className="ml-1" />
 
+            {/* CTA dourado — premium e de alta visibilidade */}
             <Link
               href="/auth/login"
-              className="ml-3 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-250 hover:-translate-y-0.5 flex items-center gap-2 shimmer-gold"
+              className="ml-3 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-250 hover:-translate-y-0.5 hover:brightness-110 flex items-center gap-2"
               style={{
-                background: '#1A3A6B',
-                boxShadow: '0 4px 14px rgba(26, 58, 107, 0.28)',
-                color: '#FFFFFF',
+                background: 'linear-gradient(135deg, #C8A97A 0%, #B8922A 100%)',
+                color: '#0C1E3D',
+                boxShadow: '0 4px 16px rgba(200, 169, 122, 0.35)',
               }}
             >
               Entrar
@@ -104,7 +111,11 @@ export function Header() {
           <div className="flex md:hidden items-center gap-2">
             <ThemeToggle />
             <button
-              className="p-2 rounded-lg text-science-700 hover:bg-clinical-50 hover:text-clinical-700 border border-science-200 transition-colors duration-200"
+              className="p-2 rounded-lg transition-colors duration-200"
+              style={{
+                color: 'rgba(220, 235, 255, 0.8)',
+                border: '1px solid rgba(200, 169, 122, 0.25)',
+              }}
               onClick={() => setMenuOpen(!menuOpen)}
               aria-expanded={menuOpen}
               aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
@@ -117,7 +128,8 @@ export function Header() {
         {/* Mobile menu */}
         {menuOpen && (
           <nav
-            className="md:hidden pb-5 pt-2 flex flex-col gap-1 border-t border-clinical-100 px-2"
+            className="md:hidden pb-5 pt-2 flex flex-col gap-1 px-2"
+            style={{ borderTop: '1px solid rgba(200, 169, 122, 0.15)' }}
             aria-label="Navegação mobile"
           >
             {navLinks.map((link) => (
@@ -125,7 +137,8 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="px-4 py-3 rounded-lg text-sm font-medium text-science-700 hover:text-clinical-700 hover:bg-clinical-50 transition-colors duration-200"
+                className="px-4 py-3 rounded-lg text-sm font-medium transition-colors duration-200"
+                style={{ color: 'rgba(220, 235, 255, 0.75)' }}
               >
                 {link.label}
               </Link>
@@ -135,9 +148,9 @@ export function Header() {
               onClick={() => setMenuOpen(false)}
               className="mt-2 mx-2 py-3 text-center rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
               style={{
-                background: '#1A3A6B',
-                color: '#FFFFFF',
-                boxShadow: '0 4px 16px rgba(26, 58, 107, 0.22)',
+                background: 'linear-gradient(135deg, #C8A97A 0%, #B8922A 100%)',
+                color: '#0C1E3D',
+                boxShadow: '0 4px 16px rgba(200, 169, 122, 0.3)',
               }}
             >
               Entrar no Lab

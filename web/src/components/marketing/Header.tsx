@@ -46,7 +46,7 @@ export function Header() {
       }}
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between">
+        <div className="flex h-24 items-center justify-between">
 
           {/* Logo PNG dourada — funciona perfeitamente sobre fundo claro */}
           <Link
@@ -55,14 +55,14 @@ export function Header() {
             aria-label="Vet do Rim — Início"
           >
             <Image
-              src="/logo/Monocrom%C3%A1tica%20-%20Azul%20Escuro%20(fundo%20claro).png"
+              src="/logo/Monocrom%C3%A1tica%20-%20Dourada.png"
               alt="Vet do Rim"
-              width={200}
-              height={70}
+              width={280}
+              height={100}
               priority
-              className="h-11 w-auto object-contain transition-all duration-300 group-hover:opacity-85 group-hover:scale-[1.02]"
+              className="h-14 w-auto object-contain transition-all duration-300 group-hover:opacity-90 group-hover:scale-[1.02]"
               style={{
-                filter: 'drop-shadow(0 2px 8px rgba(26, 58, 107, 0.12))',
+                filter: 'drop-shadow(0 2px 10px rgba(200, 169, 122, 0.25))',
               }}
               draggable={false}
             />

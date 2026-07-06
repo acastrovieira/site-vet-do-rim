@@ -6,10 +6,8 @@ export function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    // Verifica se já aceitou
     const hasAccepted = localStorage.getItem('vetdorim_cookies_accepted')
     if (!hasAccepted) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true)
     }
   }, [])
@@ -22,19 +20,35 @@ export function CookieBanner() {
   if (!isVisible) return null
 
   return (
-    <div className="fixed bottom-0 inset-x-0 pb-4 sm:pb-6 px-4 sm:px-6 z-[100] animate-in slide-in-from-bottom-10 fade-in duration-500">
-      <div className="mx-auto max-w-4xl glass-card border border-white/10 p-4 sm:p-6 rounded-2xl flex flex-col sm:flex-row items-center gap-4 sm:gap-6 shadow-2xl">
-        <div className="flex-1 text-sm text-science-200">
+    <div className="fixed bottom-0 inset-x-0 pb-4 sm:pb-5 px-4 sm:px-6 z-[100]">
+      <div
+        className="mx-auto max-w-4xl rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-6"
+        style={{
+          background: '#0F2244',
+          border: '1px solid rgba(200, 169, 122, 0.25)',
+          boxShadow: '0 -4px 32px rgba(9, 21, 48, 0.5), 0 8px 40px rgba(9, 21, 48, 0.4)',
+        }}
+      >
+        {/* Texto — branco puro, sempre legível */}
+        <div className="flex-1 text-sm leading-relaxed" style={{ color: '#FFFFFF' }}>
           <p>
-            <strong className="text-white">Nós respeitamos sua privacidade.</strong> Utilizamos cookies para
-            garantir que você tenha a melhor experiência na nossa plataforma, além de analisar nosso tráfego
-            conforme a Lei Geral de Proteção de Dados (LGPD).
+            <strong style={{ color: '#C8A97A' }}>Nós respeitamos sua privacidade.</strong>{' '}
+            Utilizamos cookies para garantir que você tenha a melhor experiência na nossa
+            plataforma, além de analisar nosso tráfego conforme a Lei Geral de Proteção de
+            Dados (LGPD).
           </p>
         </div>
+
+        {/* CTA dourado */}
         <div className="flex shrink-0 gap-3 w-full sm:w-auto">
           <button
             onClick={acceptCookies}
-            className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-gold-400/10 text-gold-400 border border-gold-400/20 text-sm font-bold hover:bg-gold-400 hover:text-[#0A0A0C] transition-all duration-300 whitespace-nowrap"
+            className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-250 whitespace-nowrap hover:-translate-y-0.5"
+            style={{
+              background: '#C8A97A',
+              color: '#0D1F3C',
+              boxShadow: '0 4px 14px rgba(200, 169, 122, 0.35)',
+            }}
           >
             Entendi e concordo
           </button>

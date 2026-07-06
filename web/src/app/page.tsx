@@ -321,22 +321,25 @@ export default function HomePage() {
                 style={{ animationDelay: '0.3s' }}
               >
                 <div className="relative flex items-center justify-center">
-                  {/* Halo suave de fundo */}
+                  {/* Halo dourado suave */}
                   <div
                     className="absolute inset-0 scale-110 rounded-full"
                     style={{
-                      background: 'radial-gradient(circle, rgba(45,90,74,0.08) 0%, transparent 65%)',
+                      background: 'radial-gradient(circle, rgba(200,169,122,0.14) 0%, rgba(26,58,107,0.04) 50%, transparent 70%)',
                       filter: 'blur(40px)',
                     }}
                     aria-hidden
                   />
                   <Image
-                    src="/logo/Monocrom%C3%A1tica%20-%20Azul%20Escuro%20(fundo%20claro).png"
-                    alt="Vet do Rim — Logo azul"
-                    width={340}
-                    height={340}
+                    src="/logo/Monocrom%C3%A1tica%20-%20Dourada.png"
+                    alt="Vet do Rim — Logo dourada"
+                    width={460}
+                    height={460}
                     priority
-                    className="relative z-10 w-56 h-auto sm:w-72 lg:w-[340px] object-contain animate-float logo-glow"
+                    className="relative z-10 w-64 h-auto sm:w-80 lg:w-[420px] object-contain animate-float"
+                    style={{
+                      filter: 'drop-shadow(0 6px 24px rgba(200,169,122,0.3)) drop-shadow(0 2px 8px rgba(9,21,48,0.1))',
+                    }}
                     draggable={false}
                   />
                 </div>

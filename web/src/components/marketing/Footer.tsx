@@ -67,9 +67,9 @@ export function Footer() {
               <Image
                 src="/logo/Monocromática - Dourada.png"
                 alt="Vet do Rim"
-                width={160}
-                height={160}
-                className="w-32 h-auto object-contain logo-glow-dark group-hover:scale-105 transition-transform duration-300"
+                width={200}
+                height={200}
+                className="w-40 h-auto object-contain logo-glow-dark group-hover:scale-105 transition-transform duration-300"
                 draggable={false}
               />
             </Link>

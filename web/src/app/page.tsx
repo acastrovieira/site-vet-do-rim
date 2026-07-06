@@ -331,10 +331,10 @@ export default function HomePage() {
                 <div
                   className="relative overflow-hidden rounded-3xl"
                   style={{
-                    width: '340px',
-                    height: '500px',
-                    boxShadow: '0 28px 70px rgba(9,21,48,0.22), 0 4px 20px rgba(9,21,48,0.12)',
-                    border: '2px solid rgba(200,169,122,0.22)',
+                    width: '420px',
+                    height: '620px',
+                    boxShadow: '0 32px 80px rgba(9,21,48,0.28), 0 6px 24px rgba(9,21,48,0.15)',
+                    border: '2px solid rgba(200,169,122,0.25)',
                   }}
                 >
                   <Image
@@ -343,7 +343,7 @@ export default function HomePage() {
                     fill
                     priority
                     className="object-cover object-top"
-                    sizes="340px"
+                    sizes="420px"
                   />
                   {/* Badge identitário no bottom */}
                   <div

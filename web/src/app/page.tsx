@@ -567,20 +567,23 @@ export default function HomePage() {
               {/* ── Bio profissional ──────────────────────────────── */}
               <div className="order-1 lg:order-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-3" style={{ color: '#1A3A6B' }}>
-                  Conheça a especialista
+                  Conheça o especialista
                 </p>
                 <div className="section-divider mb-5" style={{ margin: '0 0 1.25rem 0' }} />
                 <h2
                   id="sobre-heading"
-                  className="font-display text-3xl sm:text-4xl font-bold mb-5"
+                  className="font-display text-3xl sm:text-4xl font-bold mb-1"
                   style={{ color: '#0D1F3C' }}
                 >
                   Dr. Anderson de Castro Vieira
                 </h2>
+                <p className="text-sm font-medium mb-5" style={{ color: '#7A9BC8' }}>
+                  Médico Veterinário · CRMV-ES 0839 · Especialista em Nefrologia e Urologia Veterinária
+                </p>
                 <p className="text-base leading-relaxed mb-4" style={{ color: '#4F72A6' }}>
-                  Médico veterinário especialista em <strong style={{ color: '#1A3A6B' }}>nefrologia e urologia de pequenos animais</strong>,
-                  com atuação focada em diagnóstico precoce, estadiamento IRIS e manejo clínico individualizado de
-                  cães e gatos com doenças renais e urológicas.
+                  Graduado em <strong style={{ color: '#1A3A6B' }}>Medicina Veterinária pela Universidade Vila Velha (UVV)</strong> em 2005,
+                  atua na área de nefrologia e urologia veterinária desde <strong style={{ color: '#1A3A6B' }}>2006</strong> — mais de
+                  18 anos dedicados ao diagnóstico e tratamento de doenças renais e urológicas em cães e gatos.
                 </p>
                 <p className="text-base leading-relaxed mb-8" style={{ color: '#4F72A6' }}>
                   Fundador do <strong style={{ color: '#1A3A6B' }}>Lab Evolution</strong>, plataforma digital que une tecnologia,
@@ -588,27 +591,35 @@ export default function HomePage() {
                   transparente da saúde do seu animal.
                 </p>
 
-                {/* Credenciais */}
-                <ul className="space-y-3 mb-8">
-                  {[
-                    'Residente em Clínica Médica de Pequenos Animais',
-                    'Especialista em Nefrologia e Urologia Veterinária',
-                    'Protocolo IRIS e ACVIM para DRC em cães e gatos',
-                    'Telemedicina veterinária especializada',
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3">
-                      <div
-                        className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                        style={{ background: '#EEF3FA' }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="#1A3A6B" strokeWidth="2.5" aria-hidden>
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                      <span className="text-sm" style={{ color: '#2B4A7A' }}>{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                {/* Formação acadêmica */}
+                <div className="mb-8">
+                  <p className="text-xs font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#1A3A6B' }}>
+                    Formação
+                  </p>
+                  <ul className="space-y-3">
+                    {[
+                      { titulo: 'Graduação em Medicina Veterinária', inst: 'Universidade Vila Velha — UVV, 2005' },
+                      { titulo: 'Pós-Graduação em Medicina Intensiva', inst: 'UFSA — Universidade Federal do Sul e Sudeste do Pará' },
+                      { titulo: 'Pós-Graduação em Nefrologia e Urologia', inst: 'Unileya' },
+                      { titulo: 'Pós-Graduação em Videocirurgia', inst: 'UFAPE — Universidade Federal do Agreste de Pernambuco' },
+                    ].map((item) => (
+                      <li key={item.titulo} className="flex items-start gap-3">
+                        <div
+                          className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                          style={{ background: '#EEF3FA' }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="#1A3A6B" strokeWidth="2.5" aria-hidden>
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </div>
+                        <div>
+                          <span className="text-sm font-semibold block" style={{ color: '#0D1F3C' }}>{item.titulo}</span>
+                          <span className="text-xs" style={{ color: '#7A9BC8' }}>{item.inst}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
                 {/* Diferenciais compactos */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">

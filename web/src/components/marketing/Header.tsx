@@ -49,21 +49,21 @@ export function Header() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-24 items-center justify-between">
 
-          {/* Logo dourada — máximo contraste e elegância sobre navy */}
+          {/* Logo dourada horizontal — símbolo + tipografia, máximo impacto */}
           <Link
             href="/"
             className="flex items-center group"
             aria-label="Vet do Rim — Início"
           >
             <Image
-              src="/logo/Monocrom%C3%A1tica%20-%20Dourada.png"
-              alt="Vet do Rim"
-              width={280}
-              height={100}
+              src="/logo/Monocrom%C3%A1tica%20-%20dourada%282%29.svg"
+              alt="Vet do Rim — Nefrologia e Urologia Veterinária"
+              width={400}
+              height={200}
               priority
-              className="h-14 w-auto object-contain transition-all duration-300 group-hover:opacity-90 group-hover:scale-[1.02]"
+              className="h-16 w-auto object-contain transition-all duration-300 group-hover:opacity-90 group-hover:scale-[1.02]"
               style={{
-                filter: 'drop-shadow(0 2px 12px rgba(200, 169, 122, 0.4))',
+                filter: 'drop-shadow(0 2px 10px rgba(200, 169, 122, 0.35))',
               }}
               draggable={false}
             />

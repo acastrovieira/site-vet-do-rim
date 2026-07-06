@@ -560,3 +560,122 @@
   --tw-prose-code: #1A3A6B;
   max-width: 72ch;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   DARK MODE — variáveis, backgrounds, cards, textos
+═══════════════════════════════════════════════════════════ */
+
+/* ── 1. Variáveis CSS no dark mode ──────────────────────── */
+@layer base {
+  .dark {
+    --bg-main: #0C1E3D;
+    --bg-alt: #091530;
+    --text-heading: #EEF3FA;
+    --text-body: #ACC5E7;
+    --text-muted: #6F98D1;
+    --card-bg: #0F2244;
+    --card-border: rgba(200, 169, 122, 0.14);
+    --card-shadow: rgba(0, 0, 0, 0.3);
+    --navy-primary: #3E71B8;
+    --navy-primary-hover: #6F98D1;
+    --navy-accent-bg: rgba(200, 169, 122, 0.1);
+    --sky-accent: #38A4F5;
+  }
+
+  .dark ::-webkit-scrollbar-track { background: #091530; }
+  .dark ::-webkit-scrollbar-thumb { background: rgba(200,169,122,0.25); border-radius: 3px; }
+  .dark ::-webkit-scrollbar-thumb:hover { background: rgba(200,169,122,0.45); }
+  .dark ::selection { background: rgba(200,169,122,0.2); color: #EEF3FA; }
+}
+
+/* ── 2. Backgrounds adaptativos (light ↔ dark) ──────────── */
+@layer utilities {
+  /* Stats — branco / navy */
+  .bg-theme-white { background-color: #FFFFFF; }
+  .dark .bg-theme-white { background-color: #0C1E3D; }
+
+  /* Especialidades — branco→azul-50 / navy */
+  .bg-theme-light { background: linear-gradient(180deg, #FFFFFF 0%, #EBF1FC 100%); }
+  .dark .bg-theme-light { background: linear-gradient(180deg, #0C1E3D 0%, #091530 100%); }
+
+  /* Sobre — azul-50→branco / navy */
+  .bg-theme-blue { background: linear-gradient(180deg, #EBF1FC 0%, #FFFFFF 100%); }
+  .dark .bg-theme-blue { background: linear-gradient(180deg, #091530 0%, #0C1E3D 100%); }
+
+  /* Artigos — branco→off-white / navy */
+  .bg-theme-artigos { background: linear-gradient(180deg, #FFFFFF 0%, #F7F9F8 100%); }
+  .dark .bg-theme-artigos { background: linear-gradient(180deg, #0C1E3D 0%, #091530 100%); }
+
+  /* CTA — azul-50→branco-gelo / navy */
+  .bg-theme-cta { background: linear-gradient(180deg, #EBF1FC 0%, #F5F8FF 100%); }
+  .dark .bg-theme-cta { background: linear-gradient(180deg, #091530 0%, #0C1E3D 100%); }
+
+  /* ── 3. Cards no dark mode ────────────────────────────── */
+  .dark .card-clinical,
+  .dark .card-premium {
+    background-color: #0F2244;
+    border-color: rgba(200, 169, 122, 0.14);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .dark .card-clinical:hover,
+  .dark .card-premium:hover {
+    border-color: rgba(200, 169, 122, 0.3);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .dark .card-stat {
+    background-color: #0F2244;
+    border-color: rgba(200, 169, 122, 0.14);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  /* ── 4. Textos dentro de .card-clinical em seção clara ── */
+  .dark .card-clinical h3 { color: #D5E2F3 !important; }
+  .dark .card-clinical p  { color: #6F98D1 !important; }
+
+  /* ── 5. Seção Sobre ─────────────────────────────────────── */
+  /* Container .sobre-light-content agrupa todos os textos */
+  .dark .sobre-light-content h2             { color: #D5E2F3 !important; }
+  .dark .sobre-light-content h3             { color: #D5E2F3 !important; }
+  .dark .sobre-light-content p              { color: #7A9BC8 !important; }
+  .dark .sobre-light-content strong         { color: #ACC5E7 !important; }
+  .dark .sobre-light-content span.font-semibold { color: #D5E2F3 !important; }
+  .dark .sobre-light-content span.text-xs:not(.font-semibold):not(.font-bold) { color: #7A9BC8 !important; }
+  .dark .sobre-light-content a              { color: #C8A97A !important; }
+  /* Decoração e ícones */
+  .dark .sobre-deco-bg {
+    background: #0F2244 !important;
+    border-color: rgba(200,169,122,0.15) !important;
+  }
+  .dark .check-icon-bg { background: rgba(200,169,122,0.12) !important; }
+  .dark .diff-icon-bg  { background: rgba(200,169,122,0.12) !important; color: #C8A97A !important; }
+
+  /* ── 6. Seção Artigos ──────────────────────────────────── */
+  .dark .artigos-content h2                 { color: #D5E2F3 !important; }
+  .dark .artigos-content p                  { color: #7A9BC8 !important; }
+  .dark .artigos-content .artigos-label     { color: #C8A97A !important; }
+  .dark .artigos-content .artigos-link      { color: #7A9BC8 !important; }
+  .dark .artigo-card                        { background-color: #0F2244 !important; }
+  .dark .artigo-card h3                     { color: #D5E2F3 !important; }
+  .dark .artigo-card p                      { color: #6F98D1 !important; }
+  .dark .artigo-card .artigo-time           { color: #7A9BC8 !important; }
+
+  /* ── 7. CTA Final (lado esquerdo claro) ────────────────── */
+  .dark .cta-light-content h2               { color: #D5E2F3 !important; }
+  .dark .cta-light-content p                { color: #7A9BC8 !important; }
+  .dark .cta-fade-left {
+    background: linear-gradient(to right, #091530, transparent) !important;
+  }
+
+  /* ── 8. btn-secondary no dark mode ─────────────────────── */
+  .dark .btn-secondary {
+    color: #ACC5E7;
+    border-color: rgba(200,169,122,0.25);
+    background: transparent;
+  }
+  .dark .btn-secondary:hover {
+    background: rgba(200,169,122,0.08);
+    border-color: rgba(200,169,122,0.45);
+    color: #EEF3FA;
+  }
+}
+

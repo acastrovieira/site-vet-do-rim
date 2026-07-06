@@ -134,7 +134,7 @@ function SectionHeading({
     <div className="text-center mb-14">
       <p
         className={`text-xs font-semibold uppercase tracking-[0.12em] mb-3 ${
-          light ? 'text-sky-300' : 'text-navy-600'
+          light ? 'text-sky-300' : 'text-navy-600 dark:text-sand-300'
         }`}
       >
         {label}
@@ -142,7 +142,7 @@ function SectionHeading({
       <div className={`section-divider mb-4 ${light ? 'section-divider-sand' : 'section-divider'}`} />
       <h2
         className={`font-display text-3xl sm:text-4xl font-bold ${
-          light ? 'text-white' : 'text-science-900'
+          light ? 'text-white' : 'text-science-900 dark:text-navy-100'
         }`}
       >
         {title}
@@ -150,7 +150,7 @@ function SectionHeading({
       {description && (
         <p
           className={`mt-4 max-w-xl mx-auto leading-relaxed ${
-            light ? 'text-white/60' : 'text-science-500'
+            light ? 'text-white/60' : 'text-science-500 dark:text-navy-300'
           }`}
         >
           {description}
@@ -385,8 +385,8 @@ export default function HomePage() {
         ════════════════════════════════════════════════════════ */}
         <section
           aria-label="Números do Vet do Rim"
-          className="bg-white"
-          style={{ borderBottom: '1px solid #D4E2F5' }}
+          className="bg-theme-white transition-colors duration-300"
+          style={{ borderBottom: '1px solid var(--card-border, #D4E2F5)' }}
         >
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <AnimatedStats />
@@ -398,8 +398,7 @@ export default function HomePage() {
         ════════════════════════════════════════════════════════ */}
         <section
           id="especialidades"
-          className="py-24 relative overflow-hidden"
-          style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #EBF1FC 100%)' }}
+          className="py-24 relative overflow-hidden bg-theme-light transition-colors duration-300"
           aria-labelledby="especialidades-heading"
         >
           <div className="aurora-light" aria-hidden />
@@ -515,12 +514,11 @@ export default function HomePage() {
         ════════════════════════════════════════════════════════ */}
         <section
           id="sobre"
-          className="py-24 relative overflow-hidden"
-          style={{ background: 'linear-gradient(180deg, #EBF1FC 0%, #FFFFFF 100%)' }}
+          className="py-24 relative overflow-hidden bg-theme-blue transition-colors duration-300"
           aria-labelledby="sobre-heading"
         >
           <div className="aurora-light" aria-hidden />
-          <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="sobre-light-content relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
               {/* ── Foto da Dra. ──────────────────────────────────── */}
@@ -528,7 +526,7 @@ export default function HomePage() {
 
                 {/* Decoração: retângulo navy atrás da foto */}
                 <div
-                  className="absolute -bottom-6 -left-6 w-3/4 h-4/5 rounded-2xl hidden lg:block"
+                  className="sobre-deco-bg absolute -bottom-6 -left-6 w-3/4 h-4/5 rounded-2xl hidden lg:block"
                   style={{ background: '#EEF3FA', border: '1px solid #D4E2F5' }}
                   aria-hidden
                 />
@@ -617,7 +615,7 @@ export default function HomePage() {
                     ].map((item) => (
                       <li key={item.titulo} className="flex items-start gap-3">
                         <div
-                          className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                          className="check-icon-bg w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
                           style={{ background: '#EEF3FA' }}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="#1A3A6B" strokeWidth="2.5" aria-hidden>
@@ -641,7 +639,7 @@ export default function HomePage() {
                       className="flex items-start gap-3 p-3 rounded-xl card-clinical group"
                     >
                       <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                        className="diff-icon-bg w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
                         style={{ background: '#EEF3FA', color: '#1A3A6B' }}
                       >
                         <Icon className="h-3.5 w-3.5" strokeWidth={1.8} aria-hidden />
@@ -688,17 +686,16 @@ export default function HomePage() {
             ARTIGOS — Off-white clínico
         ════════════════════════════════════════════════════════ */}
         <section
-          className="py-24 relative overflow-hidden"
-          style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F7F9F8 100%)' }}
+          className="py-24 relative overflow-hidden bg-theme-artigos transition-colors duration-300"
           aria-labelledby="artigos-heading"
         >
           <div className="aurora-light" aria-hidden />
-          <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="artigos-content relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 
             {/* Header da seção */}
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#1A3A6B' }}>
+                <p className="artigos-label text-xs font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#1A3A6B' }}>
                   Conteúdo científico
                 </p>
                 <div className="section-divider mb-3" style={{ margin: '0 0 0.75rem 0' }} />
@@ -712,7 +709,7 @@ export default function HomePage() {
               </div>
               <Link
                 href="/blog"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold transition-all duration-200 hover:gap-2.5 shrink-0"
+                className="artigos-link inline-flex items-center gap-1.5 text-sm font-semibold transition-all duration-200 hover:gap-2.5 shrink-0"
                 style={{ color: '#2D5A4A' }}
               >
                 Ver todos os artigos
@@ -727,7 +724,7 @@ export default function HomePage() {
                 return (
                   <article
                     key={artigo.slug}
-                    className="group flex flex-col rounded-2xl card-clinical overflow-hidden bg-white"
+                    className="artigo-card group flex flex-col rounded-2xl card-clinical overflow-hidden"
                   >
                     {/* Thumb */}
                     <div
@@ -767,7 +764,7 @@ export default function HomePage() {
                         >
                           {artigo.categoria}
                         </span>
-                        <span className="text-xs" style={{ color: '#8FA89E' }}>
+                        <span className="artigo-time text-xs" style={{ color: '#8FA89E' }}>
                           {artigo.leitura} de leitura
                         </span>
                       </div>
@@ -855,8 +852,7 @@ export default function HomePage() {
             CTA FINAL — Split-screen: conteúdo + estetoscópio
         ════════════════════════════════════════════════════════ */}
         <section
-          className="relative overflow-hidden"
-          style={{ background: 'linear-gradient(180deg, #EBF1FC 0%, #F5F8FF 100%)' }}
+          className="relative overflow-hidden bg-theme-cta transition-colors duration-300"
           aria-labelledby="cta-heading"
         >
           <div className="aurora-light" aria-hidden />
@@ -864,7 +860,7 @@ export default function HomePage() {
 
             {/* Lado esquerdo — conteúdo CTA */}
             <div className="flex items-center justify-center px-8 sm:px-12 lg:px-16 py-20">
-              <div className="max-w-md">
+              <div className="cta-light-content max-w-md">
                 {/* Logo símbolo */}
                 <div className="mb-8">
                   <Image
@@ -920,7 +916,7 @@ export default function HomePage() {
               />
               {/* Gradient fade da esquerda para fundir com o conteúdo */}
               <div
-                className="absolute inset-y-0 left-0 w-24 z-10"
+                className="cta-fade-left absolute inset-y-0 left-0 w-24 z-10"
                 style={{ background: 'linear-gradient(to right, #EBF1FC, transparent)' }}
                 aria-hidden
               />

@@ -25,7 +25,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
   return (
     <button
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className={`relative p-2 rounded-xl transition-all duration-300 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-science-200 dark:hover:text-white ${className}`}
+      className={`relative p-2 rounded-xl transition-all duration-300 hover:bg-white/10 text-white/60 hover:text-white border border-transparent hover:border-white/15 ${className}`}
       aria-label="Alternar tema"
       title={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
     >
@@ -36,4 +36,5 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       <div className="w-5 h-5 opacity-0 pointer-events-none" />
     </button>
   )
+
 }

@@ -6,9 +6,9 @@ Coloque suas fotos nesta pasta. O site já está preparado para exibi-las.
 
 | Arquivo | Onde aparece | Tamanho ideal |
 |---|---|---|
-| `dr-aline-hero.jpg` | Hero da home (ao lado do título) | 800×900px, vertical |
-| `dr-aline-perfil.jpg` | Seção "Sobre" (foto principal) | 600×700px, vertical |
-| `dr-aline-clinica.jpg` | Seção "Sobre" (foto secundária, clínica) | 800×600px, horizontal |
+| `dr-anderson-hero.jpg` | Hero da home (ao lado do título) | 800×900px, vertical |
+| `dr-anderson-perfil.jpg` | Seção "Sobre" (foto principal) | 600×700px, vertical |
+| `dr-anderson-clinica.jpg` | Seção "Sobre" (foto secundária, clínica) | 800×600px, horizontal |
 
 ## Dicas para as fotos
 - **Fundo neutro ou da clínica** — evitar fundo branco simples

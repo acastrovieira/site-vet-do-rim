@@ -518,7 +518,7 @@ export default function HomePage() {
                   }}
                 >
                   {/* TODO: Substituir pelo componente Image quando a foto estiver disponível:
-                      <Image src="/images/dr-aline-perfil.jpg" alt="Dra. Aline Castro Vieira" fill className="object-cover object-top" />
+                      <Image src="/images/dr-anderson-perfil.jpg" alt="Dr. Anderson de Castro Vieira" fill className="object-cover object-top" />
                   */}
                   <div
                     className="w-full h-full flex flex-col items-center justify-center gap-4 relative"
@@ -535,7 +535,7 @@ export default function HomePage() {
                       </svg>
                     </div>
                     <p className="text-xs font-medium text-center px-6" style={{ color: 'rgba(26,58,107,0.4)' }}>
-                      Foto da Dra. Aline<br />será exibida aqui
+                      Foto do Dr. Anderson<br />será exibida aqui
                     </p>
                   </div>
 
@@ -557,7 +557,7 @@ export default function HomePage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-xs font-bold" style={{ color: '#C8A97A' }}>CRMV-ES 3854</p>
+                      <p className="text-xs font-bold" style={{ color: '#C8A97A' }}>CRMV-ES 0839</p>
                       <p className="text-xs" style={{ color: 'rgba(200,225,255,0.6)' }}>Nefrologia &amp; Urologia Veterinária</p>
                     </div>
                   </div>
@@ -575,15 +575,15 @@ export default function HomePage() {
                   className="font-display text-3xl sm:text-4xl font-bold mb-5"
                   style={{ color: '#0D1F3C' }}
                 >
-                  Dra. Aline Castro Vieira
+                  Dr. Anderson de Castro Vieira
                 </h2>
                 <p className="text-base leading-relaxed mb-4" style={{ color: '#4F72A6' }}>
-                  Médica veterinária especialista em <strong style={{ color: '#1A3A6B' }}>nefrologia e urologia de pequenos animais</strong>,
+                  Médico veterinário especialista em <strong style={{ color: '#1A3A6B' }}>nefrologia e urologia de pequenos animais</strong>,
                   com atuação focada em diagnóstico precoce, estadiamento IRIS e manejo clínico individualizado de
                   cães e gatos com doenças renais e urológicas.
                 </p>
                 <p className="text-base leading-relaxed mb-8" style={{ color: '#4F72A6' }}>
-                  Fundadora do <strong style={{ color: '#1A3A6B' }}>Lab Evolution</strong>, plataforma digital que une tecnologia,
+                  Fundador do <strong style={{ color: '#1A3A6B' }}>Lab Evolution</strong>, plataforma digital que une tecnologia,
                   inteligência artificial e empatia clínica para oferecer ao tutor um acompanhamento contínuo e
                   transparente da saúde do seu animal.
                 </p>

@@ -599,7 +599,7 @@ export default function HomePage() {
                   <ul className="space-y-3">
                     {[
                       { titulo: 'Graduação em Medicina Veterinária', inst: 'Universidade Vila Velha — UVV, 2005' },
-                      { titulo: 'Pós-Graduação em Medicina Intensiva', inst: 'UFSA — Universidade Federal do Sul e Sudeste do Pará' },
+                      { titulo: 'Pós-Graduação em Medicina Intensiva e Emergência de Pequenos Animais', inst: 'Universidade Federal do Semi Árido — UFERSA' },
                       { titulo: 'Pós-Graduação em Nefrologia e Urologia', inst: 'Unileya' },
                       { titulo: 'Pós-Graduação em Videocirurgia', inst: 'UFAPE — Universidade Federal do Agreste de Pernambuco' },
                     ].map((item) => (

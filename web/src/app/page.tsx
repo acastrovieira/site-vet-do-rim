@@ -315,33 +315,58 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* ── Coluna da Logo ───────────────────────────── */}
+              {/* ── Coluna Dr. Anderson — terno navy, autoridade executiva ── */}
               <div
-                className="flex-shrink-0 animate-fade-up"
+                className="relative flex-shrink-0 animate-fade-up hidden lg:block"
                 style={{ animationDelay: '0.3s' }}
               >
-                <div className="relative flex items-center justify-center">
-                  {/* Halo dourado suave */}
-                  <div
-                    className="absolute inset-0 scale-110 rounded-full"
-                    style={{
-                      background: 'radial-gradient(circle, rgba(200,169,122,0.14) 0%, rgba(26,58,107,0.04) 50%, transparent 70%)',
-                      filter: 'blur(40px)',
-                    }}
-                    aria-hidden
-                  />
+                {/* Decoração: frame dourado atrás, levemente deslocado */}
+                <div
+                  className="absolute -top-5 -right-5 w-full h-full rounded-3xl"
+                  style={{ background: 'rgba(200,169,122,0.07)', border: '1px solid rgba(200,169,122,0.18)' }}
+                  aria-hidden
+                />
+
+                {/* Frame da foto — terno navy, autoridade executiva */}
+                <div
+                  className="relative overflow-hidden rounded-3xl"
+                  style={{
+                    width: '340px',
+                    height: '500px',
+                    boxShadow: '0 28px 70px rgba(9,21,48,0.22), 0 4px 20px rgba(9,21,48,0.12)',
+                    border: '2px solid rgba(200,169,122,0.22)',
+                  }}
+                >
                   <Image
-                    src="/logo/Monocrom%C3%A1tica%20-%20Dourada.png"
-                    alt="Vet do Rim — Logo dourada"
-                    width={460}
-                    height={460}
+                    src="/images/dr-anderson-terno-azul.jpg"
+                    alt="Dr. Anderson de Castro Vieira — Especialista em Nefrologia Veterinária"
+                    fill
                     priority
-                    className="relative z-10 w-64 h-auto sm:w-80 lg:w-[420px] object-contain animate-float"
-                    style={{
-                      filter: 'drop-shadow(0 6px 24px rgba(200,169,122,0.3)) drop-shadow(0 2px 8px rgba(9,21,48,0.1))',
-                    }}
-                    draggable={false}
+                    className="object-cover object-top"
+                    sizes="340px"
                   />
+                  {/* Badge identitário no bottom */}
+                  <div
+                    className="absolute bottom-0 inset-x-0 px-5 py-4"
+                    style={{
+                      background: 'linear-gradient(to top, rgba(9,21,48,0.92) 0%, rgba(9,21,48,0.5) 60%, transparent 100%)',
+                    }}
+                  >
+                    <p className="text-xs font-bold" style={{ color: '#C8A97A' }}>Dr. Anderson de Castro Vieira</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: 'rgba(200,225,255,0.65)' }}>Nefrologia &amp; Urologia Veterinária · CRMV-ES 0839</p>
+                  </div>
+                </div>
+
+                {/* Badge: +18 anos de experiência */}
+                <div
+                  className="absolute -top-4 -left-4 flex flex-col items-center justify-center w-[72px] h-[72px] rounded-full z-20"
+                  style={{
+                    background: 'linear-gradient(135deg, #C8A97A 0%, #A8780A 100%)',
+                    boxShadow: '0 8px 24px rgba(200,169,122,0.45)',
+                  }}
+                >
+                  <span className="text-lg font-bold leading-none" style={{ color: '#0C1E3D' }}>18+</span>
+                  <span className="text-[9px] font-semibold text-center leading-tight" style={{ color: 'rgba(12,30,61,0.75)' }}>anos de{' '}<br />experiência</span>
                 </div>
               </div>
             </div>
@@ -517,27 +542,14 @@ export default function HomePage() {
                     aspectRatio: '3/4',
                   }}
                 >
-                  {/* TODO: Substituir pelo componente Image quando a foto estiver disponível:
-                      <Image src="/images/dr-anderson-perfil.jpg" alt="Dr. Anderson de Castro Vieira" fill className="object-cover object-top" />
-                  */}
-                  <div
-                    className="w-full h-full flex flex-col items-center justify-center gap-4 relative"
-                    style={{ background: 'linear-gradient(160deg, #EBF1FC 0%, #D4E2F5 100%)' }}
-                  >
-                    {/* Placeholder visual elegante */}
-                    <div
-                      className="w-32 h-32 rounded-full flex items-center justify-center"
-                      style={{ background: 'rgba(26,58,107,0.08)', border: '2px dashed rgba(26,58,107,0.2)' }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-14 h-14" viewBox="0 0 24 24" fill="none" stroke="rgba(26,58,107,0.35)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                    </div>
-                    <p className="text-xs font-medium text-center px-6" style={{ color: 'rgba(26,58,107,0.4)' }}>
-                      Foto do Dr. Anderson<br />será exibida aqui
-                    </p>
-                  </div>
+                  {/* Foto do Dr. Anderson — jaleco, clima clínico e acolhedor */}
+                  <Image
+                    src="/images/dr-anderson-jaleco.jpg"
+                    alt="Dr. Anderson de Castro Vieira"
+                    fill
+                    className="object-cover object-top"
+                    sizes="(max-width: 1024px) 400px, 500px"
+                  />
 
                   {/* Badge dourado — CRM */}
                   <div
@@ -786,62 +798,151 @@ export default function HomePage() {
         </section>
 
         {/* ════════════════════════════════════════════════════════
-            CTA FINAL — Clean institucional
+            MANIFESTO — Foto P&B de fundo, quote de autoridade
+        ════════════════════════════════════════════════════════ */}
+        <section className="relative overflow-hidden" style={{ minHeight: '500px' }} aria-label="Manifesto do Dr. Anderson">
+          {/* Foto P&B como fundo — sobriedade e drama premium */}
+          <div className="absolute inset-0">
+            <Image
+              src="/images/dr-anderson-pb.jpg"
+              alt=""
+              fill
+              className="object-cover object-top"
+              sizes="100vw"
+              aria-hidden
+            />
+            {/* Overlay navy escuro com vinheta nas bordas */}
+            <div
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(135deg, rgba(9,21,48,0.90) 0%, rgba(9,21,48,0.70) 45%, rgba(9,21,48,0.88) 100%)' }}
+              aria-hidden
+            />
+          </div>
+
+          {/* Conteúdo centralizado */}
+          <div className="relative z-10 flex items-center justify-center min-h-[500px] px-6 py-20">
+            <div className="max-w-3xl text-center">
+              {/* Separador dourado */}
+              <div className="flex items-center gap-4 justify-center mb-10" aria-hidden>
+                <div className="h-px w-16" style={{ background: 'rgba(200,169,122,0.45)' }} />
+                <div className="w-2 h-2 rounded-full" style={{ background: '#C8A97A' }} />
+                <div className="h-px w-16" style={{ background: 'rgba(200,169,122,0.45)' }} />
+              </div>
+
+              <blockquote>
+                <p className="font-display text-2xl sm:text-3xl lg:text-[2.4rem] font-bold leading-snug text-white mb-8">
+                  “Cada diagnóstico renal é uma oportunidade de{' '}
+                  <span style={{ color: '#C8A97A' }}>prolongar uma vida</span>{' '}
+                  com qualidade e dignidade.”
+                </p>
+                <footer>
+                  <p className="text-sm font-bold" style={{ color: '#C8A97A' }}>Dr. Anderson de Castro Vieira</p>
+                  <p className="text-xs mt-1.5" style={{ color: 'rgba(200,225,255,0.45)' }}>Especialista em Nefrologia e Urologia Veterinária · +18 anos de experiência</p>
+                </footer>
+              </blockquote>
+
+              {/* Separador dourado */}
+              <div className="flex items-center gap-4 justify-center mt-10" aria-hidden>
+                <div className="h-px w-16" style={{ background: 'rgba(200,169,122,0.45)' }} />
+                <div className="w-2 h-2 rounded-full" style={{ background: '#C8A97A' }} />
+                <div className="h-px w-16" style={{ background: 'rgba(200,169,122,0.45)' }} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════
+            CTA FINAL — Split-screen: conteúdo + estetoscópio
         ════════════════════════════════════════════════════════ */}
         <section
-          className="py-24 relative overflow-hidden"
+          className="relative overflow-hidden"
           style={{ background: 'linear-gradient(180deg, #EBF1FC 0%, #F5F8FF 100%)' }}
           aria-labelledby="cta-heading"
         >
           <div className="aurora-light" aria-hidden />
-          <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-            <div
-              className="rounded-3xl p-10 sm:p-14 bg-white"
-              style={{
-                border: '1px solid rgba(26,58,107,0.14)',
-                boxShadow: '0 8px 40px rgba(26,58,107,0.08), 0 2px 8px rgba(26,58,107,0.04)',
-              }}
-            >
-              {/* Símbolo da logo acima do título */}
-              <div className="flex justify-center mb-8">
-                <Image
-                  src="/logo/5-navy.png"
-                  alt=""
-                  width={80}
-                  height={80}
-                  className="w-16 h-auto object-contain logo-glow"
-                  aria-hidden
-                  draggable={false}
-                />
-              </div>
+          <div className="relative grid grid-cols-1 lg:grid-cols-2 min-h-[580px]">
 
-              <h2
-                id="cta-heading"
-                className="font-display text-3xl sm:text-4xl font-bold mb-4"
-                style={{ color: '#0D1F3C' }}
+            {/* Lado esquerdo — conteúdo CTA */}
+            <div className="flex items-center justify-center px-8 sm:px-12 lg:px-16 py-20">
+              <div className="max-w-md">
+                {/* Logo símbolo */}
+                <div className="mb-8">
+                  <Image
+                    src="/logo/5.png"
+                    alt=""
+                    width={56}
+                    height={56}
+                    className="w-12 h-auto object-contain logo-glow"
+                    aria-hidden
+                    draggable={false}
+                  />
+                </div>
+
+                <h2
+                  id="cta-heading"
+                  className="font-display text-3xl sm:text-4xl font-bold mb-4"
+                  style={{ color: '#0D1F3C' }}
+                >
+                  Gerencie seus pacientes renais com inteligência
+                </h2>
+                <p className="text-lg mb-8 leading-relaxed" style={{ color: '#4F72A6' }}>
+                  O Lab Evolution centraliza laudos, histórico clínico e dashboards
+                  de biomarcadores renais em uma plataforma segura e intuitiva.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link
+                    href="/auth/login"
+                    className="btn-primary shimmer-gold"
+                    id="cta-final-primary"
+                  >
+                    Acessar gratuitamente
+                    <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                  <Link
+                    href="/ferramentas/calculadora-tfg"
+                    className="btn-secondary"
+                    id="cta-final-secondary"
+                  >
+                    Calcular TFG grátis
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Lado direito — foto com estetoscópio */}
+            <div className="relative hidden lg:block">
+              <Image
+                src="/images/dr-anderson-estetoscopio.jpg"
+                alt="Dr. Anderson de Castro Vieira com estetoscópio"
+                fill
+                className="object-cover object-top"
+                sizes="50vw"
+              />
+              {/* Gradient fade da esquerda para fundir com o conteúdo */}
+              <div
+                className="absolute inset-y-0 left-0 w-24 z-10"
+                style={{ background: 'linear-gradient(to right, #EBF1FC, transparent)' }}
+                aria-hidden
+              />
+              {/* Overlay sutil — mantém leveza sem escurecer demais */}
+              <div
+                className="absolute inset-0"
+                style={{ background: 'rgba(9,21,48,0.06)' }}
+                aria-hidden
+              />
+              {/* Badge de credencial no canto */}
+              <div
+                className="absolute bottom-8 left-8 right-8 rounded-2xl px-5 py-4 z-20"
+                style={{
+                  background: 'rgba(9,21,48,0.85)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(200,169,122,0.2)',
+                }}
               >
-                Gerencie seus pacientes renais com inteligência
-              </h2>
-              <p className="text-lg mb-8 leading-relaxed" style={{ color: '#4F72A6' }}>
-                O Lab Evolution centraliza laudos, histórico clínico e dashboards
-                de biomarcadores renais em uma plataforma segura e intuitiva.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link
-                  href="/auth/login"
-                  className="btn-primary shimmer-gold"
-                  id="cta-final-primary"
-                >
-                  Acessar gratuitamente
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </Link>
-                <Link
-                  href="/ferramentas/calculadora-tfg"
-                  className="btn-secondary"
-                  id="cta-final-secondary"
-                >
-                  Calcular TFG grátis
-                </Link>
+                <p className="text-xs font-bold mb-0.5" style={{ color: '#C8A97A' }}>Lab Evolution</p>
+                <p className="text-xs leading-relaxed" style={{ color: 'rgba(200,225,255,0.65)' }}>
+                  Plataforma clínica digital desenvolvida pelo Dr. Anderson para o acompanhamento especializado de pacientes renais.
+                </p>
               </div>
             </div>
           </div>

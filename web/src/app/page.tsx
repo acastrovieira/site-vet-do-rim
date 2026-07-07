@@ -372,10 +372,13 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Transição suave para seção stats */}
+          {/* Transição suave para seção seguinte */}
           <div className="absolute bottom-0 inset-x-0 h-16" aria-hidden>
             <svg viewBox="0 0 1440 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" preserveAspectRatio="none">
-              <path d="M0 64L1440 64L1440 24C1200 54 960 64 720 54C480 44 240 14 0 32L0 64Z" fill="#ffffff" />
+              <path
+                d="M0 64L1440 64L1440 24C1200 54 960 64 720 54C480 44 240 14 0 32L0 64Z"
+                className="fill-current text-white dark:text-[#0c1e3d]"
+              />
             </svg>
           </div>
         </section>
@@ -679,6 +682,11 @@ export default function HomePage() {
               light
             />
             <TestimonialsCarousel />
+
+            {/* Métricas de confiança em cards menores e minimalistas */}
+            <div className="mt-16 border-t border-white/10 pt-12">
+              <AnimatedStats />
+            </div>
           </div>
         </section>
 

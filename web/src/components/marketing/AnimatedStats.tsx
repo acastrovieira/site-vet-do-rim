@@ -80,27 +80,41 @@ function StatCounter({
 
   return (
     <div
-      className="text-center p-7 rounded-2xl card-stat group"
-      style={{ transitionDelay: `${index * 80}ms` }}
+      className="text-center p-6 sm:p-7 rounded-2xl transition-all duration-300 hover:scale-[1.03]"
+      style={{
+        transitionDelay: `${index * 80}ms`,
+        background: 'rgba(255, 255, 255, 0.03)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)',
+      }}
     >
-      {/* Ícone */}
+      {/* Ícone com background translúcido elegante */}
       <div
-        className={`mx-auto w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${iconBg} ${iconColor} transition-transform duration-300 group-hover:scale-110`}
+        className="mx-auto w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110"
+        style={{
+          background: 'rgba(200, 169, 122, 0.12)',
+          color: '#C8A97A',
+        }}
       >
         <Icon className="w-5 h-5" />
       </div>
 
-      {/* Número */}
-      <p className="text-4xl sm:text-5xl font-bold font-display tabular-nums text-science-900">
+      {/* Número em branco com alta visibilidade */}
+      <p className="text-3xl sm:text-4xl lg:text-5xl font-bold font-display tabular-nums text-white tracking-tight">
         {count}
-        <span style={{ color: '#1A3A6B' }} className="text-3xl">{suffix}</span>
+        <span className="text-2xl sm:text-3xl ml-0.5" style={{ color: '#C8A97A' }}>{suffix}</span>
       </p>
 
-      {/* Label */}
-      <p className="text-sm text-science-500 mt-2 font-medium">{label}</p>
+      {/* Label em branco fosco */}
+      <p className="text-xs sm:text-sm mt-2 font-medium" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>{label}</p>
 
-      {/* Linha decorativa */}
-      <div className="mt-4 mx-auto w-8 h-0.5 rounded-full group-hover:w-12 transition-all duration-400" style={{ background: '#1A3A6B', opacity: 0.35 }} />
+      {/* Linha decorativa dourada sutil */}
+      <div
+        className="mt-4 mx-auto w-8 h-0.5 rounded-full transition-all duration-400"
+        style={{ background: '#C8A97A', opacity: 0.4 }}
+      />
     </div>
   )
 }

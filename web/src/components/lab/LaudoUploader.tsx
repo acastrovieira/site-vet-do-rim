@@ -200,21 +200,34 @@ export function LaudoUploader({ petId }: { petId: string }) {
         setStatus('analyzing')
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.access_token) throw new Error('Sessão expirada. Faça login novamente.')
+
         const fnRes = await supabase.functions.invoke('parse-laudo', {
           body: { laudoId: laudo.id },
           headers: { Authorization: `Bearer ${session.access_token}` },
         })
-        if (fnRes.error) throw new Error(fnRes.data?.error || fnRes.error.message)
-        if (fnRes.data?.error) throw new Error(fnRes.data.error)
-        if (!fnRes.data?.data) throw new Error('Resposta inválida da IA.')
+
+        // Erro de rede ou autenticação (o SDK define fnRes.error)
+        if (fnRes.error) {
+          // Tenta extrair mensagem do corpo mesmo em caso de erro HTTP
+          const serverMsg = fnRes.data?.error
+          throw new Error(serverMsg || fnRes.error.message || 'Falha na comunicação com o serviço de IA.')
+        }
+
+        // Erro lógico retornado pela Edge Function (success: false)
+        if (!fnRes.data?.success) {
+          throw new Error(fnRes.data?.error || 'Erro desconhecido ao processar o laudo.')
+        }
+
+        if (!fnRes.data?.data) throw new Error('A IA não retornou dados. Tente reenviar o PDF.')
 
         setResult(fnRes.data.data as HemogramaResult)
         setStatus('done')
-        
+
         // Atualiza cota local
         if (aiQuota) {
           setAiQuota({ ...aiQuota, used: aiQuota.used + 1 })
         }
+
       } catch (err) {
         setErrorMsg(err instanceof Error ? err.message : 'Erro desconhecido')
         setStatus('error')

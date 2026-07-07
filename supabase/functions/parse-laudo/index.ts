@@ -21,13 +21,21 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
-function jsonResponse(
-  body: Record<string, unknown>,
-  status: number,
-  corsHeaders: Record<string, string>,
-) {
+/**
+ * Todas as respostas de erro lógico retornam HTTP 200 com { success: false, error: "..." }.
+ * Somente erros de autenticação retornam 401 para forçar a sessão a ser renovada.
+ * Isso garante que o SDK do Supabase no cliente consiga ler o corpo do erro.
+ */
+function ok(body: Record<string, unknown>, corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify(body), {
-    status,
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function unauthorized(corsHeaders: Record<string, string>) {
+  return new Response(JSON.stringify({ success: false, error: "Não autorizado. Faça login novamente." }), {
+    status: 401,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
@@ -187,18 +195,16 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // ── Autenticação ───────────────────────────────────────────────────
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return jsonResponse({ error: "Unauthorized" }, 401, corsHeaders);
-    }
+    if (!authHeader) return unauthorized(corsHeaders);
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader.replace("Bearer ", ""),
     );
-    if (authError || !user) {
-      return jsonResponse({ error: "Unauthorized" }, 401, corsHeaders);
-    }
+    if (authError || !user) return unauthorized(corsHeaders);
 
+    // ── Cota de IA ─────────────────────────────────────────────────────
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("ai_quota_used, ai_quota_limit")
@@ -206,22 +212,25 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (profileError || !profile) {
-      return jsonResponse({ error: "Perfil nao encontrado" }, 404, corsHeaders);
+      return ok({ success: false, error: "Perfil de usuário não encontrado. Contate o suporte." }, corsHeaders);
     }
 
     const quotaUsed = profile.ai_quota_used || 0;
     const quotaLimit = profile.ai_quota_limit || 5;
 
     if (quotaUsed >= quotaLimit) {
-      return jsonResponse({ error: "Limite de cota de Inteligencia Artificial gratuito atingido." }, 403, corsHeaders);
+      return ok({ success: false, error: `Limite de análises gratuitas atingido (${quotaUsed}/${quotaLimit}). Aguarde a renovação mensal.` }, corsHeaders);
     }
 
-    const { laudoId } = await req.json() as { laudoId: string };
+    // ── Validação do body ──────────────────────────────────────────────
+    const body = await req.json().catch(() => null);
+    const laudoId = body?.laudoId;
     if (!laudoId) {
-      return jsonResponse({ error: "laudoId obrigatorio" }, 400, corsHeaders);
+      return ok({ success: false, error: "ID do laudo não informado." }, corsHeaders);
     }
     laudoIdForFailure = laudoId;
 
+    // ── Busca laudo ─────────────────────────────────────────────────────
     const { data: laudo, error: laudoError } = await supabase
       .from("laudos_pdf")
       .select("id, storage_path, status, vet_id, nome_arquivo")
@@ -229,37 +238,44 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (laudoError || !laudo) {
-      return jsonResponse({ error: "Laudo nao encontrado" }, 404, corsHeaders);
+      return ok({ success: false, error: "Laudo não encontrado. Tente fazer o upload novamente." }, corsHeaders);
     }
     if (laudo.vet_id !== user.id) {
-      return jsonResponse({ error: "Acesso negado" }, 403, corsHeaders);
+      return ok({ success: false, error: "Acesso negado a este laudo." }, corsHeaders);
     }
     if (laudo.status === "concluido") {
-      return jsonResponse({ error: "Laudo ja processado" }, 409, corsHeaders);
+      return ok({ success: false, error: "Este laudo já foi processado anteriormente." }, corsHeaders);
     }
 
+    // ── Marca como processando ─────────────────────────────────────────
     const { error: processingError } = await supabase
       .from("laudos_pdf")
       .update({ status: "processando", erro_ia: null })
       .eq("id", laudoId);
     if (processingError) {
-      throw new Error(`Nao foi possivel iniciar processamento: ${processingError.message}`);
+      throw new Error(`Não foi possível iniciar o processamento: ${processingError.message}`);
     }
 
+    // ── Download do PDF do Storage ──────────────────────────────────────
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("laudos")
       .download(laudo.storage_path);
 
     if (downloadError || !fileData) {
-      throw new Error(`Download falhou: ${downloadError?.message}`);
+      throw new Error(`Falha ao baixar o PDF: ${downloadError?.message ?? "arquivo não encontrado no storage"}`);
     }
 
+    // ── Converte para base64 ───────────────────────────────────────────
     const pdfBytes = await fileData.arrayBuffer();
     const base64Pdf = arrayBufferToBase64(pdfBytes);
 
+    // ── Chave da OpenAI ────────────────────────────────────────────────
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openaiKey) throw new Error("OPENAI_API_KEY nao configurada");
+    if (!openaiKey) {
+      throw new Error("OPENAI_API_KEY não configurada no projeto Supabase.");
+    }
 
+    // ── Chamada à OpenAI (Responses API) ──────────────────────────────
     const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -300,16 +316,23 @@ Deno.serve(async (req: Request) => {
 
     if (!openaiResponse.ok) {
       const errBody = await openaiResponse.text();
-      throw new Error(`OpenAI error ${openaiResponse.status}: ${errBody}`);
+      throw new Error(`OpenAI retornou erro ${openaiResponse.status}: ${errBody.slice(0, 500)}`);
     }
 
     const openaiData = await openaiResponse.json();
     const outputText = extractOpenAIOutputText(openaiData);
     if (!outputText) {
-      throw new Error("Resposta da OpenAI sem texto estruturado");
+      throw new Error("A IA não retornou dados estruturados. Tente reenviar o PDF.");
     }
-    const resultadoIa = JSON.parse(outputText);
 
+    let resultadoIa: unknown;
+    try {
+      resultadoIa = JSON.parse(outputText);
+    } catch {
+      throw new Error("Não foi possível interpretar a resposta da IA. Tente reenviar o PDF.");
+    }
+
+    // ── Salva resultado ────────────────────────────────────────────────
     const { error: resultUpdateError } = await supabase
       .from("laudos_pdf")
       .update({
@@ -322,22 +345,22 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Falha ao salvar resultado: ${resultUpdateError.message}`);
     }
 
+    // ── Incrementa cota ────────────────────────────────────────────────
     const { error: quotaRpcError } = await supabase.rpc("increment_ai_quota", { user_id: user.id });
     if (quotaRpcError) {
-      const { error: quotaFallbackError } = await supabase
+      await supabase
         .from("profiles")
         .update({ ai_quota_used: quotaUsed + 1 })
         .eq("id", user.id);
-      if (quotaFallbackError) {
-        console.error("[parse-laudo quota fallback]:", quotaFallbackError.message);
-      }
     }
 
-    return jsonResponse({ success: true, data: resultadoIa }, 200, corsHeaders);
+    return ok({ success: true, data: resultadoIa }, corsHeaders);
+
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[parse-laudo]:", msg);
 
+    // Atualiza status para 'erro' no banco
     if (supabase && laudoIdForFailure) {
       await supabase
         .from("laudos_pdf")
@@ -348,10 +371,16 @@ Deno.serve(async (req: Request) => {
         .eq("id", laudoIdForFailure);
     }
 
+    // Mensagem pública sem expor detalhes sensíveis
     const publicMsg = msg.includes("OPENAI_API_KEY")
-      ? "Servico de IA indisponivel no momento."
-      : "Nao foi possivel processar o laudo agora.";
+      ? "Serviço de IA não configurado. Contate o suporte técnico."
+      : msg.includes("OpenAI retornou erro")
+      ? "Serviço de IA temporariamente indisponível. Tente novamente em alguns minutos."
+      : msg.includes("Falha ao baixar")
+      ? "Erro ao acessar o arquivo PDF no storage. Tente fazer o upload novamente."
+      : "Não foi possível processar o laudo agora. Tente novamente.";
 
-    return jsonResponse({ error: publicMsg }, 500, corsHeaders);
+    // Sempre retorna 200 para que o cliente consiga ler o corpo da resposta
+    return ok({ success: false, error: publicMsg }, corsHeaders);
   }
 });

@@ -84,10 +84,11 @@ export function LaudoUploader({ petId }: { petId: string }) {
   const [dragActive, setDragActive] = useState(false)
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
-  const [status, setStatus] = useState<'idle' | 'uploading' | 'analyzing' | 'done' | 'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'saving' | 'analyzing' | 'done' | 'error'>('idle')
   const [result, setResult] = useState<HemogramaResult | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [aiQuota, setAiQuota] = useState<{ used: number; limit: number } | null>(null)
+  const [laudoId, setLaudoId] = useState<string | null>(null)
 
   // Busca cota de IA do usuário
   useEffect(() => {
@@ -157,13 +158,13 @@ export function LaudoUploader({ petId }: { petId: string }) {
     if (file) handleFile(file)
   }, [handleFile])
 
-  async function handleAnalyze() {
+  /** Etapa 1: Upload PDF → Storage + salvar no banco. Não requer IA. */
+  async function handleUpload() {
     if (!pdfFile) return
     setErrorMsg(null)
 
     startTransition(async () => {
       try {
-        // 1. Upload para o Storage
         setStatus('uploading')
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) throw new Error('Sessão expirada. Faça login novamente.')
@@ -173,12 +174,13 @@ export function LaudoUploader({ petId }: { petId: string }) {
           .replace(/[^\w.-]+/g, '_')
           .replace(/^_+|_+$/g, '') || 'laudo.pdf'
         const fileName = `${user.id}/${Date.now()}_${safeName}`
+
         const { error: uploadError } = await supabase.storage
           .from('laudos')
           .upload(fileName, pdfFile, { contentType: 'application/pdf', upsert: false })
         if (uploadError) throw new Error(`Upload falhou: ${uploadError.message}`)
 
-        // 2. Cria registro no banco (cast necessário pelas limitações do client Supabase)
+        setStatus('saving')
         const { data: laudo, error: insertError } = await supabase
           .from('laudos_pdf')
           .insert({
@@ -191,43 +193,49 @@ export function LaudoUploader({ petId }: { petId: string }) {
           })
           .select('id')
           .single() as { data: { id: string } | null; error: Error | null }
+
         if (insertError || !laudo) {
           await supabase.storage.from('laudos').remove([fileName])
-          throw new Error('Erro ao registrar laudo.')
+          throw new Error('Erro ao registrar laudo no banco.')
         }
 
-        // 3. Dispara Edge Function
+        setLaudoId(laudo.id)
+        setStatus('done')
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : 'Erro desconhecido')
+        setStatus('error')
+      }
+    })
+  }
+
+  /** Etapa 2 (opcional): Aciona a análise por IA para laudo já salvo. */
+  async function handleAnalyzeWithAI() {
+    if (!laudoId) return
+    setErrorMsg(null)
+
+    startTransition(async () => {
+      try {
         setStatus('analyzing')
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.access_token) throw new Error('Sessão expirada. Faça login novamente.')
 
         const fnRes = await supabase.functions.invoke('parse-laudo', {
-          body: { laudoId: laudo.id },
+          body: { laudoId },
           headers: { Authorization: `Bearer ${session.access_token}` },
         })
 
-        // Erro de rede ou autenticação (o SDK define fnRes.error)
         if (fnRes.error) {
-          // Tenta extrair mensagem do corpo mesmo em caso de erro HTTP
           const serverMsg = fnRes.data?.error
           throw new Error(serverMsg || fnRes.error.message || 'Falha na comunicação com o serviço de IA.')
         }
-
-        // Erro lógico retornado pela Edge Function (success: false)
         if (!fnRes.data?.success) {
           throw new Error(fnRes.data?.error || 'Erro desconhecido ao processar o laudo.')
         }
-
         if (!fnRes.data?.data) throw new Error('A IA não retornou dados. Tente reenviar o PDF.')
 
         setResult(fnRes.data.data as HemogramaResult)
+        if (aiQuota) setAiQuota({ ...aiQuota, used: aiQuota.used + 1 })
         setStatus('done')
-
-        // Atualiza cota local
-        if (aiQuota) {
-          setAiQuota({ ...aiQuota, used: aiQuota.used + 1 })
-        }
-
       } catch (err) {
         setErrorMsg(err instanceof Error ? err.message : 'Erro desconhecido')
         setStatus('error')
@@ -291,34 +299,42 @@ export function LaudoUploader({ petId }: { petId: string }) {
 
           {/* Painel de resultado */}
           <div className="order-1 lg:order-2 space-y-4">
-            {/* Botão analisar */}
-            {status === 'idle' || status === 'error' ? (
+            {/* Botão principal: carregamento do PDF */}
+            {(status === 'idle' || status === 'error') && (
               <div className="space-y-2">
                 <button
                   type="button"
-                  onClick={handleAnalyze}
-                  disabled={isPending || (aiQuota !== null && aiQuota.used >= aiQuota.limit)}
+                  onClick={handleUpload}
+                  disabled={isPending}
                   className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-bold text-sm hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg shadow-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Zap className="h-4 w-4" aria-hidden />
-                  {aiQuota !== null && aiQuota.used >= aiQuota.limit 
-                    ? 'Limite Gratuito Atingido' 
-                    : status === 'error'
-                      ? 'Tentar novamente'
-                      : 'Analisar com IA (GPT-4o)'}
+                  {status === 'error' ? 'Tentar novamente' : 'Salvar laudo no sistema'}
                 </button>
-                {aiQuota && (
-                  <p className="text-center text-xs text-slate-500">
-                    Você já usou <strong className={aiQuota.used >= aiQuota.limit ? 'text-red-500' : 'text-slate-700'}>{aiQuota.used}</strong> de <strong>{aiQuota.limit}</strong> análises gratuitas este mês.
-                  </p>
-                )}
+                <p className="text-center text-xs text-slate-400">
+                  O arquivo será salvo com segurança no seu histórico clínico.
+                </p>
               </div>
-            ) : status === 'uploading' ? (
+            )}
+
+            {/* Progresso: upload */}
+            {status === 'uploading' && (
               <div className="flex items-center gap-3 px-6 py-4 rounded-xl bg-slate-50 border border-slate-100">
                 <Loader2 className="h-5 w-5 text-brand-500 animate-spin" />
                 <span className="text-sm font-medium text-slate-700">Enviando PDF…</span>
               </div>
-            ) : status === 'analyzing' ? (
+            )}
+
+            {/* Progresso: gravando no banco */}
+            {status === 'saving' && (
+              <div className="flex items-center gap-3 px-6 py-4 rounded-xl bg-slate-50 border border-slate-100">
+                <Loader2 className="h-5 w-5 text-brand-500 animate-spin" />
+                <span className="text-sm font-medium text-slate-700">Registrando laudo…</span>
+              </div>
+            )}
+
+            {/* Progresso: IA */}
+            {status === 'analyzing' && (
               <div className="flex items-center gap-3 px-6 py-4 rounded-xl bg-brand-50 border border-brand-100">
                 <Loader2 className="h-5 w-5 text-brand-500 animate-spin" />
                 <div>
@@ -326,7 +342,39 @@ export function LaudoUploader({ petId }: { petId: string }) {
                   <p className="text-xs text-brand-400 mt-0.5">GPT-4o extraindo dados clínicos</p>
                 </div>
               </div>
-            ) : null}
+            )}
+
+            {/* Sucesso: PDF salvo, sem análise de IA ainda */}
+            {status === 'done' && !result && (
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-green-50 border border-green-100">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" aria-hidden />
+                  <div>
+                    <p className="text-sm font-semibold text-green-800">PDF salvo com sucesso!</p>
+                    <p className="text-xs text-green-600 mt-0.5">
+                      O laudo está seguro no histórico do paciente.
+                    </p>
+                  </div>
+                </div>
+                {/* Botão opcional de análise por IA */}
+                <button
+                  type="button"
+                  onClick={handleAnalyzeWithAI}
+                  disabled={isPending || (aiQuota !== null && aiQuota.used >= aiQuota.limit)}
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-brand-200 bg-brand-50 text-brand-700 font-semibold text-sm hover:bg-brand-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Zap className="h-4 w-4" aria-hidden />
+                  {aiQuota !== null && aiQuota.used >= aiQuota.limit
+                    ? 'Limite de análises atingido'
+                    : 'Analisar com IA (opcional)'}
+                </button>
+                {aiQuota && (
+                  <p className="text-center text-xs text-slate-400">
+                    {aiQuota.used} de {aiQuota.limit} análises gratuitas usadas este mês.
+                  </p>
+                )}
+              </div>
+            )}
 
             {errorMsg && (
               <div role="alert" className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">

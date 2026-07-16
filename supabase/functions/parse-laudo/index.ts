@@ -214,55 +214,78 @@ async function callGemini(
 
   const geminiSchema = toGeminiSchema(HEMOGRAMA_SCHEMA.schema);
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      system_instruction: {
-        parts: [{ text: SYSTEM_PROMPT }],
-      },
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: `Extraia todos os dados deste laudo veterinario (${fileName}). Retorne JSON estruturado:` },
-            {
-              inline_data: {
-                mime_type: "application/pdf",
-                data: base64Pdf,
-              },
+  const requestBody = JSON.stringify({
+    system_instruction: {
+      parts: [{ text: SYSTEM_PROMPT }],
+    },
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { text: `Extraia todos os dados deste laudo veterinario (${fileName}). Retorne JSON estruturado:` },
+          {
+            inline_data: {
+              mime_type: "application/pdf",
+              data: base64Pdf,
             },
-          ],
-        },
-      ],
-      generationConfig: {
-        temperature: 0,
-        maxOutputTokens: 4096,
-        responseMimeType: "application/json",
-        responseSchema: geminiSchema,
+          },
+        ],
       },
-    }),
+    ],
+    generationConfig: {
+      temperature: 0,
+      maxOutputTokens: 4096,
+      responseMimeType: "application/json",
+      responseSchema: geminiSchema,
+    },
   });
 
-  if (!response.ok) {
-    const errBody = await response.text();
-    throw new Error(`Gemini retornou erro ${response.status}: ${errBody.slice(0, 500)}`);
+  // Retry com backoff exponencial para rate limit (429)
+  const MAX_RETRIES = 3;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      const delayMs = Math.min(2000 * Math.pow(2, attempt - 1), 16000);
+      console.log(`[parse-laudo] Gemini rate limit (429). Retry ${attempt}/${MAX_RETRIES} em ${delayMs}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: requestBody,
+    });
+
+    if (response.status === 429) {
+      const errBody = await response.text();
+      lastError = new Error(`Gemini rate limit (429): ${errBody.slice(0, 300)}`);
+      continue; // tenta novamente
+    }
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`Gemini retornou erro ${response.status}: ${errBody.slice(0, 500)}`);
+    }
+
+    const data = await response.json();
+
+    // Extrai texto da resposta do Gemini
+    const candidates = data?.candidates;
+    if (!candidates || candidates.length === 0) {
+      throw new Error("Gemini não retornou candidatos na resposta.");
+    }
+
+    const parts = candidates[0]?.content?.parts;
+    if (!parts || parts.length === 0) {
+      throw new Error("Gemini não retornou conteúdo na resposta.");
+    }
+
+    return parts[0]?.text ?? "";
   }
 
-  const data = await response.json();
-
-  // Extrai texto da resposta do Gemini
-  const candidates = data?.candidates;
-  if (!candidates || candidates.length === 0) {
-    throw new Error("Gemini não retornou candidatos na resposta.");
-  }
-
-  const parts = candidates[0]?.content?.parts;
-  if (!parts || parts.length === 0) {
-    throw new Error("Gemini não retornou conteúdo na resposta.");
-  }
-
-  return parts[0]?.text ?? "";
+  // Se esgotou retries, lança o último erro
+  throw lastError ?? new Error("Gemini: máximo de tentativas excedido.");
 }
 
 // ── OpenAI API (fallback) ────────────────────────────────────────────────

@@ -339,7 +339,7 @@ export function LaudoUploader({ petId }: { petId: string }) {
                 <Loader2 className="h-5 w-5 text-brand-500 animate-spin" />
                 <div>
                   <p className="text-sm font-semibold text-brand-700">IA analisando o laudo…</p>
-                  <p className="text-xs text-brand-400 mt-0.5">GPT-4o extraindo dados clínicos</p>
+                  <p className="text-xs text-brand-400 mt-0.5">Extraindo dados clínicos do laudo…</p>
                 </div>
               </div>
             )}

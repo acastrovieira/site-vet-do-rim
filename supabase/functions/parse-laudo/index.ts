@@ -52,33 +52,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-function extractOpenAIOutputText(data: unknown): string | null {
-  if (!data || typeof data !== "object") return null;
-
-  const response = data as {
-    output_text?: unknown;
-    output?: Array<{ content?: Array<{ type?: string; text?: unknown }> }>;
-  };
-
-  if (typeof response.output_text === "string") {
-    return response.output_text;
-  }
-
-  const parts: string[] = [];
-  for (const item of response.output ?? []) {
-    for (const content of item.content ?? []) {
-      if (
-        (content.type === "output_text" || content.type === "text") &&
-        typeof content.text === "string"
-      ) {
-        parts.push(content.text);
-      }
-    }
-  }
-
-  return parts.length > 0 ? parts.join("\n") : null;
-}
-
+// ── Schema do resultado (compartilhado entre Gemini e OpenAI) ────────────
 const HEMOGRAMA_SCHEMA = {
   name: "hemograma_veterinario",
   strict: true,
@@ -179,6 +153,206 @@ const HEMOGRAMA_SCHEMA = {
   },
 };
 
+const SYSTEM_PROMPT = "Voce e um assistente clinico veterinario especialista em patologia clinica. Extraia todos os dados do PDF e retorne JSON estruturado conforme o schema fornecido. Se algum campo nao constar no laudo, retorne null. Para interpretacao, destaque achados relevantes para nefrologia como DRC, proteinuria, anemia renal, hiperfosfatemia e hipocalemia. Sugira estadiamento IRIS apenas se creatinina estiver presente.";
+
+// ── Gemini API ───────────────────────────────────────────────────────────
+
+/**
+ * Converte o schema JSON Schema para o formato do Gemini.
+ * Gemini não suporta `type: ["number", "null"]`, usa `nullable: true`.
+ */
+function toGeminiSchema(jsonSchema: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(jsonSchema)) {
+    if (key === "additionalProperties") continue; // Gemini não usa isso
+
+    if (key === "type" && Array.isArray(value)) {
+      // ["number", "null"] → type: "NUMBER", nullable: true
+      const types = (value as string[]).filter((t) => t !== "null");
+      result["type"] = geminiType(types[0] || "string");
+      if ((value as string[]).includes("null")) {
+        result["nullable"] = true;
+      }
+    } else if (key === "type" && typeof value === "string") {
+      result["type"] = geminiType(value);
+    } else if (key === "properties" && typeof value === "object" && value !== null) {
+      const props: Record<string, unknown> = {};
+      for (const [propKey, propVal] of Object.entries(value as Record<string, unknown>)) {
+        props[propKey] = toGeminiSchema(propVal as Record<string, unknown>);
+      }
+      result["properties"] = props;
+    } else if (key === "items" && typeof value === "object" && value !== null) {
+      result["items"] = toGeminiSchema(value as Record<string, unknown>);
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+function geminiType(t: string): string {
+  switch (t) {
+    case "string": return "STRING";
+    case "number": return "NUMBER";
+    case "integer": return "INTEGER";
+    case "boolean": return "BOOLEAN";
+    case "array": return "ARRAY";
+    case "object": return "OBJECT";
+    default: return "STRING";
+  }
+}
+
+async function callGemini(
+  apiKey: string,
+  base64Pdf: string,
+  fileName: string,
+): Promise<string> {
+  const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.0-flash";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  const geminiSchema = toGeminiSchema(HEMOGRAMA_SCHEMA.schema);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: {
+        parts: [{ text: SYSTEM_PROMPT }],
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: `Extraia todos os dados deste laudo veterinario (${fileName}). Retorne JSON estruturado:` },
+            {
+              inline_data: {
+                mime_type: "application/pdf",
+                data: base64Pdf,
+              },
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        temperature: 0,
+        maxOutputTokens: 4096,
+        responseMimeType: "application/json",
+        responseSchema: geminiSchema,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error(`Gemini retornou erro ${response.status}: ${errBody.slice(0, 500)}`);
+  }
+
+  const data = await response.json();
+
+  // Extrai texto da resposta do Gemini
+  const candidates = data?.candidates;
+  if (!candidates || candidates.length === 0) {
+    throw new Error("Gemini não retornou candidatos na resposta.");
+  }
+
+  const parts = candidates[0]?.content?.parts;
+  if (!parts || parts.length === 0) {
+    throw new Error("Gemini não retornou conteúdo na resposta.");
+  }
+
+  return parts[0]?.text ?? "";
+}
+
+// ── OpenAI API (fallback) ────────────────────────────────────────────────
+
+function extractOpenAIOutputText(data: unknown): string | null {
+  if (!data || typeof data !== "object") return null;
+
+  const response = data as {
+    output_text?: unknown;
+    output?: Array<{ content?: Array<{ type?: string; text?: unknown }> }>;
+  };
+
+  if (typeof response.output_text === "string") {
+    return response.output_text;
+  }
+
+  const parts: string[] = [];
+  for (const item of response.output ?? []) {
+    for (const content of item.content ?? []) {
+      if (
+        (content.type === "output_text" || content.type === "text") &&
+        typeof content.text === "string"
+      ) {
+        parts.push(content.text);
+      }
+    }
+  }
+
+  return parts.length > 0 ? parts.join("\n") : null;
+}
+
+async function callOpenAI(
+  apiKey: string,
+  base64Pdf: string,
+  fileName: string,
+): Promise<string> {
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: Deno.env.get("OPENAI_MODEL") || "gpt-4o",
+      text: {
+        format: {
+          type: "json_schema",
+          name: HEMOGRAMA_SCHEMA.name,
+          strict: HEMOGRAMA_SCHEMA.strict,
+          schema: HEMOGRAMA_SCHEMA.schema,
+        },
+      },
+      input: [
+        {
+          role: "system",
+          content: SYSTEM_PROMPT,
+        },
+        {
+          role: "user",
+          content: [
+            { type: "input_text", text: "Extraia todos os dados deste laudo veterinario:" },
+            {
+              type: "input_file",
+              filename: fileName,
+              file_data: `data:application/pdf;base64,${base64Pdf}`,
+            },
+          ],
+        },
+      ],
+      max_output_tokens: 4096,
+      temperature: 0,
+    }),
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error(`OpenAI retornou erro ${response.status}: ${errBody.slice(0, 500)}`);
+  }
+
+  const data = await response.json();
+  const outputText = extractOpenAIOutputText(data);
+  if (!outputText) {
+    throw new Error("OpenAI não retornou dados estruturados.");
+  }
+
+  return outputText;
+}
+
+// ── Handler principal ────────────────────────────────────────────────────
+
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin");
   const corsHeaders = getCorsHeaders(origin);
@@ -268,61 +442,25 @@ Deno.serve(async (req: Request) => {
     // ── Converte para base64 ───────────────────────────────────────────
     const pdfBytes = await fileData.arrayBuffer();
     const base64Pdf = arrayBufferToBase64(pdfBytes);
+    const fileName = laudo.nome_arquivo || "laudo.pdf";
 
-    // ── Chave da OpenAI ────────────────────────────────────────────────
+    // ── Chamada à IA (Gemini prioritário, OpenAI como fallback) ────────
+    const geminiKey = Deno.env.get("GEMINI_API_KEY");
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openaiKey) {
-      throw new Error("OPENAI_API_KEY não configurada no projeto Supabase.");
-    }
 
-    // ── Chamada à OpenAI (Responses API) ──────────────────────────────
-    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: Deno.env.get("OPENAI_MODEL") || "gpt-4o",
-        text: {
-          format: {
-            type: "json_schema",
-            name: HEMOGRAMA_SCHEMA.name,
-            strict: HEMOGRAMA_SCHEMA.strict,
-            schema: HEMOGRAMA_SCHEMA.schema,
-          },
-        },
-        input: [
-          {
-            role: "system",
-            content: "Voce e um assistente clinico veterinario especialista em patologia clinica. Extraia todos os dados do PDF e retorne JSON estruturado. Se algum campo nao constar no laudo, retorne null. Para interpretacao, destaque achados relevantes para nefrologia como DRC, proteinuria, anemia renal, hiperfosfatemia e hipocalemia. Sugira estadiamento IRIS apenas se creatinina estiver presente.",
-          },
-          {
-            role: "user",
-            content: [
-              { type: "input_text", text: "Extraia todos os dados deste laudo veterinario:" },
-              {
-                type: "input_file",
-                filename: laudo.nome_arquivo || "laudo.pdf",
-                file_data: `data:application/pdf;base64,${base64Pdf}`,
-              },
-            ],
-          },
-        ],
-        max_output_tokens: 4096,
-        temperature: 0,
-      }),
-    });
+    let outputText: string;
+    let providerUsed: string;
 
-    if (!openaiResponse.ok) {
-      const errBody = await openaiResponse.text();
-      throw new Error(`OpenAI retornou erro ${openaiResponse.status}: ${errBody.slice(0, 500)}`);
-    }
-
-    const openaiData = await openaiResponse.json();
-    const outputText = extractOpenAIOutputText(openaiData);
-    if (!outputText) {
-      throw new Error("A IA não retornou dados estruturados. Tente reenviar o PDF.");
+    if (geminiKey) {
+      // Usa Gemini 2.0 Flash (free tier: 15 RPM, 1.500 req/dia)
+      outputText = await callGemini(geminiKey, base64Pdf, fileName);
+      providerUsed = "gemini";
+    } else if (openaiKey) {
+      // Fallback: OpenAI GPT-4o (custo por token)
+      outputText = await callOpenAI(openaiKey, base64Pdf, fileName);
+      providerUsed = "openai";
+    } else {
+      throw new Error("Nenhuma API de IA configurada. Configure GEMINI_API_KEY (gratuito) ou OPENAI_API_KEY no projeto Supabase.");
     }
 
     let resultadoIa: unknown;
@@ -354,7 +492,7 @@ Deno.serve(async (req: Request) => {
         .eq("id", user.id);
     }
 
-    return ok({ success: true, data: resultadoIa }, corsHeaders);
+    return ok({ success: true, data: resultadoIa, provider: providerUsed }, corsHeaders);
 
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
@@ -372,9 +510,9 @@ Deno.serve(async (req: Request) => {
     }
 
     // Mensagem pública sem expor detalhes sensíveis
-    const publicMsg = msg.includes("OPENAI_API_KEY")
+    const publicMsg = msg.includes("API de IA configurada")
       ? "Serviço de IA não configurado. Contate o suporte técnico."
-      : msg.includes("OpenAI retornou erro")
+      : msg.includes("Gemini retornou erro") || msg.includes("OpenAI retornou erro")
       ? "Serviço de IA temporariamente indisponível. Tente novamente em alguns minutos."
       : msg.includes("Falha ao baixar")
       ? "Erro ao acessar o arquivo PDF no storage. Tente fazer o upload novamente."

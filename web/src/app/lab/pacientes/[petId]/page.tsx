@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { TutorPetActions } from '@/app/lab/tutores/[id]/TutorPetActions'
+import { LabEvolutionTable } from '@/components/lab/LabEvolutionTable'
+import type { ResultadoIA } from '@/lib/lab/transform-laudo-data'
 import {
   ArrowLeft,
   User,
@@ -80,14 +82,21 @@ export default async function PacienteDetailPage({ params }: Props) {
     .eq('id', pet.tutor_id)
     .single() as { data: TutorRow | null; error: unknown }
 
-  type LaudoRow = { id: string; nome_arquivo: string; tipo_exame: string; status: string; created_at: string }
+  type LaudoRow = {
+    id: string
+    nome_arquivo: string
+    tipo_exame: string
+    status: string
+    created_at: string
+    resultado_ia: ResultadoIA | null
+  }
 
   const { data: laudos } = await supabase
     .from('laudos_pdf')
-    .select('id, nome_arquivo, tipo_exame, status, created_at')
+    .select('id, nome_arquivo, tipo_exame, status, created_at, resultado_ia')
     .eq('pet_id', petId)
     .order('created_at', { ascending: false })
-    .limit(10) as { data: LaudoRow[] | null; error: unknown }
+    .limit(50) as { data: LaudoRow[] | null; error: unknown }
 
   const statusInfo = STATUS_LABELS[pet.status_paciente] ?? { label: pet.status_paciente, color: 'bg-slate-100 text-slate-500' }
 
@@ -232,6 +241,22 @@ export default async function PacienteDetailPage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {/* Tabela Evolutiva — Acompanhamento de Valores Laboratoriais */}
+      {laudos && laudos.some((l) => l.status === 'concluido' && l.resultado_ia) && (
+        <div>
+          <LabEvolutionTable
+            laudos={laudos.map((l) => ({
+              id: l.id,
+              created_at: l.created_at,
+              resultado_ia: l.resultado_ia,
+              status: l.status,
+              nome_arquivo: l.nome_arquivo,
+            }))}
+            especie={pet.especie}
+          />
+        </div>
+      )}
 
       {/* Dados físicos */}
       <div className="bg-white rounded-2xl border border-slate-100 p-6">

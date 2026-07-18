@@ -1,10 +1,12 @@
 # Runbook: Sprint Upload/IA de Laudos
 
+> **RUNBOOK LEGADO EM REVISAO:** o fluxo atual de laudos ainda nao e transacional/idempotente. Nao aplicar migration, deploy ou teste remoto por este documento; siga o gate de `docs/README.md` e o draft em `docs/architecture/drafts/laudos-ia/`.
+
 ## Objetivo
 
 Aplicar e validar em ambiente Supabase real o fluxo de upload de PDF, processamento pela Edge Function `parse-laudo`, persistencia do resultado de IA, controle de cota e limpeza final dos dados temporarios.
 
-Projeto alvo: `ycclyzoslirpnnwgzrqx`.
+Projeto alvo: `<staging-project-ref>` explicitamente confirmado.
 
 ## Dependencia
 
@@ -15,7 +17,7 @@ Executar somente depois da Sprint Lab CRUD real passar com usuario vet temporari
 Antes de aplicar migration, deployar Edge Function ou criar dados temporarios, registrar confirmacao explicita:
 
 ```text
-Confirmo aplicar Upload/IA de laudos no projeto ycclyzoslirpnnwgzrqx com migration, deploy da Edge Function, teste temporário e limpeza final
+Confirmo aplicar Upload/IA de laudos no projeto <staging-project-ref> com migration, deploy da Edge Function, teste temporário e limpeza final
 ```
 
 ## Pre-checagem segura
@@ -23,7 +25,7 @@ Confirmo aplicar Upload/IA de laudos no projeto ycclyzoslirpnnwgzrqx com migrati
 Rodar no terminal com Supabase CLI, Deno e envs reais:
 
 ```powershell
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim\web"
+Set-Location (Join-Path (git rev-parse --show-toplevel) "web")
 npm run check:remote-readiness
 ```
 
@@ -77,7 +79,7 @@ deno --version
 Na raiz do projeto:
 
 ```powershell
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim"
+Set-Location (git rev-parse --show-toplevel)
 supabase migration list
 supabase db push --dry-run
 supabase db lint --linked --schema public,storage --fail-on warning
@@ -148,7 +150,7 @@ Observacao: planejamentos antigos citavam `laudos-pdf`, mas o codigo atual, scri
 No diretorio `web`:
 
 ```powershell
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim\web"
+Set-Location (Join-Path (git rev-parse --show-toplevel) "web")
 npm run test:e2e:upload-ia
 ```
 

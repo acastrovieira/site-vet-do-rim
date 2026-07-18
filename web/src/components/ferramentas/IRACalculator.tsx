@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Zap, AlertTriangle, CheckCircle2, Info, ExternalLink, ArrowRight } from 'lucide-react'
+import { gradeAKI } from '@/lib/aki-grading'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,11 +19,10 @@ interface AKIResult {
   interpretation: string
   interventions: string[]
   urgency: 'monitorar' | 'tratar' | 'urgencia' | 'emergencia'
-  rrNeeded: boolean
 }
 
 // ─── IRIS AKI Grading Table ───────────────────────────────────────────────────
-// Source: IRIS AKI Guidelines 2016 (www.iris-kidney.com/guidelines/aki.html)
+// Source: IRIS AKI Grading Guidelines 2026 (iris-kidney.com)
 
 const IRIS_AKI_GRADES = [
   {
@@ -67,50 +67,34 @@ const IRIS_AKI_GRADES = [
 
 const GRADE_INTERVENTIONS: Record<number, string[]> = {
   1: [
-    'Identificar e tratar a causa subjacente (isquemia, nefrotóxicos, pré-renal)',
-    'Restaurar a perfusão renal com fluidoterapia IV criteriosa',
-    'Suspender ou ajustar todos os fármacos nefrotóxicos',
-    'Monitorar débito urinário (alvo: 1–2 mL/kg/h)',
-    'Repetir creatinina e ureia em 24–48h',
-    'Avaliar bioquímica completa: ureia, fósforo, K⁺, HCO₃⁻',
+    'Confirmar a evidência de injúria renal aguda e investigar a causa.',
+    'Reavaliar creatinina, tendência clínica, hidratação e débito urinário.',
+    'Revisar exposições e medicamentos potencialmente nefrotóxicos com o veterinário.',
+    'Definir exames e suporte de forma individualizada.',
   ],
   2: [
-    'Fluidoterapia IV agressiva: Ringer Lactato ou NaCl 0,9% — taxa individualizada',
-    'Monitorar débito urinário rigorosamente (horário)',
-    'Verificar K⁺ sérico a cada 6–8h — hipercalemia é emergência',
-    'Monitorar PA (objetivo: PAM > 65–80 mmHg)',
-    'Avaliar necessidade de diuréticos (furosemida 1–4 mg/kg IV se sobrecarga hídrica)',
-    'Creatinina e ureia a cada 12–24h',
-    'Consultar especialista em nefrologia veterinária',
+    'Confirmar IRA e diferenciar de DRC ou injúria aguda sobre DRC.',
+    'Avaliar balanço hídrico, eletrólitos, pressão arterial e débito urinário.',
+    'Definir necessidade de internação e suporte pelo estado clínico, não pelo grau isolado.',
+    'Considerar avaliação por especialista em nefrologia veterinária.',
   ],
   3: [
-    'Fluidoterapia IV intensiva + monitoração central de pressão venosa',
-    'Correção de distúrbios eletrolíticos: K⁺, HCO₃⁻, Ca²⁺, PO₄³⁻',
-    'Controle de hipercalemia (gluconato de Ca²⁺, bicarbonato, glicose + insulina)',
-    'Avaliação de hemodiálise ou diálise peritoneal',
-    'Manejo de sobrecarga de volume se oligúria persistente',
-    'Creatinina a cada 6–12h, ECG se K⁺ > 6,0 mEq/L',
-    'Referência imediata para centro de nefrologia veterinária',
-    'Nutrição parenteral precoce se anorexia > 48h',
+    'Realizar avaliação veterinária urgente e monitoramento seriado.',
+    'Avaliar balanço hídrico, eletrólitos, acidose, pressão arterial e complicações urêmicas.',
+    'Individualizar suporte e frequência de reavaliação.',
+    'Discutir precocemente o caso com centro de nefrologia quando disponível.',
   ],
   4: [
-    'EMERGÊNCIA — iniciar terapia de substituição renal (TSR) se disponível',
-    'Hemodiálise intermitente ou CRRT (terapia de substituição contínua)',
-    'Diálise peritoneal como alternativa se sem acesso a hemodiálise',
-    'Controle rigoroso de K⁺ (risco de parada cardíaca)',
-    'Manejo de uremia: antiemético, protetor gástrico (omeprazol)',
-    'Suporte nutricional parenteral total',
-    'Discussão de prognóstico e qualidade de vida com o tutor',
-    'UTI veterinária obrigatória',
+    'Realizar avaliação veterinária emergencial e monitoramento intensivo conforme o quadro.',
+    'Pesquisar e tratar complicações potencialmente fatais com protocolo individualizado.',
+    'Avaliar terapia de substituição renal pelas complicações e resposta ao suporte, não pelo grau isolado.',
+    'Discutir prognóstico e opções terapêuticas com o tutor.',
   ],
   5: [
-    'CRÍTICO — avaliar viabilidade de terapia de substituição renal imediata',
-    'Prognóstico extremamente grave — mortalidade elevada sem TSR',
-    'Diálise de emergência se o paciente for candidato',
-    'Discussão ética com tutor sobre prognóstico reservado',
-    'Cuidados paliativos e controle de sintomas urêmicos se TSR não for opção',
-    'Analgesia, antiemético, fluidoterapia de conforto',
-    'Reavaliação a cada 4–6h',
+    'Realizar avaliação veterinária emergencial em ambiente com suporte intensivo, quando disponível.',
+    'Avaliar complicações, reversibilidade e terapia de substituição renal de forma individual.',
+    'Discutir prognóstico, limites terapêuticos e qualidade de vida com o tutor.',
+    'Registrar decisões compartilhadas e reavaliar a resposta clínica.',
   ],
 }
 
@@ -123,10 +107,10 @@ const GRADE_COLORS = {
 }
 
 const URGENCY_LABELS = {
-  monitorar: { label: 'Monitorar', cls: 'bg-emerald-100 text-emerald-700' },
-  tratar:    { label: 'Tratar — internação recomendada', cls: 'bg-amber-100 text-amber-700' },
-  urgencia:  { label: 'Urgência — internação obrigatória', cls: 'bg-orange-100 text-orange-700' },
-  emergencia:{ label: 'Emergência — UTI veterinária', cls: 'bg-red-100 text-red-800' },
+  monitorar: { label: 'Avaliação necessária', cls: 'bg-emerald-100 text-emerald-700' },
+  tratar:    { label: 'Avaliação prioritária', cls: 'bg-amber-100 text-amber-700' },
+  urgencia:  { label: 'Avaliação urgente', cls: 'bg-orange-100 text-orange-700' },
+  emergencia:{ label: 'Avaliação emergencial', cls: 'bg-red-100 text-red-800' },
 }
 
 // ─── Core classification logic ────────────────────────────────────────────────
@@ -136,48 +120,36 @@ function classifyAKI(
   prevCreat: number | null,
   hoursInterval: number | null,
   uoStatus: UOStatus,
-): AKIResult {
-  // Determine grade by creatinine
-  let gradeEntry = IRIS_AKI_GRADES[0]
-  for (const g of IRIS_AKI_GRADES) {
-    if (creat >= (g.creatMin ?? 0)) gradeEntry = g
-  }
+  hasClinicalEvidence: boolean,
+): AKIResult | null {
+  const grading = gradeAKI({
+    creatinineMgDl: creat,
+    previousCreatinineMgDl: prevCreat,
+    intervalHours: hoursInterval,
+    urineOutputStatus: uoStatus,
+    hasClinicalEvidence,
+  })
+  if (!grading) return null
 
-  // Grade I special case: normal creat but ≥ 0.3 mg/dL rise within 48h
-  let deltaCriteria: string | undefined
-  if (gradeEntry.grade === 1 && prevCreat !== null && hoursInterval !== null) {
-    const delta = creat - prevCreat
-    if (delta >= 0.3 && hoursInterval <= 48) {
-      deltaCriteria = `Δ creatinina = ${delta.toFixed(2)} mg/dL em ${hoursInterval}h (critério ≥ 0,3 mg/dL / 48h ✓)`
-    }
-  }
-
-  // Upgrade grade based on urine output (IRIS AKI)
-  let uoCriteria = ''
-  let upgradeForUO = false
-  if (uoStatus === 'oliguria') {
-    uoCriteria = 'Oligúria (< 1 mL/kg/h após fluidoterapia) — critério de agravamento'
-    upgradeForUO = gradeEntry.grade < 3
-  } else if (uoStatus === 'anuria') {
-    uoCriteria = 'Anúria (< 0,08 mL/kg/h) — critério de emergência'
-    upgradeForUO = gradeEntry.grade < 4
-  }
-
-  let finalGrade = gradeEntry.grade
-  if (upgradeForUO) finalGrade = Math.min(5, finalGrade + 1) as 1|2|3|4|5
-
-  const finalEntry = IRIS_AKI_GRADES.find(g => g.grade === finalGrade) ?? gradeEntry
+  const finalGrade = grading.grade
+  const finalEntry = IRIS_AKI_GRADES.find(g => g.grade === finalGrade) ?? IRIS_AKI_GRADES[0]
+  const deltaCriteria = grading.deltaMgDl !== undefined
+    ? `Δ creatinina = ${grading.deltaMgDl.toFixed(2)} mg/dL em ${hoursInterval}h (> 0,3 mg/dL / 48h)`
+    : undefined
+  const uoCriteria = grading.urineSubgrade
+    ? `Subgrau urinário ${grading.urineSubgrade} — o débito urinário não altera o grau IRIS AKI`
+    : 'Débito urinário não avaliado'
 
   const urgencyMap: Record<number, AKIResult['urgency']> = {
     1: 'monitorar', 2: 'tratar', 3: 'urgencia', 4: 'emergencia', 5: 'emergencia',
   }
 
   const interpretMap: Record<number, string> = {
-    1: 'IRA não azotêmica ou inicial. Sem azotemia detectável, mas com evidência de lesão renal aguda. Janela terapêutica crítica — intervenção precoce muda o prognóstico.',
-    2: 'Azotemia leve. Lesão renal estabelecida com disfunção moderada. Internação e fluidoterapia IV são necessárias para reverter a progressão.',
-    3: 'Azotemia moderada a grave. Risco significativo de progressão para uremia. Correção de distúrbios eletrolíticos urgente. Avaliar diálise.',
-    4: 'Azotemia grave. Uremia sintomática esperada. Risco iminente de parada cardíaca por hipercalemia. Terapia de substituição renal indicada.',
-    5: 'Azotemia crítica. Insuficiência renal em estágio terminal agudo. Prognóstico extremamente reservado sem suporte dialítico intensivo.',
+    1: 'Faixa não azotêmica ou inicial, aplicável apenas quando há evidência documentada de injúria renal aguda.',
+    2: 'Faixa de azotemia leve. Correlacionar com tendência, hidratação e evidência clínica de IRA.',
+    3: 'Faixa de azotemia moderada. Avaliar prontamente tendência e complicações.',
+    4: 'Faixa de azotemia grave. A urgência depende do estado clínico e das complicações.',
+    5: 'Faixa de azotemia muito grave. Requer avaliação emergencial e prognóstico individualizado.',
   }
 
   return {
@@ -190,7 +162,6 @@ function classifyAKI(
     interpretation: interpretMap[finalGrade],
     interventions: GRADE_INTERVENTIONS[finalGrade],
     urgency: urgencyMap[finalGrade],
-    rrNeeded: finalGrade >= 4,
   }
 }
 
@@ -211,7 +182,7 @@ function Field({ id, label, hint, children }: { id: string; label: string; hint?
 
 function References() {
   const refs = [
-    { a: 'IRIS (International Renal Interest Society).', t: 'IRIS AKI Grading Guidelines', j: '2016. iris-kidney.com', url: 'https://www.iris-kidney.com/guidelines/aki.html', doi: 'iris-kidney.com/guidelines/aki.html' },
+    { a: 'IRIS (International Renal Interest Society).', t: 'IRIS AKI Grading Guidelines', j: '2026. iris-kidney.com', url: 'https://www.iris-kidney.com/s/IRIS-AKI-Grading_2026.pdf', doi: 'IRIS-AKI-Grading_2026.pdf' },
     { a: 'Kellum JA et al.', t: 'KDIGO Clinical Practice Guideline for Acute Kidney Injury', j: 'Kidney Int Suppl. 2012;2(1):1-138', url: 'https://doi.org/10.1038/kisup.2012.1', doi: '10.1038/kisup.2012.1' },
     { a: 'Cowgill LD, Langston C.', t: 'Acute Kidney Insufficiency. In: Nephrology and Urology of Small Animals', j: 'Wiley-Blackwell; 2011:472-523', url: null, doi: null },
     { a: 'Segev G et al.', t: 'Epidemiology of acute kidney injury in veterinary medicine', j: 'J Vet Intern Med. 2008;22(5):1162-1167', url: 'https://doi.org/10.1111/j.1939-1676.2008.0163.x', doi: '10.1111/j.1939-1676.2008.0163.x' },
@@ -244,6 +215,7 @@ function References() {
 export function IRACalculator() {
   const [result, setResult] = useState<AKIResult | null>(null)
   const [showPrev, setShowPrev] = useState(false)
+  const [validationMessage, setValidationMessage] = useState('')
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -252,8 +224,21 @@ export function IRACalculator() {
     const prevCreat = showPrev ? parseFloat(fd.get('prevCreat') as string) : null
     const hours     = showPrev ? parseFloat(fd.get('hours') as string) : null
     const uoStatus  = fd.get('uoStatus') as UOStatus
+    const hasClinicalEvidence = fd.get('acuteEvidence') === 'on'
     if (!creat || creat <= 0) return
-    setResult(classifyAKI(creat, prevCreat, hours, uoStatus))
+    const nextResult = classifyAKI(
+      creat,
+      prevCreat,
+      hours,
+      uoStatus,
+      hasClinicalEvidence,
+    )
+    setResult(nextResult)
+    setValidationMessage(
+      nextResult
+        ? ''
+        : 'Não foi possível classificar. Confirme evidência de IRA e use valores laboratoriais reportados nas faixas IRIS; intervalos entre cortes exigem interpretação veterinária.',
+    )
   }
 
   return (
@@ -264,33 +249,26 @@ export function IRACalculator() {
         <div className="mb-6 rounded-xl bg-brand-50 border border-brand-100 p-4 flex gap-3">
           <Info className="h-4 w-4 text-brand-500 shrink-0 mt-0.5" aria-hidden />
           <p className="text-xs text-brand-700 leading-relaxed">
-            Classificação baseada no sistema <strong>IRIS AKI 2016</strong> (Graus I–V) e critérios <strong>KDIGO</strong>.
-            Considera creatinina sérica, variação em 48h e débito urinário após fluidoterapia.
+            Faixas baseadas no sistema <strong>IRIS AKI 2026</strong> (Graus I–V).
+            O débito urinário define o subgrau O/NO e não eleva o grau da creatinina.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-            <Field id="species" label="Espécie">
-              <select id="species" name="species" className={selectCls}>
-                <option value="cao">Cão</option>
-                <option value="gato">Gato</option>
-              </select>
-            </Field>
-
             <Field id="creat" label="Creatinina sérica atual (mg/dL) *"
-              hint="Cão ref: < 1,4 | Gato ref: < 1,6 mg/dL">
+              hint="A faixa de creatinina não diferencia IRA de DRC sem contexto clínico.">
               <input id="creat" name="creat" type="number" step="0.01" min="0.1" max="40"
                 placeholder="Ex: 3.8" className={inputCls} required />
             </Field>
 
             <Field id="uoStatus" label="Débito urinário (após fluidoterapia)"
-              hint="Avalie após 2–4h de fluidoterapia adequada">
+              hint="IRIS 2026: subgrau O se < 1 mL/kg/h ou ausência de urina por 6h.">
               <select id="uoStatus" name="uoStatus" className={selectCls}>
                 <option value="normal">Normal (≥ 1 mL/kg/h)</option>
-                <option value="oliguria">Oligúria (0,08–0,99 mL/kg/h)</option>
-                <option value="anuria">Anúria (≤ 0,08 mL/kg/h)</option>
+                <option value="oliguria">Oligúria (&lt; 1 mL/kg/h)</option>
+                <option value="anuria">Sem produção de urina por 6h</option>
                 <option value="nao_avaliado">Não avaliado</option>
               </select>
             </Field>
@@ -309,6 +287,18 @@ export function IRACalculator() {
           </div>
 
           {/* Toggle creatinina anterior */}
+          <div className="mt-4">
+            <label className="flex items-start gap-2 cursor-pointer text-sm text-slate-600">
+              <input
+                type="checkbox"
+                name="acuteEvidence"
+                className="mt-0.5 rounded border-slate-300 text-brand-500 focus:ring-brand-500"
+              />
+              Há evidência clínica ou laboratorial documentada de injúria renal aguda
+              (além de um valor isolado de creatinina).
+            </label>
+          </div>
+
           <div className="mt-4">
             <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-600">
               <input type="checkbox" checked={showPrev}
@@ -336,6 +326,11 @@ export function IRACalculator() {
             <Zap className="h-4 w-4" aria-hidden />
             Classificar Injúria Renal Aguda
           </button>
+          {validationMessage && (
+            <p className="mt-3 text-sm text-red-700" role="alert">
+              {validationMessage}
+            </p>
+          )}
         </form>
 
         {/* Result */}
@@ -378,11 +373,9 @@ export function IRACalculator() {
                 <span className={`px-4 py-2 rounded-full text-xs font-bold ${urgency.cls}`}>
                   {urgency.label}
                 </span>
-                {result.rrNeeded && (
-                  <span className="px-4 py-2 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
-                    ⚠️ Avaliar terapia de substituição renal (TSR)
-                  </span>
-                )}
+                <span className="px-4 py-2 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
+                  TSR depende das complicações e da resposta, não do grau isolado
+                </span>
               </div>
 
               {/* Interpretation */}
@@ -393,7 +386,7 @@ export function IRACalculator() {
               {/* Interventions */}
               <div className="bg-white rounded-2xl border border-slate-100 p-5">
                 <h3 className="font-display font-semibold text-slate-900 mb-4 text-sm">
-                  Condutas recomendadas — IRIS AKI Grau {result.grade}
+                  Pontos para avaliação veterinária — IRIS AKI Grau {result.grade}
                 </h3>
                 <ul className="space-y-2">
                   {result.interventions.map((r, i) => (

@@ -3,11 +3,15 @@ import { randomBytes } from 'node:crypto'
 import { existsSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
-import { envValue, loadLocalEnv, requiredEnv } from './lib/env-file.mjs'
+import { loadLocalEnv, requiredEnv } from './lib/env-file.mjs'
+import {
+  deleteAuthUsersAndVerify,
+  runCleanupSteps,
+} from './lib/e2e-cleanup-match.mjs'
+import { explicitSupabaseTarget } from './lib/supabase-target.mjs'
 
 const localEnv = loadLocalEnv()
-const projectRef = envValue(localEnv, 'SUPABASE_PROJECT_REF').value || 'ycclyzoslirpnnwgzrqx'
-const supabaseUrl = envValue(localEnv, 'NEXT_PUBLIC_SUPABASE_URL').value || `https://${projectRef}.supabase.co`
+const { supabaseUrl } = explicitSupabaseTarget(localEnv, { mutation: true })
 const serviceRoleKey = requiredEnv(localEnv, 'SUPABASE_SERVICE_ROLE_KEY')
 const anonKey = requiredEnv(localEnv, 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
 
@@ -43,7 +47,6 @@ async function createRoleUser(role) {
     email_confirm: true,
     user_metadata: {
       full_name: `E2E ${role}`,
-      requested_role: role,
     },
   })
 
@@ -69,14 +72,16 @@ async function createRoleUser(role) {
 }
 
 async function cleanup() {
-  for (const user of [...createdUsers].reverse()) {
-    const { error } = await supabase.auth.admin.deleteUser(user.id)
-    if (error) {
-      console.error(`Cleanup failed for ${user.role} (${user.email}): ${error.message}`)
-    } else {
+  const users = [...createdUsers].reverse()
+  await deleteAuthUsersAndVerify(supabase.auth.admin, users, {
+    isExpectedUser: (user) => (
+      roles.includes(user.role)
+      && user.email === `e2e-${user.role}-${runId}@example.test`
+    ),
+    onDeleted: (user) => {
       console.log(`Deleted E2E ${user.role} user: ${user.email}`)
-    }
-  }
+    },
+  })
 }
 
 function writeTemporaryPublicEnv() {
@@ -110,6 +115,8 @@ function restoreEnvLocal() {
 function clearNextCache() {
   rmSync(nextBuildPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 })
 }
+
+let primaryError
 
 try {
   writeTemporaryPublicEnv()
@@ -149,8 +156,12 @@ try {
   if (result.status !== 0) {
     throw new Error(`Playwright exited with status ${result.status}`)
   }
-} finally {
-  await cleanup()
-  restoreEnvLocal()
-  clearNextCache()
+} catch (error) {
+  primaryError = error
 }
+
+await runCleanupSteps([
+  ['Auth E2E user cleanup', cleanup],
+  ['temporary public environment restoration', restoreEnvLocal],
+  ['Next.js cache cleanup', clearNextCache],
+], { primaryError })

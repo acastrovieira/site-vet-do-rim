@@ -2,13 +2,18 @@
 -- - Evita reavaliar auth.uid() por linha em subscriptions.
 -- - Consolida policies permissivas duplicadas por role/action.
 
-DROP POLICY IF EXISTS "Usuários podem ver sua própria assinatura." ON public.subscriptions;
-
-CREATE POLICY "Usuários podem ver sua própria assinatura."
-  ON public.subscriptions
-  FOR SELECT
-  TO authenticated
-  USING ((select auth.uid()) = user_id);
+DO $$
+BEGIN
+  IF to_regclass('public.subscriptions') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "Usuários podem ver sua própria assinatura." ON public.subscriptions';
+    EXECUTE 'CREATE POLICY "Usuários podem ver sua própria assinatura."
+      ON public.subscriptions
+      FOR SELECT
+      TO authenticated
+      USING ((select auth.uid()) = user_id)';
+  END IF;
+END
+$$;
 
 DROP POLICY IF EXISTS "own_select_profile" ON public.profiles;
 DROP POLICY IF EXISTS "own_update_profile" ON public.profiles;

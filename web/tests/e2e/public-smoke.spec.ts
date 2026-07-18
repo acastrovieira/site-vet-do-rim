@@ -1,6 +1,21 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('public website smoke', () => {
+  test('privacy banner offers a real analytics opt-out', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.removeItem('vetdorim_analytics_consent')
+      localStorage.removeItem('vetdorim_cookies_accepted')
+    })
+    await page.goto('/')
+
+    await expect(page.getByRole('button', { name: /Somente necessários/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Aceitar analytics/i })).toBeVisible()
+    await page.getByRole('button', { name: /Somente necessários/i }).click()
+
+    await expect(page.getByRole('button', { name: /Aceitar analytics/i })).toHaveCount(0)
+    await expect(page.evaluate(() => localStorage.getItem('vetdorim_analytics_consent'))).resolves.toBe('declined')
+  })
+
   test('home renders primary navigation and CTAs', async ({ page }) => {
     await page.goto('/')
 
@@ -26,8 +41,8 @@ test.describe('public website smoke', () => {
     await page.goto('/ferramentas')
     await expect(page.getByRole('heading', { name: /Ferramentas/i })).toBeVisible()
 
-    await page.getByRole('link', { name: /TFG|taxa de filtra/i }).first().click()
-    await expect(page).toHaveURL(/\/ferramentas\/calculadora-tfg/)
-    await expect(page.getByRole('heading', { name: /TFG|filtra/i })).toBeVisible()
+    await page.getByRole('link', { name: /Estadiamento IRIS/i }).first().click()
+    await expect(page).toHaveURL(/\/ferramentas\/estadiamento-iris/)
+    await expect(page.getByRole('heading', { name: /Estadiamento IRIS/i })).toBeVisible()
   })
 })

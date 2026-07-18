@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
 import { getAllPosts } from '@/lib/blog'
+import { formatCivilDate } from '@/lib/civil-date'
 import { ArrowRight, BookOpen, Calendar } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -84,7 +85,7 @@ export default function BlogPage() {
                         </span>
                         <span className="text-xs text-slate-400 dark:text-white/40 flex items-center gap-1">
                           <Calendar className="h-3 w-3" aria-hidden />
-                          {new Date(post.frontmatter.date).toLocaleDateString('pt-BR', {
+                          {formatCivilDate(post.frontmatter.date, {
                             day: '2-digit',
                             month: 'short',
                             year: 'numeric',

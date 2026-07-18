@@ -1,6 +1,11 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { FlaskConical, Users, Activity, TrendingUp } from 'lucide-react'
+import {
+  assertServerQuerySucceeded,
+  throwServerQueryFailure,
+} from '@/lib/server-query-safety'
 
 export const metadata: Metadata = {
   title: 'Dashboard — Lab Evolution',
@@ -10,20 +15,27 @@ export const metadata: Metadata = {
 
 export default async function LabDashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) redirect('/auth/login?redirectTo=/lab')
 
   // Métricas rápidas (dados reais do banco)
-  const [{ count: totalPets }, { count: totalTutores }] = await Promise.all([
-    supabase.from('pets').select('*', { count: 'exact', head: true }),
-    supabase.from('tutores').select('*', { count: 'exact', head: true }),
+  const [petsResult, tutoresResult] = await Promise.all([
+    supabase.from('pets').select('id', { count: 'exact', head: true }),
+    supabase.from('tutores').select('id', { count: 'exact', head: true }),
   ])
+  assertServerQuerySucceeded(petsResult.error, 'LAB_PETS_COUNT_FAILED')
+  assertServerQuerySucceeded(tutoresResult.error, 'LAB_TUTORES_COUNT_FAILED')
+  const totalPets = petsResult.count
+  const totalTutores = tutoresResult.count
 
   // Perfil do usuário logado
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('full_name, role')
-    .eq('id', user!.id)
-    .single() as { data: { full_name: string | null; role: string } | null; error: Error | null }
+    .select('full_name')
+    .eq('id', user.id)
+    .maybeSingle()
+  assertServerQuerySucceeded(profileError, 'LAB_PROFILE_QUERY_FAILED')
+  if (!profile) throwServerQueryFailure('LAB_PROFILE_NOT_FOUND')
 
   // Saudação dinâmica por horário de Brasília (UTC-3)
   const brtHour = new Date(
@@ -41,7 +53,7 @@ export default async function LabDashboardPage() {
     },
     {
       icon: FlaskConical,
-      label: 'Pacientes ativos',
+      label: 'Pacientes cadastrados',
       value: totalPets ?? 0,
       color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
     },

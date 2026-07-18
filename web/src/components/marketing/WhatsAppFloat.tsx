@@ -1,11 +1,22 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
+
+const SENSITIVE_ROUTE_PREFIXES = ['/auth', '/lab', '/portal', '/admin', '/dashboard']
+
 /**
  * Botão flutuante do WhatsApp.
  * Fixo no canto inferior direito em todas as páginas de marketing.
  * Padrão UX #1 para conversão em sites brasileiros.
  */
 export function WhatsAppFloat() {
+  const pathname = usePathname()
+  const isSensitiveRoute = SENSITIVE_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )
+
+  if (isSensitiveRoute) return null
+
   const phone = '5527997987058'
   const message = encodeURIComponent(
     'Olá! Vim pelo site do Vet do Rim e gostaria de saber mais sobre os serviços.',

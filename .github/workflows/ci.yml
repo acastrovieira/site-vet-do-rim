@@ -1,4 +1,4 @@
-name: CI — Vet do Rim
+name: CI - Vet do Rim
 
 on:
   push:
@@ -6,19 +6,45 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     name: Quality Gates
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          node-version: '20'
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.18.0'
           cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Verify lockfile supply-chain metadata
+        run: node scripts/verify-supply-chain.mjs
+
+      - name: Verify append-only migration integrity
+        run: node scripts/verify-migration-integrity.mjs --check
+        env:
+          MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+
+      - name: Verify Edge Function dependency pins
+        run: node scripts/verify-edge-functions.mjs
 
       - name: Install dependencies
         run: npm ci --no-fund --no-audit
@@ -29,8 +55,121 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
+      - name: Unit tests
+        run: npm test
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
+      - name: Tooling dependency audits
+        run: |
+          npm --prefix ../.aiox-core audit --audit-level=high --package-lock-only
+          npm --prefix ../.aiox-core/scripts/diagnostics/health-dashboard audit --audit-level=high --package-lock-only
+
+      - name: Generate and validate production SBOM
+        run: |
+          npm sbom --omit=dev --sbom-format=cyclonedx > "$RUNNER_TEMP/vetdorim-web.cdx.json"
+          node -e "const fs=require('fs');const p=process.env.RUNNER_TEMP+'/vetdorim-web.cdx.json';const b=JSON.parse(fs.readFileSync(p,'utf8'));if(b.bomFormat!=='CycloneDX'||!Array.isArray(b.components))process.exit(1)"
+
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.placeholder
+
+  database-contract:
+    name: Database Contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Setup audited Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: 2.107.0
+
+      - name: Confirm Supabase CLI pin
+        run: test "$(supabase --version)" = "2.107.0"
+
+      - name: Start isolated PostgreSQL
+        run: supabase db start
+
+      - name: Replay all active migrations
+        run: supabase db reset --local --no-seed
+
+      - name: Verify local migration history
+        run: supabase migration list --local
+
+      - name: Run database contract tests
+        run: supabase test db --local
+
+      - name: Lint project schemas
+        run: supabase db lint --local --schema public,private --level warning --fail-on warning
+
+      - name: Run security advisor
+        run: supabase db advisors --local --type security --fail-on warn
+
+      - name: Run performance advisor
+        run: supabase db advisors --local --type performance --fail-on warn
+
+      - name: Stop isolated PostgreSQL
+        if: always()
+        run: supabase stop --project-id site-vet-do-rim --no-backup --yes
+
+  edge-contract:
+    name: Edge Runtime Contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.18.0'
+
+      - name: Verify every Edge Function contract
+        run: node web/scripts/verify-edge-functions.mjs
+
+      - name: Type-check, lint and bundle every Edge Function
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          function_configs=(supabase/functions/[!_]*/deno.json)
+          if (( ${#function_configs[@]} == 0 )); then
+            printf '%s\n' 'No Edge Function deno.json files found.' >&2
+            exit 1
+          fi
+
+          for config_path in "${function_configs[@]}"; do
+            function_dir="${config_path%/deno.json}"
+            function_name="${function_dir##*/}"
+            mount_source="${GITHUB_WORKSPACE}/${function_dir}"
+
+            docker run --rm \
+              --mount "type=bind,source=${mount_source},target=/app,readonly" \
+              --workdir /app \
+              denoland/deno@sha256:3bf75873714baa410dcf7fabaf76d806d20f0ac8a7579df11577b4ed97416e34 \
+              deno check --frozen --lock=deno.lock index.ts
+
+            docker run --rm \
+              --mount "type=bind,source=${mount_source},target=/app,readonly" \
+              --workdir /app \
+              denoland/deno@sha256:3bf75873714baa410dcf7fabaf76d806d20f0ac8a7579df11577b4ed97416e34 \
+              deno lint --rules-include=no-deprecated-deno-api .
+
+            docker run --rm \
+              --mount "type=bind,source=${mount_source},target=/app,readonly" \
+              --workdir /app \
+              public.ecr.aws/supabase/edge-runtime@sha256:a82676277615aee03c4f288cbbbf68dedb5ba8693073e567ab8dbfdd11ba5d45 \
+              bundle --entrypoint /app/index.ts --output "/tmp/${function_name}.eszip" \
+              --checksum sha256 --disable-module-cache --timeout 120
+          done

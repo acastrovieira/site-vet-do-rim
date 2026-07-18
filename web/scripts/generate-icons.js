@@ -45,16 +45,9 @@ async function generateIcons() {
     .toFile(path.join(publicDir, 'icon-512.png'));
   console.log('Created icon-512.png (512x512)');
 
-  // 5. favicon.ico
-  // To create an ICO file natively in node without an extra library is complex, 
-  // but sharp doesn't output .ico directly. We'll skip favicon.ico since modern 
-  // browsers fully support favicon.png, and we can just copy favicon.png to favicon.ico 
-  // as a fallback (some browsers accept PNGs renamed to .ico).
-  fs.copyFileSync(
-    path.join(publicDir, 'favicon.png'),
-    path.join(publicDir, 'favicon.ico')
-  );
-  console.log('Created favicon.ico (fallback to png)');
+  // Do not overwrite favicon.ico with renamed PNG bytes. Use
+  // generate-favicon.mjs when a native multi-size ICO must be regenerated.
+  console.log('Kept existing favicon.ico unchanged');
 
   console.log('Done!');
 }

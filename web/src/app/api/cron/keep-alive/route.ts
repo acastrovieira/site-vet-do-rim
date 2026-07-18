@@ -1,116 +1,165 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import {
+  getBoundedTimeoutMs,
+  hasValidBearerSecret,
+  isConfiguredSupabasePublicKey,
+  isConfiguredSupabaseUrl,
+  OPERATIONAL_NO_STORE_HEADERS,
+  parseHttpsHealthUrl,
+} from '@/lib/operational-health'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+type ServiceResult = {
+  ok: boolean
+  message: string
+  latencyMs?: number
+}
 
 /**
- * Endpoint acionado por cronjob para manter os serviços ativos.
- * 
- * Serviços monitorados:
- * 1. Supabase — query simples para evitar pausa no plano free (7 dias inatividade)
- * 2. VPS — ping via HTTP GET (se URL configurada)
- * 
- * Pode ser chamado por:
- * - Vercel Cron (vercel.json) — 1x/dia no plano Hobby
- * - Cron externo (cron-job.org, UptimeRobot) — frequência customizável
+ * Cron autenticado que verifica dependencias sem retornar dados ou detalhes internos.
+ * Todas as chamadas possuem timeout e as respostas nunca podem ser armazenadas em cache.
  */
 export async function GET(request: Request) {
-  // Validar autorização do Vercel Cron (evita chamadas arbitrárias)
-  const authHeader = request.headers.get('authorization')
-  if (
-    process.env.CRON_SECRET &&
-    authHeader !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
-    return new NextResponse('Unauthorized', { status: 401 })
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || cronSecret.length < 32) {
+    console.error('[Cron Keep-Alive] configuracao_invalida', {
+      code: 'CRON_SECRET_INVALID',
+    })
+    return NextResponse.json(
+      { ok: false, message: 'Servico indisponivel por configuracao incompleta.' },
+      { status: 503, headers: OPERATIONAL_NO_STORE_HEADERS },
+    )
   }
 
-  const results: Record<string, { ok: boolean; message: string; latencyMs?: number }> = {}
-
-  // ── 1. Supabase Keep-Alive ──────────────────────────────────────────
-  try {
-    const start = Date.now()
-    const supabase = await createClient()
-
-    const { data, error } = await supabase
-      .from('tutores')
-      .select('id')
-      .limit(1)
-
-    const latency = Date.now() - start
-
-    if (error) {
-      console.error('[Cron Keep-Alive] Supabase erro:', error)
-      results.supabase = { ok: false, message: error.message, latencyMs: latency }
-    } else {
-      results.supabase = {
-        ok: true,
-        message: `Supabase ativo (${data?.length ?? 0} registro${data?.length !== 1 ? 's' : ''})`,
-        latencyMs: latency,
-      }
-    }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Erro desconhecido'
-    console.error('[Cron Keep-Alive] Supabase falha:', msg)
-    results.supabase = { ok: false, message: msg }
+  if (!hasValidBearerSecret(request.headers.get('authorization'), cronSecret)) {
+    return new NextResponse('Unauthorized', {
+      status: 401,
+      headers: OPERATIONAL_NO_STORE_HEADERS,
+    })
   }
 
-  // ── 2. VPS Keep-Alive (se configurado) ─────────────────────────────
-  const vpsUrl = process.env.VPS_HEALTH_URL
-  if (vpsUrl) {
+  const results: Record<string, ServiceResult> = {}
+  const timeoutMs = getBoundedTimeoutMs(process.env.KEEP_ALIVE_TIMEOUT_MS)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabasePublicKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseConfigured = isConfiguredSupabaseUrl(supabaseUrl) &&
+    isConfiguredSupabasePublicKey(supabasePublicKey)
+
+  if (supabaseConfigured) {
     try {
       const start = Date.now()
-      const vpsRes = await fetch(vpsUrl, {
-        method: 'GET',
-        signal: AbortSignal.timeout(10000), // 10s timeout
+      const response = await fetch(`${supabaseUrl}/rest/v1/`, {
+        cache: 'no-store',
+        headers: {
+          Accept: 'application/openapi+json',
+          apikey: supabasePublicKey,
+        },
+        redirect: 'error',
+        signal: AbortSignal.timeout(timeoutMs),
       })
-      const latency = Date.now() - start
+      const latencyMs = Date.now() - start
+      await response.body?.cancel()
+
+      results.supabase = {
+        ok: response.ok,
+        message: response.ok ? 'Supabase ativo.' : 'Supabase indisponivel.',
+        latencyMs,
+      }
+    } catch (error: unknown) {
+      console.error('[Cron Keep-Alive] dependencia_falhou', {
+        dependency: 'supabase_database',
+        type: error instanceof Error ? error.name : 'UnknownError',
+      })
+      results.supabase = { ok: false, message: 'Supabase indisponivel.' }
+    }
+  } else {
+    results.supabase = {
+      ok: false,
+      message: 'Supabase indisponivel por configuracao invalida.',
+    }
+  }
+
+  const configuredVpsUrl = process.env.VPS_HEALTH_URL
+  const vpsUrl = parseHttpsHealthUrl(configuredVpsUrl)
+  if (configuredVpsUrl && !vpsUrl) {
+    console.error('[Cron Keep-Alive] configuracao_invalida', {
+      code: 'VPS_HEALTH_URL_INVALID',
+    })
+    results.vps = {
+      ok: false,
+      message: 'VPS indisponivel por configuracao invalida.',
+    }
+  } else if (vpsUrl) {
+    try {
+      const start = Date.now()
+      const response = await fetch(vpsUrl, {
+        method: 'GET',
+        cache: 'no-store',
+        redirect: 'error',
+        signal: AbortSignal.timeout(timeoutMs),
+      })
+      const latencyMs = Date.now() - start
+      await response.body?.cancel()
 
       results.vps = {
-        ok: vpsRes.ok,
-        message: vpsRes.ok
-          ? `VPS ativo (HTTP ${vpsRes.status})`
-          : `VPS respondeu com HTTP ${vpsRes.status}`,
-        latencyMs: latency,
+        ok: response.ok,
+        message: response.ok ? 'VPS ativo.' : 'VPS indisponivel.',
+        latencyMs,
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro desconhecido'
-      console.error('[Cron Keep-Alive] VPS falha:', msg)
-      results.vps = { ok: false, message: `VPS indisponível: ${msg}` }
+    } catch (error: unknown) {
+      console.error('[Cron Keep-Alive] dependencia_falhou', {
+        dependency: 'vps',
+        type: error instanceof Error ? error.name : 'UnknownError',
+      })
+      results.vps = { ok: false, message: 'VPS indisponivel.' }
     }
   }
 
-  // ── 3. Supabase Edge Functions warmup (opcional) ────────────────────
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  if (supabaseUrl) {
+  if (supabaseConfigured) {
     try {
       const start = Date.now()
-      // Apenas checa se o endpoint do Supabase está respondendo
-      const healthRes = await fetch(`${supabaseUrl}/rest/v1/`, {
-        method: 'HEAD',
-        headers: {
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-        },
-        signal: AbortSignal.timeout(5000),
+      const response = await fetch(`${supabaseUrl}/auth/v1/health`, {
+        cache: 'no-store',
+        headers: { apikey: supabasePublicKey },
+        redirect: 'error',
+        signal: AbortSignal.timeout(timeoutMs),
       })
-      const latency = Date.now() - start
+      const latencyMs = Date.now() - start
+      await response.body?.cancel()
 
       results.supabase_api = {
-        ok: healthRes.ok || healthRes.status === 400, // 400 = sem tabela especificada, mas API está ativa
-        message: `API REST ativa (HTTP ${healthRes.status})`,
-        latencyMs: latency,
+        ok: response.ok,
+        message: response.ok ? 'API Supabase ativa.' : 'API Supabase indisponivel.',
+        latencyMs,
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro desconhecido'
-      results.supabase_api = { ok: false, message: msg }
+    } catch (error: unknown) {
+      console.error('[Cron Keep-Alive] dependencia_falhou', {
+        dependency: 'supabase_api',
+        type: error instanceof Error ? error.name : 'UnknownError',
+      })
+      results.supabase_api = { ok: false, message: 'API Supabase indisponivel.' }
+    }
+  } else {
+    results.supabase_api = {
+      ok: false,
+      message: 'API Supabase indisponivel por configuracao invalida.',
     }
   }
 
-  const allOk = Object.values(results).every((r) => r.ok)
+  const allOk = Object.values(results).every((result) => result.ok)
 
-  return NextResponse.json({
-    ok: allOk,
-    message: allOk ? 'Todos os serviços ativos.' : 'Alguns serviços com problemas.',
-    timestamp: new Date().toISOString(),
-    services: results,
-  }, { status: allOk ? 200 : 503 })
+  return NextResponse.json(
+    {
+      ok: allOk,
+      message: allOk ? 'Todos os servicos ativos.' : 'Alguns servicos com problemas.',
+      timestamp: new Date().toISOString(),
+      services: results,
+    },
+    {
+      status: allOk ? 200 : 503,
+      headers: OPERATIONAL_NO_STORE_HEADERS,
+    },
+  )
 }

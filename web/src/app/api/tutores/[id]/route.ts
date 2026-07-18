@@ -1,6 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import {
+  ApiUnsupportedMediaTypeError,
+  ApiPayloadTooLargeError,
+  ApiValidationError,
+  assertAllowedKeys,
+  optionalText,
+  readJsonObject,
+  requiredText,
+  safeErrorSummary,
+} from '@/lib/api-validation'
 import type { Database } from '@/types/database'
+import { authorizeServerRoles } from '@/lib/server-authorization'
+import {
+  authorizationFailureJson,
+  privateApiJson,
+} from '@/lib/server-api-response'
+import { isUuid } from '@/lib/identifiers'
 
 interface Params {
   params: Promise<{ id: string }>
@@ -8,68 +23,61 @@ interface Params {
 
 type TutorUpdate = Database['public']['Tables']['tutores']['Update']
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const UF_RE = /^[A-Z]{2}$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function badRequest(error: string) {
-  return NextResponse.json({ ok: false, error, code: 'VALIDATION' }, { status: 400 })
-}
-
-function optionalString(value: unknown, field: string) {
-  if (value === null) return null
-  if (typeof value !== 'string') throw new Error(`${field} invalido`)
-  return value.trim() || null
+  return privateApiJson({ ok: false, error, code: 'VALIDATION' }, { status: 400 })
 }
 
 export async function PATCH(request: Request, { params }: Params) {
   try {
     const { id } = await params
-    if (!UUID_RE.test(id)) {
+    if (!isUuid(id)) {
       return badRequest('ID de tutor invalido')
     }
 
     const supabase = await createClient()
+    const authorization = await authorizeServerRoles(supabase, ['vet', 'admin'])
+    if (!authorization.ok) return authorizationFailureJson(authorization)
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ ok: false, error: 'Nao autenticado', code: 'UNAUTHENTICATED' }, { status: 401 })
-    }
-
-    const body = await request.json() as {
-      nome?: string
-      telefone?: string
-      email?: string | null
-      cpf?: string | null
-      cep?: string | null
-      endereco?: string | null
-      cidade?: string | null
-      estado?: string | null
-    }
+    const body = await readJsonObject(request)
+    assertAllowedKeys(body, [
+      'nome',
+      'telefone',
+      'email',
+      'cpf',
+      'cep',
+      'endereco',
+      'cidade',
+      'estado',
+    ])
 
     const updates: TutorUpdate = {}
 
     if (body.nome !== undefined) {
-      if (typeof body.nome !== 'string') return badRequest('Nome invalido')
-      const nome = body.nome.trim()
-      if (!nome) {
-        return badRequest('Nome e obrigatorio')
-      }
-      updates.nome = nome
+      updates.nome = requiredText(body.nome, 'Nome', 120)
     }
 
     if (body.telefone !== undefined) {
-      if (typeof body.telefone !== 'string') return badRequest('Telefone invalido')
-      const telefone = body.telefone.trim()
-      if (!telefone) {
-        return badRequest('Telefone e obrigatorio')
-      }
-      updates.telefone = telefone
+      updates.telefone = requiredText(body.telefone, 'Telefone', 32)
     }
 
     for (const field of ['email', 'cpf', 'cep', 'endereco', 'cidade', 'estado'] as const) {
       if (body[field] !== undefined) {
-        const value = optionalString(body[field], field)
+        const maxLength = field === 'email'
+          ? 254
+          : field === 'endereco'
+            ? 255
+            : field === 'cidade'
+              ? 120
+              : field === 'estado'
+                ? 2
+                : field === 'cep'
+                  ? 16
+                  : 32
+        const parsedValue = optionalText(body[field], field, maxLength)
+        const value = field === 'estado' ? parsedValue?.toUpperCase() ?? null : parsedValue
         if (field === 'email' && value && !EMAIL_RE.test(value)) return badRequest('Email invalido')
         if (field === 'estado' && value && !UF_RE.test(value)) return badRequest('Estado invalido')
         updates[field] = value
@@ -89,16 +97,12 @@ export async function PATCH(request: Request, { params }: Params) {
 
     if (error || !data) {
       console.error('[PATCH /api/tutores/:id]', {
-        message: error?.message,
-        code: error?.code,
-        details: error?.details,
-        userId: user.id,
-        tutorId: id,
+        code: error?.code ?? 'UNKNOWN',
       })
 
       const isRLS = error?.code === '42501' || error?.message?.toLowerCase().includes('row-level')
       const isNotFound = error?.code === 'PGRST116'
-      return NextResponse.json(
+      return privateApiJson(
         {
           ok: false,
           error: isRLS
@@ -106,17 +110,28 @@ export async function PATCH(request: Request, { params }: Params) {
             : isNotFound
               ? 'Tutor nao encontrado.'
               : 'Nao foi possivel atualizar o tutor.',
-          code: isRLS ? 'RLS_DENIED' : isNotFound ? 'NOT_FOUND' : (error?.code ?? 'UNKNOWN'),
+          code: isRLS ? 'RLS_DENIED' : isNotFound ? 'NOT_FOUND' : 'DATABASE',
         },
         { status: isRLS ? 403 : isNotFound ? 404 : 500 }
       )
     }
 
-    return NextResponse.json({ ok: true, id: data.id })
+    return privateApiJson({ ok: true, id: data.id })
   } catch (err) {
-    console.error('[PATCH /api/tutores/:id] Unexpected error:', err)
-    if (err instanceof SyntaxError) return badRequest('JSON invalido')
-    if (err instanceof Error && err.message.endsWith('invalido')) return badRequest(err.message)
-    return NextResponse.json({ ok: false, error: 'Erro interno inesperado', code: 'INTERNAL' }, { status: 500 })
+    if (err instanceof ApiPayloadTooLargeError) {
+      return privateApiJson(
+        { ok: false, error: err.message, code: 'PAYLOAD_TOO_LARGE' },
+        { status: 413 },
+      )
+    }
+    if (err instanceof ApiUnsupportedMediaTypeError) {
+      return privateApiJson(
+        { ok: false, error: err.message, code: 'UNSUPPORTED_MEDIA_TYPE' },
+        { status: 415 },
+      )
+    }
+    if (err instanceof ApiValidationError) return badRequest(err.message)
+    console.error('[PATCH /api/tutores/:id] Unexpected error:', safeErrorSummary(err))
+    return privateApiJson({ ok: false, error: 'Erro interno inesperado', code: 'INTERNAL' }, { status: 500 })
   }
 }

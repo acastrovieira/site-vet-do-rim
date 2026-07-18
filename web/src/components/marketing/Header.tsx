@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Menu, X, ArrowRight } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
@@ -22,6 +22,8 @@ const navLinks = [
 export function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const mobileNavRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20)
@@ -29,8 +31,32 @@ export function Header() {
     return () => window.removeEventListener('scroll', handler)
   }, [])
 
+  useEffect(() => {
+    if (!menuOpen) return
+
+    const returnFocusTo = menuButtonRef.current
+    mobileNavRef.current?.querySelector<HTMLElement>('a[href]')?.focus()
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape)
+      returnFocusTo?.focus()
+    }
+  }, [menuOpen])
+
   return (
-    <header
+    <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only fixed left-4 top-4 z-[110] rounded-lg bg-white px-4 py-2 text-sm font-semibold text-brand-800 shadow-lg outline-none ring-2 ring-gold-400"
+      >
+        Pular para o conteúdo principal
+      </a>
+      <header
       className="fixed top-0 inset-x-0 z-50 transition-all duration-400"
       style={{
         background: scrolled
@@ -52,26 +78,35 @@ export function Header() {
           {/* Logo dourada horizontal — ampliada para máximo impacto visual */}
           <Link
             href="/"
-            className="flex items-center group relative z-10"
+            className="group relative z-10 flex items-center gap-2.5"
             aria-label="Vet do Rim — Início"
           >
             <Image
-              src="/logo/Monocrom%C3%A1tica%20-%20dourada%282%29.svg"
-              alt="Vet do Rim — Nefrologia e Urologia Veterinária"
-              width={500}
-              height={250}
-              priority
-              className="h-28 md:h-36 w-auto object-contain transition-all duration-300 group-hover:opacity-90 group-hover:scale-[1.02] -my-4 md:-my-6"
+              src="/logo/symbol-gold.webp"
+              alt=""
+              width={96}
+              height={96}
+              loading="eager"
+              unoptimized
+              className="h-14 w-14 object-contain transition-all duration-300 group-hover:scale-[1.03] sm:h-16 sm:w-16"
               style={{
                 filter: 'drop-shadow(0 2px 12px rgba(200, 169, 122, 0.4))',
               }}
               draggable={false}
             />
+            <span aria-hidden className="min-w-0 text-gold-400">
+              <span className="block whitespace-nowrap font-display text-base font-semibold tracking-[0.13em] sm:text-xl">
+                VET DO RIM
+              </span>
+              <span className="mt-0.5 hidden whitespace-nowrap text-[8px] font-semibold tracking-[0.08em] text-gold-400/80 sm:block">
+                NEFROLOGIA E UROLOGIA VETERINÁRIA
+              </span>
+            </span>
           </Link>
 
           {/* Nav Desktop */}
           <nav
-            className="hidden md:flex items-center gap-1"
+            className="hidden lg:flex items-center gap-1"
             aria-label="Navegação principal"
           >
             {navLinks.map((link) => (
@@ -90,7 +125,7 @@ export function Header() {
               </Link>
             ))}
 
-            <ThemeToggle className="ml-1" />
+            <ThemeToggle className="ml-1" inverted />
 
             {/* CTA dourado — premium e de alta visibilidade */}
             <Link
@@ -108,16 +143,18 @@ export function Header() {
           </nav>
 
           {/* Mobile toggle */}
-          <div className="flex md:hidden items-center gap-2">
-            <ThemeToggle />
+          <div className="flex lg:hidden items-center gap-2">
+            <ThemeToggle inverted />
             <button
-              className="p-2 rounded-lg transition-colors duration-200"
+              ref={menuButtonRef}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 transition-colors duration-200"
               style={{
                 color: 'rgba(220, 235, 255, 0.8)',
                 border: '1px solid rgba(200, 169, 122, 0.25)',
               }}
               onClick={() => setMenuOpen(!menuOpen)}
               aria-expanded={menuOpen}
+              aria-controls="mobile-navigation"
               aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
             >
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -128,7 +165,9 @@ export function Header() {
         {/* Mobile menu */}
         {menuOpen && (
           <nav
-            className="md:hidden pb-5 pt-2 flex flex-col gap-1 px-2"
+            id="mobile-navigation"
+            ref={mobileNavRef}
+            className="lg:hidden pb-5 pt-2 flex flex-col gap-1 px-2"
             style={{ borderTop: '1px solid rgba(200, 169, 122, 0.15)' }}
             aria-label="Navegação mobile"
           >
@@ -159,6 +198,7 @@ export function Header() {
           </nav>
         )}
       </div>
-    </header>
+      </header>
+    </>
   )
 }

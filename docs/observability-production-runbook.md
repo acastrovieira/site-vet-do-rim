@@ -1,5 +1,7 @@
 # Runbook: Observabilidade e Producao
 
+> **RUNBOOK COMPLEMENTAR, NAO APROVACAO:** observabilidade nao compensa os bloqueios de tenancy, transacao de IA e validacao clinica. O estado vigente e **NO-GO**; consulte `docs/README.md`.
+
 ## Objetivo
 
 Validar readiness de producao do site Vet do Rim e do Lab Evolution, cobrindo health checks, logs, estados de erro, fallback humano, Supabase Advisors, Edge Function `parse-laudo` e evidencias pos-deploy.
@@ -16,23 +18,31 @@ Validar readiness de producao do site Vet do Rim e do Lab Evolution, cobrindo he
 Na raiz:
 
 ```powershell
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim"
+Set-Location (git rev-parse --show-toplevel)
 npm run vercel-build
 ```
 
 No app web:
 
 ```powershell
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim\web"
+Set-Location (Join-Path (git rev-parse --show-toplevel) "web")
 npm run check:predeploy
 npm run check:remote-readiness
 ```
 
-`check:remote-readiness` nao deve imprimir valores de secrets. Ele deve indicar somente presenca/origem das chaves.
+Sem argumentos, `check:remote-readiness` executa somente verificacoes locais e informa
+`networkConsulted: false`. A consulta externa read-only exige autorizacao consciente:
+
+```powershell
+npm run check:remote-readiness -- --remote
+```
+
+Mesmo no modo remoto, o script nao altera banco, secrets ou deploys. Ele nao deve
+imprimir valores de secrets, project ref, URLs completas ou caminhos absolutos.
 
 ## Health check
 
-Endpoint:
+Liveness (processo Next.js respondendo):
 
 ```text
 /api/health
@@ -43,21 +53,33 @@ Resposta esperada em producao:
 ```json
 {
   "ok": true,
+  "status": "alive",
   "service": "vetdorim-web",
   "timestamp": "ISO-8601",
-  "environment": "production",
   "checks": {
-    "next": true,
-    "supabasePublicUrlConfigured": true,
-    "supabaseAnonKeyConfigured": true
+    "runtime": true
   }
 }
+```
+
+Status esperado: `200`. Este endpoint nao consulta Supabase e nao declara que as
+dependencias estao prontas.
+
+Readiness local (contrato das configuracoes obrigatorias, sem rede):
+
+```text
+/api/health/readiness
 ```
 
 Status esperado:
 
 - `200` quando envs publicas obrigatorias estiverem configuradas.
 - `503` quando faltar env publica obrigatoria.
+
+Ambos devem retornar `Cache-Control` com `no-store`. O cron
+`/api/cron/keep-alive` e o unico destes endpoints que consulta dependencias; ele
+exige `CRON_SECRET` com no minimo 32 caracteres, aplica timeout de 1-10 segundos
+por dependencia e aceita `VPS_HEALTH_URL` apenas em HTTPS.
 
 Nunca deve conter:
 
@@ -161,4 +183,3 @@ A Sprint Observabilidade e Producao so fica concluida quando:
 - logs e estados de erro da Edge Function foram validados com upload real;
 - fallback humano esta documentado;
 - evidencias foram anexadas ao fechamento da sprint.
-

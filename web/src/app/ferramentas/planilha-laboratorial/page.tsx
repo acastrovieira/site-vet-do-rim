@@ -3,6 +3,7 @@ import Script from 'next/script'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
 import { FreeLabApp } from '@/components/ferramentas/lab-free/FreeLabApp'
+import { serializeJsonLd } from '@/lib/json-ld'
 
 export const metadata: Metadata = {
   title: 'Planilha Laboratorial Gratuita — Acompanhamento de Exames Veterinários',
@@ -42,21 +43,21 @@ export default function PlanilhaLaboratorialPage() {
       <Script
         id="planilha-laboratorial-schema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
       />
       <Header />
-      <main id="main-content" className="min-h-screen bg-science-50 pt-24 pb-16">
+      <main id="main-content" className="min-h-screen bg-science-50 pt-24 pb-16 transition-colors dark:bg-[#0C1E3D]">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           {/* Hero */}
           <div className="mb-10 text-center">
-            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-brand-700">
+            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-brand-700 dark:border-gold-400/20 dark:bg-gold-400/10 dark:text-gold-400">
               🧪 Ferramenta gratuita · Freemium
             </span>
-            <h1 className="font-display text-4xl font-bold tracking-tight text-slate-900 text-balance sm:text-5xl mb-4">
+            <h1 className="font-display text-4xl font-bold tracking-tight text-slate-900 text-balance sm:text-5xl mb-4 dark:text-white">
               Planilha{' '}
               <span className="text-gradient-brand">Laboratorial</span>
             </h1>
-            <p className="mx-auto max-w-2xl text-lg leading-relaxed text-slate-500">
+            <p className="mx-auto max-w-2xl text-lg leading-relaxed text-slate-500 dark:text-science-200">
               Cadastre pacientes, insira exames manualmente e acompanhe a evolução dos
               parâmetros laboratoriais ao longo do tempo. Exporte em PDF gratuitamente.
             </p>
@@ -66,7 +67,7 @@ export default function PlanilhaLaboratorialPage() {
           <FreeLabApp />
 
           {/* Disclaimer */}
-          <p className="mx-auto mt-10 max-w-lg text-center text-xs leading-relaxed text-slate-400">
+          <p className="mx-auto mt-10 max-w-lg text-center text-xs leading-relaxed text-slate-400 dark:text-science-400">
             ⚠️ Ferramenta de caráter educacional e de suporte clínico.
             Não substitui a avaliação veterinária presencial nem o
             julgamento do médico veterinário responsável.

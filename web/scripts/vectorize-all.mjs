@@ -226,4 +226,7 @@ async function run() {
   console.log('\n✅ All logo vectorizations completed successfully!');
 }
 
-run().catch(console.error);
+run().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

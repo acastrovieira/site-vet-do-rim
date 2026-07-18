@@ -1,5 +1,15 @@
 {
+  "name": "site-vet-do-rim",
+  "private": true,
   "scripts": {
+    "audit:staging": "npm --prefix web run audit:staging",
+    "build": "npm --prefix web run build",
+    "check:edge": "npm --prefix web run check:edge",
+    "check:migrations": "npm --prefix web run check:migrations",
+    "check:predeploy": "npm --prefix web run check:predeploy",
+    "lint": "npm --prefix web run lint",
+    "test": "npm --prefix web test",
+    "typecheck": "npm --prefix web run typecheck",
     "vercel-build": "npm --prefix web run build"
   }
 }

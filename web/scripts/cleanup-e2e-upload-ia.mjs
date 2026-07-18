@@ -1,17 +1,30 @@
 import { createClient } from '@supabase/supabase-js'
 import { envValue, loadLocalEnv, requiredEnv } from './lib/env-file.mjs'
+import {
+  assertNoRows,
+  assertRows,
+  assertValidCleanupRunId,
+  deleteRowsByIds,
+  matchesExactE2EUser,
+  removeStoragePaths,
+  runCleanupSteps,
+  verifyStoragePathsAbsent,
+  verifyTableRowsAbsent,
+} from './lib/e2e-cleanup-match.mjs'
+import { explicitSupabaseTarget } from './lib/supabase-target.mjs'
 
 const localEnv = loadLocalEnv()
-const projectRef = envValue(localEnv, 'SUPABASE_PROJECT_REF').value || 'ycclyzoslirpnnwgzrqx'
-const supabaseUrl = envValue(localEnv, 'NEXT_PUBLIC_SUPABASE_URL').value || `https://${projectRef}.supabase.co`
-const serviceRoleKey = requiredEnv(localEnv, 'SUPABASE_SERVICE_ROLE_KEY')
 const runId = envValue(localEnv, 'E2E_CLEANUP_RUN_ID').value
 const apply = process.argv.includes('--apply')
+const { projectRef, supabaseUrl } = explicitSupabaseTarget(localEnv, { mutation: apply })
+const serviceRoleKey = requiredEnv(localEnv, 'SUPABASE_SERVICE_ROLE_KEY')
 
 if (apply && !runId) {
   console.error('Refusing to delete without E2E_CLEANUP_RUN_ID. Example: E2E_CLEANUP_RUN_ID=uploadia-20260626093000 npm run cleanup:e2e:upload-ia -- --apply')
   process.exit(1)
 }
+
+if (apply) assertValidCleanupRunId(runId, 'uploadia')
 
 const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: {
@@ -19,11 +32,6 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
     persistSession: false,
   },
 })
-
-function matchesRun(value, prefix) {
-  if (!runId) return value?.includes(prefix)
-  return value?.includes(runId)
-}
 
 async function listE2EUsers() {
   const matches = []
@@ -34,7 +42,10 @@ async function listE2EUsers() {
     if (error) throw new Error(`Failed to list users: ${error.message}`)
 
     for (const user of data.users) {
-      if (matchesRun(user.email, 'e2e-vet-uploadia-')) {
+      const isMatch = runId
+        ? matchesExactE2EUser(user.email, runId, 'uploadia')
+        : user.email?.startsWith('e2e-vet-uploadia-') && user.email.endsWith('@example.test')
+      if (isMatch) {
         matches.push({ id: user.id, email: user.email })
       }
     }
@@ -47,71 +58,75 @@ async function listE2EUsers() {
 }
 
 async function collectData() {
-  const tutorPattern = runId ? `Tutor E2E Upload IA ${runId}%` : 'Tutor E2E Upload IA uploadia-%'
-  const petPattern = runId ? `Paciente E2E Upload IA ${runId}%` : 'Paciente E2E Upload IA uploadia-%'
-
-  const { data: tutors, error: tutorsError } = await supabase
+  const tutorQuery = supabase
     .from('tutores')
     .select('id, nome')
-    .ilike('nome', tutorPattern)
+  const { data: tutorRows, error: tutorsError } = runId
+    ? await tutorQuery.eq('email', `tutor-upload-${runId}@example.test`)
+    : await tutorQuery.ilike('nome', 'Tutor E2E Upload IA uploadia-%')
   if (tutorsError) throw new Error(`Failed to list tutors: ${tutorsError.message}`)
+  const tutors = assertRows('Tutor cleanup', tutorRows)
+  const tutorIds = tutors.map((tutor) => tutor.id)
 
-  const { data: pets, error: petsError } = await supabase
-    .from('pets')
-    .select('id, nome')
-    .ilike('nome', petPattern)
+  const petQuery = supabase.from('pets').select('id, nome')
+  const { data: petRows, error: petsError } = runId
+    ? tutorIds.length > 0
+      ? await petQuery.in('tutor_id', tutorIds)
+      : { data: [], error: null }
+    : await petQuery.ilike('nome', 'Paciente E2E Upload IA uploadia-%')
   if (petsError) throw new Error(`Failed to list pets: ${petsError.message}`)
+  const pets = assertRows('Pet cleanup', petRows)
 
-  const petIds = pets?.map((pet) => pet.id) ?? []
-  const { data: laudos, error: laudosError } = petIds.length > 0
+  const petIds = pets.map((pet) => pet.id)
+  const { data: laudoRows, error: laudosError } = petIds.length > 0
     ? await supabase
       .from('laudos_pdf')
       .select('id, storage_path')
       .in('pet_id', petIds)
     : { data: [], error: null }
   if (laudosError) throw new Error(`Failed to list laudos: ${laudosError.message}`)
+  const laudos = assertRows('Laudo cleanup', laudoRows)
 
   return {
-    tutors: tutors ?? [],
-    pets: pets ?? [],
-    laudos: laudos ?? [],
+    tutors,
+    pets,
+    laudos,
   }
 }
 
 async function deleteData(data) {
-  const storagePaths = data.laudos.map((laudo) => laudo.storage_path).filter(Boolean)
-  if (storagePaths.length > 0) {
-    const { error } = await supabase.storage.from('laudos').remove(storagePaths)
-    if (error) {
-      throw new Error(`Storage cleanup failed; keeping database rows for traceability: ${error.message}`)
-    }
-  }
-
+  const storagePaths = [...new Set(data.laudos.map((laudo) => laudo.storage_path).filter(Boolean))]
+  await removeStoragePaths(supabase, 'laudos', storagePaths)
   const laudoIds = data.laudos.map((laudo) => laudo.id)
-  if (laudoIds.length > 0) {
-    const { error } = await supabase.from('laudos_pdf').delete().in('id', laudoIds)
-    if (error) throw new Error(`Failed to delete laudos: ${error.message}`)
-  }
-
+  await deleteRowsByIds(supabase, 'laudos_pdf', laudoIds, 'Laudos')
   const petIds = data.pets.map((pet) => pet.id)
-  if (petIds.length > 0) {
-    const { error } = await supabase.from('pets').delete().in('id', petIds)
-    if (error) throw new Error(`Failed to delete pets: ${error.message}`)
-  }
-
+  await deleteRowsByIds(supabase, 'pets', petIds, 'Pets')
   const tutorIds = data.tutors.map((tutor) => tutor.id)
-  if (tutorIds.length > 0) {
-    const { error } = await supabase.from('tutores').delete().in('id', tutorIds)
-    if (error) throw new Error(`Failed to delete tutors: ${error.message}`)
-  }
+  await deleteRowsByIds(supabase, 'tutores', tutorIds, 'Tutores')
 }
 
 async function deleteUsers(users) {
-  for (const user of users) {
+  await runCleanupSteps(users.map((user) => [user.email, async () => {
     const { error } = await supabase.auth.admin.deleteUser(user.id)
     if (error) throw new Error(`Failed to delete ${user.email}: ${error.message}`)
     console.log(`Deleted user: ${user.email}`)
-  }
+  }]))
+}
+
+async function verifyNoResidues(expectedData) {
+  await verifyTableRowsAbsent(supabase, 'laudos_pdf', expectedData.laudos.map((row) => row.id))
+  await verifyTableRowsAbsent(supabase, 'pets', expectedData.pets.map((row) => row.id))
+  await verifyTableRowsAbsent(supabase, 'tutores', expectedData.tutors.map((row) => row.id))
+  await verifyStoragePathsAbsent(supabase, 'laudos', [
+    ...new Set(expectedData.laudos.map((row) => row.storage_path).filter(Boolean)),
+  ])
+
+  const remainingUsers = await listE2EUsers()
+  const remainingData = await collectData()
+  assertNoRows('E2E users', remainingUsers)
+  assertNoRows('Matching laudos', remainingData.laudos)
+  assertNoRows('Matching pets', remainingData.pets)
+  assertNoRows('Matching tutors', remainingData.tutors)
 }
 
 const users = await listE2EUsers()
@@ -136,6 +151,16 @@ if (!apply) {
   process.exit(0)
 }
 
-await deleteData(data)
-await deleteUsers(users)
+let cleanupError
+try {
+  await deleteData(data)
+  await deleteUsers(users)
+} catch (error) {
+  cleanupError = error
+}
+
+await runCleanupSteps([
+  ['residue verification', () => verifyNoResidues(data)],
+], { primaryError: cleanupError })
+
 console.log('E2E Upload IA cleanup completed.')

@@ -1,5 +1,7 @@
 # Auth/RLS Functional Validation
 
+> **EVIDENCIA HISTORICA INSUFICIENTE PARA RELEASE:** este teste nao substitui a matriz negativa Vet A x Vet B. O estado vigente e **NO-GO**; consulte `docs/README.md`.
+
 Status: validado com usuarios E2E temporarios em 2026-06-25.
 
 ## Estado atual
@@ -16,7 +18,7 @@ Status: validado com usuarios E2E temporarios em 2026-06-25.
 Configure apenas no terminal local ou em segredo de CI. Nao versionar.
 
 ```powershell
-$env:NEXT_PUBLIC_SUPABASE_URL="https://ycclyzoslirpnnwgzrqx.supabase.co"
+$env:NEXT_PUBLIC_SUPABASE_URL="https://<staging-project-ref>.supabase.co"
 $env:NEXT_PUBLIC_SUPABASE_ANON_KEY="..."
 
 $env:E2E_ADMIN_EMAIL="admin@example.com"
@@ -46,7 +48,7 @@ Compatibilidade: `E2E_SUPABASE_EMAIL` e `E2E_SUPABASE_PASSWORD` ainda funcionam 
 ## Comandos
 
 ```powershell
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim\web"
+Set-Location (Join-Path (git rev-parse --show-toplevel) "web")
 npm run test:e2e
 ```
 

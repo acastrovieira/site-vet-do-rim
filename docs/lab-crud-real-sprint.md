@@ -1,5 +1,9 @@
 # Sprint Lab Evolution CRUD Real
 
+> **REGISTRO HISTORICO:** a execucao abaixo comprovou apenas o fluxo e o
+> cleanup daquele ciclo. Ela nao comprova isolamento entre clinicas nem autoriza
+> producao. O estado vigente e **NO-GO**; consulte `docs/README.md`.
+
 ## Status
 
 Concluida com execucao real usando usuario vet temporario no Supabase.
@@ -29,7 +33,7 @@ Runbook operacional: `docs/lab-crud-real-runbook.md`.
 - `node --check scripts/cleanup-e2e-lab-crud.mjs`: passou.
 - `npm run check:predeploy`: passou apos o carregamento local de envs nos scripts.
 - `npx playwright test tests/e2e/lab-crud.spec.ts` sem credenciais reais: passou como `1 skipped`, confirmando compilacao do spec sem tocar no banco.
-- `npm run test:e2e:lab-crud`: passou no projeto remoto `ycclyzoslirpnnwgzrqx`.
+- `npm run test:e2e:lab-crud`: passou no projeto remoto de staging registrado na evidência privada da execução.
 - `npm run cleanup:e2e:lab-crud`: dry-run retornou zero residuos apos a execucao.
 
 ## Validacoes pendentes

@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(__dirname, '..');
 
 async function traceLayer(buffer, width, height) {
   // Convert raw buffer back to a PNG buffer first
@@ -112,8 +113,8 @@ export async function vectorizeTwoColorPng(inputPath, outputPath, colors) {
 
 // Running script directly if launched from CLI
 if (process.argv[1] && process.argv[1].endsWith('vectorize.mjs')) {
-  const symbolPng = 'C:/Users/acast/.gemini/antigravity-ide/brain/c6dc56a9-9418-45ed-a5d7-ec4c5ed75ede/media__1781930154526.png';
-  const symbolSvgOut = 'C:/Users/acast/.gemini/antigravity-ide/brain/c6dc56a9-9418-45ed-a5d7-ec4c5ed75ede/logo-symbol.svg';
+  const symbolPng = process.argv[2] || path.join(ROOT, 'public', 'logo', '5.png');
+  const symbolSvgOut = process.argv[3] || path.join(ROOT, 'public', 'logo-symbol.svg');
 
   const brandColors = {
     blue: '#0D1B2A',
@@ -122,5 +123,8 @@ if (process.argv[1] && process.argv[1].endsWith('vectorize.mjs')) {
 
   vectorizeTwoColorPng(symbolPng, symbolSvgOut, brandColors)
     .then(() => console.log('Vectorization complete!'))
-    .catch(console.error);
+    .catch((error) => {
+      console.error(error);
+      process.exitCode = 1;
+    });
 }

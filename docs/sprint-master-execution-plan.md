@@ -1,5 +1,7 @@
 # Plano Mestre de Execucao das Sprints
 
+> **PLANO LEGADO EM REVISAO:** nao execute comandos remotos deste arquivo contra producao. Os scripts atuais exigem homologacao explicita e confirmacao vinculada ao projeto; consulte `docs/README.md`.
+
 ## Objetivo
 
 Coordenar a execucao das sprints Lab CRUD real, Upload/IA, Mobile/UX e Observabilidade/Producao com criterios claros de entrada, saida, evidencias e confirmacoes exigidas.
@@ -32,13 +34,13 @@ Entrada:
 Confirmacao exigida:
 
 ```text
-Confirmo executar test:e2e:lab-crud com usuário vet temporário e limpeza final no projeto ycclyzoslirpnnwgzrqx
+Confirmo executar test:e2e:lab-crud com usuário vet temporário e limpeza final no projeto <staging-project-ref>
 ```
 
 Comando:
 
 ```powershell
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim\web"
+Set-Location (Join-Path (git rev-parse --show-toplevel) "web")
 npm run test:e2e:lab-crud
 ```
 
@@ -70,18 +72,18 @@ Entrada:
 Confirmacao exigida:
 
 ```text
-Confirmo aplicar Upload/IA de laudos no projeto ycclyzoslirpnnwgzrqx com migration, deploy da Edge Function, teste temporário e limpeza final
+Confirmo aplicar Upload/IA de laudos no projeto <staging-project-ref> com migration, deploy da Edge Function, teste temporário e limpeza final
 ```
 
 Comandos principais:
 
 ```powershell
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim"
+Set-Location (git rev-parse --show-toplevel)
 supabase db push --dry-run
 supabase db push
 supabase functions deploy parse-laudo
 
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim\web"
+Set-Location (Join-Path (git rev-parse --show-toplevel) "web")
 npm run test:e2e:upload-ia
 ```
 
@@ -143,10 +145,10 @@ Saida esperada:
 ## Comandos seguros sem confirmacao remota
 
 ```powershell
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim"
+Set-Location (git rev-parse --show-toplevel)
 npm run vercel-build
 
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim\web"
+Set-Location (Join-Path (git rev-parse --show-toplevel) "web")
 npm run check:predeploy
 npm run check:remote-readiness
 ```
@@ -173,5 +175,4 @@ Na sessao Codex atual:
 - `NEXT_PUBLIC_SUPABASE_URL` nao esta carregada;
 - `SUPABASE_SERVICE_ROLE_KEY` nao esta carregada.
 
-Use o terminal do usuario onde `supabase login` e `supabase link --project-ref ycclyzoslirpnnwgzrqx` ja funcionaram, ou ajuste PATH/envs antes da execucao remota.
-
+Use um terminal autorizado onde `supabase login` e `supabase link --project-ref <staging-project-ref>` tenham sido validados, ou ajuste PATH/envs antes da execucao remota.

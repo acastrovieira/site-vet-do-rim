@@ -1,9 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff, Loader2, LogIn } from 'lucide-react'
+import {
+  isRoleAuthorizedForRedirect,
+  parseAppRole,
+  roleHome,
+  safeInternalRedirectPath,
+} from '@/lib/route-authorization'
 
 type AuthProfile = {
   role: string | null
@@ -11,12 +17,6 @@ type AuthProfile = {
 
 interface LoginFormProps {
   redirectTo?: string
-}
-
-function safeRelativePath(path: string | undefined) {
-  if (!path || !path.startsWith('/') || path.startsWith('//')) return ''
-  if (path.startsWith('/auth/')) return ''
-  return path
 }
 
 /**
@@ -28,14 +28,25 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
   const [isPending, startTransition] = useTransition()
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const submitInFlightRef = useRef(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
 
-    const form = new FormData(e.currentTarget)
-    const email = form.get('email') as string
-    const password = form.get('password') as string
+    const formElement = e.currentTarget
+    if (!formElement.reportValidity()) return
+
+    const form = new FormData(formElement)
+    const email = String(form.get('email') ?? '').trim()
+    const password = String(form.get('password') ?? '')
+
+    if (!email || !password) {
+      setError('Preencha o e-mail e a senha para continuar.')
+      return
+    }
+    if (submitInFlightRef.current) return
+    submitInFlightRef.current = true
 
     startTransition(async () => {
       try {
@@ -44,43 +55,58 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
 
         if (error) {
           setError(
-            error.message === 'Invalid login credentials'
-              ? 'Email ou senha incorretos. Tente novamente.'
-              : error.message
+            error.code === 'invalid_credentials' || error.message === 'Invalid login credentials'
+              ? 'E-mail ou senha incorretos. Tente novamente.'
+              : error.code === 'email_not_confirmed'
+                ? 'Confirme seu e-mail antes de entrar.'
+                : error.code === 'over_request_rate_limit'
+                  ? 'Muitas tentativas. Aguarde alguns minutos e tente novamente.'
+                  : 'Não foi possível entrar agora. Tente novamente em instantes.'
           )
           return
         }
 
-        const desiredPath = safeRelativePath(redirectTo)
+        const desiredPath = safeInternalRedirectPath(redirectTo)
         const {
           data: { user },
+          error: userError,
         } = await supabase.auth.getUser()
 
-        let role: string | null = null
-        if (user) {
-          const { data: rawProfile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single()
-          const profile = rawProfile as AuthProfile | null
-
-          role = profile?.role ?? null
+        if (userError || !user) {
+          await supabase.auth.signOut()
+          setError('Não foi possível validar a sessão. Entre novamente.')
+          return
         }
 
-        const destination = role === 'tutor'
-          ? (desiredPath && !desiredPath.startsWith('/lab') && !desiredPath.startsWith('/admin')
-              ? desiredPath
-              : '/portal')
-          : (desiredPath && !desiredPath.startsWith('/portal') ? desiredPath : '/lab')
+        const { data: rawProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle()
+        const profile = rawProfile as AuthProfile | null
+        const role = parseAppRole(profile?.role)
+
+        if (profileError || !role) {
+          await supabase.auth.signOut()
+          setError('Seu perfil de acesso não pôde ser validado. Contate o suporte.')
+          return
+        }
+
+        const destination = desiredPath && isRoleAuthorizedForRedirect(desiredPath, role)
+          ? desiredPath
+          : roleHome(role)
 
         router.push(destination)
         router.refresh()
       } catch (loginError) {
         if (process.env.NODE_ENV !== 'production') {
-          console.error('Login flow failed', loginError)
+          console.error('Login flow failed', {
+            type: loginError instanceof Error ? loginError.name : 'UnknownError',
+          })
         }
-        setError('Nao foi possivel concluir o login agora. Verifique sua conexao e tente novamente.')
+        setError('Não foi possível concluir o login agora. Verifique sua conexão e tente novamente.')
+      } finally {
+        submitInFlightRef.current = false
       }
     })
   }
@@ -89,7 +115,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       {/* Email */}
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
+        <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-science-100 mb-1.5">
           Email
         </label>
         <input
@@ -98,21 +124,22 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           type="email"
           autoComplete="email"
           required
+          maxLength={254}
           disabled={isPending}
           placeholder="seu@email.com"
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all duration-200 disabled:opacity-60"
+          className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder:text-science-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all duration-200 disabled:opacity-60"
         />
       </div>
 
       {/* Senha */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-science-100">
             Senha
           </label>
           <a
             href="/auth/recuperar-senha"
-            className="text-xs text-brand-600 hover:underline font-medium"
+            className="text-xs text-brand-600 dark:text-gold-400 hover:underline font-medium"
           >
             Esqueceu a senha?
           </a>
@@ -124,14 +151,15 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
             type={showPassword ? 'text' : 'password'}
             autoComplete="current-password"
             required
+            maxLength={128}
             disabled={isPending}
             placeholder="••••••••"
-            className="w-full px-4 py-3 pr-11 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all duration-200 disabled:opacity-60"
+            className="w-full px-4 py-3 pr-11 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder:text-science-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all duration-200 disabled:opacity-60"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:text-science-400 dark:hover:text-white transition-colors"
             aria-label={showPassword ? 'Ocultar campo de senha' : 'Mostrar campo de senha'}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -143,7 +171,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
       {error && (
         <div
           role="alert"
-          className="flex items-start gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700"
+          className="flex items-start gap-2 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-sm text-red-700 dark:text-red-300"
         >
           <span className="shrink-0 mt-0.5">⚠️</span>
           {error}

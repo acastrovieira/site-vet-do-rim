@@ -2,6 +2,11 @@
 
 Este arquivo define as instrucoes do projeto para o Codex CLI.
 
+> **ADAPTACAO LOCAL:** este repositorio e um aplicativo brownfield com runtime em
+> `web/`; nao e o monorepo publicavel do AIOX. Os comandos de qualidade da raiz
+> delegam para `web`. A copia em `.aiox-core/` e infraestrutura auxiliar
+> vendorizada e nao constitui evidencia de build ou release do framework.
+
 <!-- AIOX-MANAGED-START: core -->
 ## Core Rules
 
@@ -24,21 +29,20 @@ Este arquivo define as instrucoes do projeto para o Codex CLI.
 ## Project Map
 
 - Core framework: `.aiox-core/`
-- CLI entrypoints: `bin/`
-- Shared packages: `packages/`
-- Tests: `tests/`
+- Web app e comandos de runtime: `web/`
+- Backend, migrations e Edge Functions: `supabase/`
+- Testes do produto: `web/tests/`
 - Docs: `docs/`
 <!-- AIOX-MANAGED-END: codebase -->
 
 <!-- AIOX-MANAGED-START: commands -->
 ## Common Commands
 
-- `npm run sync:ide`
-- `npm run sync:ide:check`
-- `npm run sync:skills:codex`
-- `npm run sync:skills:codex:global` (opcional; neste repo o padrao e local-first)
-- `npm run validate:structure`
-- `npm run validate:agents`
+- `npm run check:predeploy` (gate local seguro do produto)
+- `npm run audit:staging` (valida offline o pacote SQL somente leitura; nao abre rede no modo padrao)
+- Os comandos AIOX de sync/estrutura gerados para o monorepo de origem nao
+  estao homologados nesta copia brownfield. Nao os trate como gate do produto;
+  consulte `docs/aiox-root-config-audit-2026-07-16.md`.
 <!-- AIOX-MANAGED-END: commands -->
 
 <!-- AIOX-MANAGED-START: shortcuts -->

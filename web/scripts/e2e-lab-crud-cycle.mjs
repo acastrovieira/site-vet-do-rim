@@ -3,11 +3,19 @@ import { randomBytes } from 'node:crypto'
 import { existsSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
-import { envValue, loadLocalEnv, requiredEnv } from './lib/env-file.mjs'
+import { loadLocalEnv, requiredEnv } from './lib/env-file.mjs'
+import {
+  assertRows,
+  deleteRowsByIds,
+  removeStoragePaths,
+  runCleanupSteps,
+  verifyStoragePathsAbsent,
+  verifyTableRowsAbsent,
+} from './lib/e2e-cleanup-match.mjs'
+import { explicitSupabaseTarget } from './lib/supabase-target.mjs'
 
 const localEnv = loadLocalEnv()
-const projectRef = envValue(localEnv, 'SUPABASE_PROJECT_REF').value || 'ycclyzoslirpnnwgzrqx'
-const supabaseUrl = envValue(localEnv, 'NEXT_PUBLIC_SUPABASE_URL').value || `https://${projectRef}.supabase.co`
+const { supabaseUrl } = explicitSupabaseTarget(localEnv, { mutation: true })
 const serviceRoleKey = requiredEnv(localEnv, 'SUPABASE_SERVICE_ROLE_KEY')
 const anonKey = requiredEnv(localEnv, 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
 
@@ -42,7 +50,6 @@ async function createVetUser() {
     email_confirm: true,
     user_metadata: {
       full_name: `E2E Lab CRUD ${runId}`,
-      requested_role: 'vet',
     },
   })
 
@@ -70,54 +77,75 @@ async function createVetUser() {
 }
 
 async function cleanupData() {
-  const tutorPrefix = `Tutor E2E CRUD ${runId}`
-  const petPrefix = `Paciente E2E CRUD ${runId}`
+  const scope = { tutorIds: [], petIds: [], laudoIds: [], storagePaths: [] }
+  let cleanupError
 
-  const { data: pets } = await supabase
-    .from('pets')
-    .select('id')
-    .ilike('nome', `${petPrefix}%`)
+  try {
+    const { data: tutorRows, error: tutorsQueryError } = await supabase
+      .from('tutores')
+      .select('id')
+      .eq('email', `tutor-${runId}@example.test`)
+    if (tutorsQueryError) throw new Error(`Cleanup tutor query failed: ${tutorsQueryError.message}`)
+    const tutors = assertRows('Cleanup tutor', tutorRows)
+    scope.tutorIds = tutors.map((tutor) => tutor.id)
 
-  const petIds = pets?.map((pet) => pet.id) ?? []
+    const { data: petRows, error: petsQueryError } = scope.tutorIds.length > 0
+      ? await supabase.from('pets').select('id').in('tutor_id', scope.tutorIds)
+      : { data: [], error: null }
+    if (petsQueryError) throw new Error(`Cleanup pet query failed: ${petsQueryError.message}`)
+    const pets = assertRows('Cleanup pet', petRows)
+    scope.petIds = pets.map((pet) => pet.id)
 
-  if (petIds.length > 0) {
-    const { data: laudos } = await supabase
-      .from('laudos_pdf')
-      .select('id, storage_path')
-      .in('pet_id', petIds)
+    if (scope.petIds.length > 0) {
+      const { data: laudoRows, error: laudosQueryError } = await supabase
+        .from('laudos_pdf')
+        .select('id, storage_path')
+        .in('pet_id', scope.petIds)
+      if (laudosQueryError) throw new Error(`Cleanup laudo query failed: ${laudosQueryError.message}`)
+      const laudos = assertRows('Cleanup laudo', laudoRows)
 
-    const storagePaths = laudos?.map((laudo) => laudo.storage_path).filter(Boolean) ?? []
-    if (storagePaths.length > 0) {
-      const { error } = await supabase.storage.from('laudos').remove(storagePaths)
-      if (error) {
-        console.error(`Cleanup storage failed; keeping laudos rows as storage references: ${error.message}`)
-        return
-      }
+      scope.laudoIds = laudos.map((laudo) => laudo.id)
+      scope.storagePaths = [...new Set(laudos.map((laudo) => laudo.storage_path).filter(Boolean))]
+      await removeStoragePaths(supabase, 'laudos', scope.storagePaths)
+      await deleteRowsByIds(supabase, 'laudos_pdf', scope.laudoIds, 'Laudos')
+      await deleteRowsByIds(supabase, 'pets', scope.petIds, 'Pets')
     }
 
-    const { error: laudosError } = await supabase.from('laudos_pdf').delete().in('pet_id', petIds)
-    if (laudosError) console.error(`Cleanup laudos failed: ${laudosError.message}`)
-
-    const { error: petsError } = await supabase.from('pets').delete().in('id', petIds)
-    if (petsError) console.error(`Cleanup pets failed: ${petsError.message}`)
+    await deleteRowsByIds(supabase, 'tutores', scope.tutorIds, 'Tutores')
+  } catch (error) {
+    cleanupError = error
   }
 
-  const { error: tutoresError } = await supabase
-    .from('tutores')
-    .delete()
-    .ilike('nome', `${tutorPrefix}%`)
-  if (tutoresError) console.error(`Cleanup tutores failed: ${tutoresError.message}`)
+  await runCleanupSteps([
+    ['data residue verification', () => verifyNoDataResidues(scope)],
+  ], { primaryError: cleanupError })
+}
+
+async function verifyNoDataResidues({ tutorIds, petIds, laudoIds, storagePaths }) {
+  await verifyTableRowsAbsent(supabase, 'laudos_pdf', laudoIds)
+  await verifyTableRowsAbsent(supabase, 'pets', petIds)
+  await verifyTableRowsAbsent(supabase, 'tutores', tutorIds)
+  await verifyStoragePathsAbsent(supabase, 'laudos', storagePaths)
 }
 
 async function cleanupUser() {
   if (!createdUser) return
 
   const { error } = await supabase.auth.admin.deleteUser(createdUser.id)
-  if (error) {
-    console.error(`Cleanup failed for vet (${createdUser.email}): ${error.message}`)
-  } else {
-    console.log(`Deleted E2E vet user: ${createdUser.email}`)
+  if (error) throw new Error(`Cleanup failed for vet (${createdUser.email}): ${error.message}`)
+
+  let page = 1
+  while (true) {
+    const { data, error: listError } = await supabase.auth.admin.listUsers({ page, perPage: 1000 })
+    if (listError) throw new Error(`Failed to verify E2E user cleanup: ${listError.message}`)
+    if (data.users.some((user) => user.id === createdUser.id || user.email === createdUser.email)) {
+      throw new Error(`E2E user cleanup left residue: ${createdUser.email}`)
+    }
+    if (data.users.length < 1000) break
+    page += 1
   }
+
+  console.log(`Deleted E2E vet user: ${createdUser.email}`)
 }
 
 function writeTemporaryPublicEnv() {
@@ -152,6 +180,8 @@ function clearNextCache() {
   rmSync(nextBuildPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 })
 }
 
+let executionError
+
 try {
   writeTemporaryPublicEnv()
   clearNextCache()
@@ -177,9 +207,13 @@ try {
 
   if (result.error) throw result.error
   if (result.status !== 0) throw new Error(`Playwright exited with status ${result.status}`)
-} finally {
-  await cleanupData()
-  await cleanupUser()
-  restoreEnvLocal()
-  clearNextCache()
+} catch (error) {
+  executionError = error
 }
+
+await runCleanupSteps([
+  ['database and storage', cleanupData],
+  ['E2E user', cleanupUser],
+  ['temporary environment', restoreEnvLocal],
+  ['Next.js cache', clearNextCache],
+], { primaryError: executionError })

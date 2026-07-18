@@ -1,9 +1,14 @@
 import { redirect } from 'next/navigation'
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { LabShell } from '@/components/lab/LabShell'
-import type { Database } from '@/types/database'
+import { parseAppRole, roleHome } from '@/lib/route-authorization'
 
-type LabProfile = Database['public']['Tables']['profiles']['Row']
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
+
+export const dynamic = 'force-dynamic'
 
 /**
  * Layout protegido do Lab Evolution.
@@ -14,24 +19,26 @@ export default async function LabLayout({ children }: { children: React.ReactNod
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser()
 
-  if (!user) redirect('/auth/login?redirectTo=/lab')
+  if (authError || !user) redirect('/auth/login?redirectTo=/lab')
 
-  // Carrega perfil do banco (role, nome)
-  const { data: rawProfile } = await supabase
+  // Only the fields needed by the client shell cross the server boundary.
+  const { data: rawProfile, error: profileError } = await supabase
     .from('profiles')
-    .select('*')
+    .select('id, role, full_name')
     .eq('id', user.id)
-    .single()
-  const profile = rawProfile as LabProfile | null
+    .maybeSingle()
+  const role = parseAppRole(rawProfile?.role)
 
-  if (profile?.role !== 'vet' && profile?.role !== 'admin') {
-    redirect('/portal')
-  }
+  if (profileError || !rawProfile || !role) redirect('/auth/login?error=profile')
+  if (role !== 'vet' && role !== 'admin') redirect(roleHome(role))
 
   return (
-    <LabShell user={user} profile={profile}>
+    <LabShell
+      profile={{ fullName: rawProfile.full_name, role }}
+    >
       {children}
     </LabShell>
   )

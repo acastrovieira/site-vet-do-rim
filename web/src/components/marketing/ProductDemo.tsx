@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useMotionActivity } from '@/hooks/useMotionActivity'
 import {
   Play,
   Pause,
@@ -17,6 +18,11 @@ import {
 } from 'lucide-react'
 
 /* ── Cenas do demo ────────────────────────────────────────────── */
+
+interface SceneActivityProps {
+  active: boolean
+  showFinal: boolean
+}
 
 function SceneDashboard() {
   return (
@@ -89,22 +95,26 @@ function SceneDashboard() {
   )
 }
 
-function SceneCadastro() {
+function SceneCadastro({ active, showFinal }: SceneActivityProps) {
   const [typed, setTyped] = useState('')
   const fullName = 'Ana Paula Ferreira'
 
   useEffect(() => {
-    let i = 0
+    if (showFinal || !active) return
+
     const interval = setInterval(() => {
-      if (i < fullName.length) {
-        setTyped(fullName.slice(0, i + 1))
-        i++
-      } else {
-        clearInterval(interval)
-      }
+      setTyped((current) => {
+        if (current.length >= fullName.length) {
+          clearInterval(interval)
+          return current
+        }
+        return fullName.slice(0, current.length + 1)
+      })
     }, 60)
     return () => clearInterval(interval)
-  }, [])
+  }, [active, showFinal])
+
+  const displayedName = showFinal ? fullName : typed
 
   return (
     <div className="flex flex-col gap-3">
@@ -116,7 +126,7 @@ function SceneCadastro() {
       </div>
 
       {[
-        { label: 'Nome completo *', value: typed, placeholder: 'Digitando...', isAnimated: true },
+        { label: 'Nome completo *', value: displayedName, placeholder: 'Digitando...', isAnimated: true },
         { label: 'Telefone *', value: '(27) 99912-3456', placeholder: '', isAnimated: false },
         { label: 'E-mail', value: 'ana.ferreira@email.com', placeholder: '', isAnimated: false },
         { label: 'Cidade', value: 'Vitória, ES', placeholder: '', isAnimated: false },
@@ -130,14 +140,15 @@ function SceneCadastro() {
           <p className="text-[10px] text-white/40 mb-1">{label}</p>
           <div className="px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-xs text-white flex items-center gap-1">
             {value || <span className="text-white/20">{placeholder}</span>}
-            {isAnimated && typed.length < fullName.length && (
+            {isAnimated && displayedName.length < fullName.length && (
               <span className="inline-block w-0.5 h-3.5 bg-gold-400 animate-pulse ml-0.5" />
             )}
           </div>
         </motion.div>
       ))}
 
-      <motion.button
+      <motion.div
+        aria-hidden="true"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
@@ -145,26 +156,34 @@ function SceneCadastro() {
       >
         <CheckCircle2 className="w-3.5 h-3.5" />
         Salvar tutor
-      </motion.button>
+      </motion.div>
     </div>
   )
 }
 
-function SceneTFG() {
+function SceneIRIS({ active, showFinal }: SceneActivityProps) {
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
+    if (showFinal || !active) return
+
+    let interval: ReturnType<typeof setInterval> | null = null
     const t = setTimeout(() => {
-      let p = 0
-      const i = setInterval(() => {
-        p += 4
-        setProgress(Math.min(p, 100))
-        if (p >= 100) clearInterval(i)
+      interval = setInterval(() => {
+        setProgress((current) => {
+          const next = Math.min(current + 4, 100)
+          if (next >= 100 && interval) clearInterval(interval)
+          return next
+        })
       }, 30)
-      return () => clearInterval(i)
     }, 400)
-    return () => clearTimeout(t)
-  }, [])
+    return () => {
+      clearTimeout(t)
+      if (interval) clearInterval(interval)
+    }
+  }, [active, showFinal])
+
+  const displayedProgress = showFinal ? 100 : progress
 
   return (
     <div className="flex flex-col gap-3">
@@ -172,15 +191,15 @@ function SceneTFG() {
         <div className="h-6 w-6 rounded-lg bg-blue-500/20 flex items-center justify-center">
           <Calculator className="w-3.5 h-3.5 text-blue-400" />
         </div>
-        <p className="font-display font-semibold text-white text-sm">Calculadora TFG</p>
+        <p className="font-display font-semibold text-white text-sm">Estadiamento IRIS</p>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         {[
           { label: 'Creatinina', value: '2.8 mg/dL' },
           { label: 'Espécie', value: 'Canino' },
-          { label: 'Peso', value: '28 kg' },
-          { label: 'Idade', value: '9 anos' },
+          { label: 'SDMA', value: '25 µg/dL' },
+          { label: 'UPC', value: '0,3' },
         ].map(({ label, value }) => (
           <div key={label} className="px-3 py-2 rounded-lg border border-white/10 bg-white/5">
             <p className="text-[10px] text-white/40">{label}</p>
@@ -191,38 +210,37 @@ function SceneTFG() {
 
       <div className="rounded-xl border border-white/10 bg-white/5 p-3">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] text-white/40">Calculando TFG…</p>
-          <p className="text-[10px] text-gold-400 font-semibold">{progress}%</p>
+          <p className="text-[10px] text-white/40">Comparando faixas IRIS…</p>
+          <p className="text-[10px] text-gold-400 font-semibold">{displayedProgress}%</p>
         </div>
         <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-brand-500 to-gold-400"
-            style={{ width: `${progress}%` }}
+            style={{ width: `${displayedProgress}%` }}
           />
         </div>
       </div>
 
-      {progress >= 100 && (
+      {displayedProgress >= 100 && (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center"
         >
-          <p className="text-[10px] text-emerald-400/70 mb-0.5">TFG Estimada</p>
-          <p className="text-2xl font-bold font-display text-emerald-400">23,4 <span className="text-sm font-normal">mL/min</span></p>
-          <p className="text-[10px] text-white/40 mt-1">IRIS DRC — Estágio 3</p>
+          <p className="text-[10px] text-emerald-400/70 mb-0.5">Faixa de estadiamento</p>
+          <p className="text-2xl font-bold font-display text-emerald-400">IRIS 2</p>
+          <p className="text-[10px] text-white/40 mt-1">Requer confirmação veterinária</p>
         </motion.div>
       )}
     </div>
   )
 }
 
-function SceneLaudo() {
+function SceneLaudo({ active, showFinal }: SceneActivityProps) {
   const linhas = [
     '→ Creatinina: 2.8 mg/dL ↑ (referência: 0.5–1.4)',
     '→ BUN: 68 mg/dL ↑↑',
     '→ Fósforo: 6.2 mg/dL ↑',
-    '→ TFG estimada: 23,4 mL/min',
     '→ SDMA: 25 µg/dL ↑',
     '',
     '✓ Compatível com DRC Estágio 3 IRIS',
@@ -232,11 +250,21 @@ function SceneLaudo() {
   const [shown, setShown] = useState(0)
 
   useEffect(() => {
+    if (showFinal || !active) return
+
     const i = setInterval(() => {
-      setShown((s) => (s < linhas.length ? s + 1 : s))
+      setShown((current) => {
+        if (current >= linhas.length) {
+          clearInterval(i)
+          return current
+        }
+        return current + 1
+      })
     }, 220)
     return () => clearInterval(i)
-  }, [linhas.length])
+  }, [active, linhas.length, showFinal])
+
+  const displayedLines = showFinal ? linhas.length : shown
 
   return (
     <div className="flex flex-col gap-3">
@@ -249,7 +277,7 @@ function SceneLaudo() {
       </div>
 
       <div className="flex-1 rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-[10px] leading-relaxed text-white/70 min-h-[120px]">
-        {linhas.slice(0, shown).map((linha, i) => (
+        {linhas.slice(0, displayedLines).map((linha, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, x: -4 }}
@@ -259,7 +287,7 @@ function SceneLaudo() {
             {linha || '\u00A0'}
           </motion.div>
         ))}
-        {shown < linhas.length && (
+        {displayedLines < linhas.length && (
           <span className="inline-block w-1.5 h-3 bg-violet-400 animate-pulse" />
         )}
       </div>
@@ -280,11 +308,11 @@ function SceneHistorico() {
 
       <div className="space-y-2">
         {[
-          { data: 'Jan/26', creat: '3.2', tfg: '19.1', cor: 'text-red-400' },
-          { data: 'Fev/26', creat: '3.0', tfg: '21.3', cor: 'text-amber-400' },
-          { data: 'Mar/26', creat: '2.9', tfg: '22.5', cor: 'text-amber-400' },
-          { data: 'Abr/26', creat: '2.8', tfg: '23.4', cor: 'text-emerald-400' },
-        ].map(({ data, tfg, cor }, i) => (
+          { data: 'Jan/26', creat: '3.2', cor: 'text-red-400' },
+          { data: 'Fev/26', creat: '3.0', cor: 'text-amber-400' },
+          { data: 'Mar/26', creat: '2.9', cor: 'text-amber-400' },
+          { data: 'Abr/26', creat: '2.8', cor: 'text-emerald-400' },
+        ].map(({ data, creat, cor }, i) => (
           <motion.div
             key={data}
             initial={{ opacity: 0, x: -8 }}
@@ -297,13 +325,13 @@ function SceneHistorico() {
               <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${cor === 'text-emerald-400' ? 'bg-emerald-400' : cor === 'text-amber-400' ? 'bg-amber-400' : 'bg-red-400'}`}
-                  style={{ width: `${(parseFloat(tfg) / 30) * 100}%` }}
+                  style={{ width: `${(parseFloat(creat) / 5) * 100}%` }}
                 />
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className={`text-xs font-bold ${cor}`}>{tfg}</p>
-              <p className="text-[9px] text-white/30">mL/min</p>
+              <p className={`text-xs font-bold ${cor}`}>{creat}</p>
+              <p className="text-[9px] text-white/30">mg/dL</p>
             </div>
           </motion.div>
         ))}
@@ -317,7 +345,7 @@ function SceneHistorico() {
       >
         <TrendingUp className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
         <p className="text-[10px] text-emerald-400">
-          <strong>Tendência positiva:</strong> TFG melhorou 23% em 4 meses
+          <strong>Série histórica:</strong> creatinina registrada em quatro avaliações
         </p>
       </motion.div>
     </div>
@@ -326,10 +354,14 @@ function SceneHistorico() {
 
 /* ── Sequência de cenas ──────────────────────────────────────── */
 
-const cenas = [
+const cenas: Array<{
+  id: string
+  label: string
+  Component: React.ComponentType<SceneActivityProps>
+}> = [
   { id: 'dashboard', label: 'Dashboard', Component: SceneDashboard },
   { id: 'cadastro', label: 'Cadastro', Component: SceneCadastro },
-  { id: 'tfg', label: 'Calculadora TFG', Component: SceneTFG },
+  { id: 'iris', label: 'Estadiamento IRIS', Component: SceneIRIS },
   { id: 'laudo', label: 'Análise IA', Component: SceneLaudo },
   { id: 'historico', label: 'Histórico', Component: SceneHistorico },
 ]
@@ -344,31 +376,42 @@ export function ProductDemo() {
   const [cenaIdx, setCenaIdx] = useState(0)
   const [playing, setPlaying] = useState(true)
   const [progress, setProgress] = useState(0)
+  const progressRef = useRef(0)
+  const { ref, canAnimate, reducedMotion } = useMotionActivity<HTMLDivElement>()
+  const shouldRun = playing && canAnimate
 
   const goTo = useCallback((idx: number) => {
     setCenaIdx(idx)
+    progressRef.current = 0
     setProgress(0)
   }, [])
 
   useEffect(() => {
-    if (!playing) return
-    const start = Date.now()
+    if (!shouldRun) return
+    const initialProgress = progressRef.current
+    const start = performance.now()
     const tick = setInterval(() => {
-      const elapsed = Date.now() - start
-      const pct = Math.min((elapsed / CENA_DURATION) * 100, 100)
+      const elapsed = performance.now() - start
+      const pct = Math.min(initialProgress + (elapsed / CENA_DURATION) * 100, 100)
+      progressRef.current = pct
       setProgress(pct)
       if (pct >= 100) {
+        progressRef.current = 0
         setCenaIdx((c) => (c + 1) % cenas.length)
         setProgress(0)
       }
     }, 50)
     return () => clearInterval(tick)
-  }, [playing, cenaIdx])
+  }, [cenaIdx, shouldRun])
 
   const { Component } = cenas[cenaIdx]
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
+    <div
+      ref={ref}
+      data-demo-scene={cenas[cenaIdx].id}
+      className="w-full max-w-3xl mx-auto"
+    >
       {/* Frame browser */}
       <div
         className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-black/40"
@@ -401,6 +444,7 @@ export function ProductDemo() {
               <button
                 key={id}
                 onClick={() => { goTo(i); setPlaying(false) }}
+                aria-current={i === cenaIdx ? 'step' : undefined}
                 className={`text-left px-3 py-2 rounded-lg text-[10px] font-medium transition-all duration-200 ${
                   i === cenaIdx
                     ? 'bg-brand-500/20 text-brand-300 border border-brand-500/20'
@@ -420,10 +464,13 @@ export function ProductDemo() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                transition={{ duration: playing && !reducedMotion ? 0.3 : 0, ease: 'easeInOut' }}
                 className="h-full"
               >
-                <Component />
+                <Component
+                  active={shouldRun}
+                  showFinal={reducedMotion || !playing}
+                />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -432,11 +479,11 @@ export function ProductDemo() {
         {/* Barra de progresso + controles */}
         <div className="px-4 py-3 border-t border-white/5 flex items-center gap-3" style={{ background: 'rgba(12,14,22,0.9)' }}>
           <button
-            onClick={() => setPlaying(!playing)}
+            onClick={() => setPlaying((value) => !value)}
             aria-label={playing ? 'Pausar demo' : 'Reproduzir demo'}
-            className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/30 transition-all duration-200 shrink-0"
+            className="h-11 w-11 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/30 transition-all duration-200 shrink-0"
           >
-            {playing ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+            {playing ? <Pause className="w-3 h-3" aria-hidden /> : <Play className="w-3 h-3" aria-hidden />}
           </button>
 
           {/* Progress track */}
@@ -448,9 +495,14 @@ export function ProductDemo() {
           </div>
 
           <button
-            onClick={() => { setCenaIdx(0); setProgress(0); setPlaying(true) }}
+            onClick={() => {
+              progressRef.current = 0
+              setCenaIdx(0)
+              setProgress(0)
+              setPlaying(true)
+            }}
             aria-label="Reiniciar demo"
-            className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/30 transition-all duration-200 shrink-0"
+            className="h-11 w-11 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/30 transition-all duration-200 shrink-0"
           >
             <RotateCcw className="w-3 h-3" />
           </button>
@@ -461,16 +513,22 @@ export function ProductDemo() {
               <button
                 key={i}
                 onClick={() => { goTo(i); setPlaying(false) }}
-                className={`h-1.5 rounded-full transition-all duration-300 ${i === cenaIdx ? 'w-4 bg-gold-400' : 'w-1.5 bg-white/20'}`}
+                className="inline-flex h-8 min-w-8 items-center justify-center rounded-full"
                 aria-label={`Ir para cena ${i + 1}`}
-              />
+                aria-current={i === cenaIdx ? 'step' : undefined}
+              >
+                <span
+                  aria-hidden
+                  className={`h-1.5 rounded-full transition-all duration-300 ${i === cenaIdx ? 'w-4 bg-gold-400' : 'w-1.5 bg-white/20'}`}
+                />
+              </button>
             ))}
           </div>
         </div>
       </div>
 
-      <p className="text-center text-xs text-white/30 mt-3">
-        Demonstração ao vivo — Lab Evolution · Vet do Rim
+      <p className="text-center text-xs text-white/45 mt-3">
+        Demonstração ilustrativa com dados fictícios — não representa paciente nem resultado clínico real
       </p>
     </div>
   )

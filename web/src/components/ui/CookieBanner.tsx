@@ -1,23 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useSyncExternalStore } from 'react'
+import {
+  getAnalyticsConsent,
+  setAnalyticsConsent,
+  subscribeToAnalyticsConsent,
+} from '@/lib/analytics-consent'
 
 export function CookieBanner() {
-  const [isVisible, setIsVisible] = useState(false)
+  const consent = useSyncExternalStore(
+    subscribeToAnalyticsConsent,
+    getAnalyticsConsent,
+    () => null,
+  )
 
-  useEffect(() => {
-    const hasAccepted = localStorage.getItem('vetdorim_cookies_accepted')
-    if (!hasAccepted) {
-      setIsVisible(true)
-    }
-  }, [])
-
-  const acceptCookies = () => {
-    localStorage.setItem('vetdorim_cookies_accepted', 'true')
-    setIsVisible(false)
-  }
-
-  if (!isVisible) return null
+  if (consent !== null) return null
 
   return (
     <div className="fixed bottom-0 inset-x-0 pb-4 sm:pb-5 px-4 sm:px-6 z-[100]">
@@ -33,16 +30,28 @@ export function CookieBanner() {
         <div className="flex-1 text-sm leading-relaxed" style={{ color: '#FFFFFF' }}>
           <p>
             <strong style={{ color: '#C8A97A' }}>Nós respeitamos sua privacidade.</strong>{' '}
-            Utilizamos cookies para garantir que você tenha a melhor experiência na nossa
-            plataforma, além de analisar nosso tráfego conforme a Lei Geral de Proteção de
-            Dados (LGPD).
+            Usamos armazenamento essencial para o funcionamento da plataforma. Se você
+            autorizar, também utilizaremos cookies de análise para entender o uso do site.
           </p>
+          <a
+            href="/legal/privacidade"
+            className="inline-block mt-1 text-xs underline underline-offset-2"
+            style={{ color: 'rgba(255,255,255,0.8)' }}
+          >
+            Política de privacidade
+          </a>
         </div>
 
         {/* CTA dourado */}
-        <div className="flex shrink-0 gap-3 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row shrink-0 gap-2 w-full sm:w-auto">
           <button
-            onClick={acceptCookies}
+            onClick={() => setAnalyticsConsent('declined')}
+            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap border border-white/30 text-white hover:bg-white/10 transition-colors"
+          >
+            Somente necessários
+          </button>
+          <button
+            onClick={() => setAnalyticsConsent('accepted')}
             className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-250 whitespace-nowrap hover:-translate-y-0.5"
             style={{
               background: '#C8A97A',
@@ -50,7 +59,7 @@ export function CookieBanner() {
               boxShadow: '0 4px 14px rgba(200, 169, 122, 0.35)',
             }}
           >
-            Entendi e concordo
+            Aceitar analytics
           </button>
         </div>
       </div>

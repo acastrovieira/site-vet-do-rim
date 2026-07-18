@@ -1,5 +1,5 @@
 ---
-paths: **/*
+paths: "**/*"
 ---
 
 # MCP Server Usage Rules - AIOX Architecture
@@ -161,16 +161,16 @@ mcp__docker-gateway__fetch-apify-docs              # Fetch documentation page
 - MCP server starts but fails authentication
 - Verbose output shows `-e ENV_VAR` without values
 
-**Workaround:** Edit `~/.docker/mcp/catalogs/docker-mcp.yaml` directly with hardcoded env values:
-```yaml
-{mcp-name}:
-  env:
-    - name: API_TOKEN
-      value: 'actual-token-value'
-```
+**Safe response:** Do not hardcode credentials in catalogs, project files, prompts,
+logs, or examples. Disable the affected MCP until the secret store is fixed, or
+inject the credential through a supported OS/container secret mechanism after a
+security review. Rotate any credential that may previously have been written to
+disk and verify that it is absent from version control and logs.
 
 **Affected MCPs:** Any MCP requiring authentication (Apify, Notion, Slack, etc.)
 
-**Working MCPs:** EXA works because its key is in `~/.docker/mcp/config.yaml` under `apiKeys`
+**Working MCPs:** Treat any locally configured key as sensitive and verify that
+its configuration file is excluded from version control and protected by OS
+permissions.
 
 For detailed instructions, see `*add-mcp` task or ask @devops for assistance.

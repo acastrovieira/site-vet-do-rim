@@ -1,5 +1,7 @@
 # 📊 Dashboard de Execução e Orquestração de Agentes (AIOX)
 
+> **ARQUIVO HISTORICO:** este dashboard contem estados contraditorios e nao e fonte de readiness. O estado vigente e **NO-GO**; consulte `docs/README.md` e `docs/auditoria-production-readiness-2026-07-16.md`.
+
 **Projeto:** Ecossistema Digital "Vet do Rim"
 **Metodologia:** Sprints Ágeis (Story-Driven Development)
 **Gerenciado por:** `@aiox-master`

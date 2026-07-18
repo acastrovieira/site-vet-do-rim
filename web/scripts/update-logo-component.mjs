@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 
 async function main() {
-  const svgPath = 'C:/Users/acast/.gemini/antigravity-ide/brain/c6dc56a9-9418-45ed-a5d7-ec4c5ed75ede/logo-symbol.svg';
+  const svgPath = process.argv[2] || path.join(ROOT, 'public', 'logo-symbol.svg');
   const logoComponentPath = path.join(ROOT, 'src', 'components', 'ui', 'VetDoRimLogo.tsx');
 
   console.log(`Reading vectorized SVG from: ${svgPath}`);
@@ -62,11 +62,20 @@ async function main() {
         </g>
       $2`;
 
-  componentContent = componentContent.replace(oldSimboloGroupRegex, replacementContent);
+  if (!oldSimboloGroupRegex.test(componentContent)) {
+    throw new Error('Expected symbol group was not found; component left unchanged.');
+  }
+  const updatedContent = componentContent.replace(oldSimboloGroupRegex, replacementContent);
+  if (updatedContent === componentContent) {
+    throw new Error('Logo component replacement produced no change.');
+  }
 
   // 3. Save the modified component file
-  await fs.writeFile(logoComponentPath, componentContent, 'utf8');
+  await fs.writeFile(logoComponentPath, updatedContent, 'utf8');
   console.log('✓ Successfully updated VetDoRimLogo.tsx component!');
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

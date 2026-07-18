@@ -5,6 +5,12 @@ test.use({
   isMobile: true,
 })
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('vetdorim_analytics_consent', 'declined')
+  })
+})
+
 async function expectNoHorizontalOverflow(page: import('@playwright/test').Page) {
   const metrics = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -17,7 +23,7 @@ async function expectNoHorizontalOverflow(page: import('@playwright/test').Page)
 test.describe('mobile public layout', () => {
   test('key public routes render without horizontal overflow', async ({ page }) => {
     const routes = [
-      { path: '/', heading: /Cuidado renal/i },
+      { path: '/', heading: /Nefrologia|Urologia/i },
       { path: '/auth/login', heading: /Entrar/i },
       { path: '/auth/cadastro', heading: /Criar conta/i },
       { path: '/ferramentas', heading: /Ferramentas/i },
@@ -34,7 +40,7 @@ test.describe('mobile public layout', () => {
 
   test('mobile navigation exposes primary links', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('button', { name: 'Alternar tema', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Mudar para modo (claro|escuro)/ })).toBeVisible()
 
     const menuButton = page.getByRole('button', { name: /menu/i })
     await expect(menuButton).toBeVisible()
@@ -43,6 +49,22 @@ test.describe('mobile public layout', () => {
     await expect(page.getByRole('navigation', { name: 'Navegação mobile' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Ferramentas', exact: true })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Entrar no Lab', exact: true })).toBeVisible()
+    await expectNoHorizontalOverflow(page)
+  })
+
+  test('tablet keeps the accessible menu before the desktop breakpoint', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1024 })
+    await page.goto('/')
+
+    const menuButton = page.getByRole('button', { name: 'Abrir menu', exact: true })
+    await expect(menuButton).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toBeHidden()
+
+    await menuButton.click()
+    const mobileNavigation = page.getByRole('navigation', { name: 'Navegação mobile' })
+    await expect(mobileNavigation).toBeVisible()
+    await expect(mobileNavigation.getByRole('link', { name: 'Blog Científico', exact: true })).toBeVisible()
+    await expect(mobileNavigation.getByRole('link', { name: 'Lab Evolution', exact: true })).toBeVisible()
     await expectNoHorizontalOverflow(page)
   })
 
@@ -72,10 +94,10 @@ test.describe('mobile public layout', () => {
     await expect(page.getByLabel(/Perfil de acesso/i)).toBeVisible()
     await expect(page.getByLabel(/^Senha$/i)).toBeVisible()
 
-    await expect(async () => {
-      await page.getByLabel(/Mostrar campo de senha/i).click()
-      await expect(page.locator('#password')).toHaveAttribute('type', 'text')
-    }).toPass({ timeout: 10_000 })
+    const showPassword = page.getByLabel(/Mostrar campo de senha/i)
+    await expect(showPassword).toBeVisible()
+    await showPassword.click()
+    await expect(page.locator('#password')).toHaveAttribute('type', 'text')
     await expect(page.getByLabel(/Ocultar campo de senha/i)).toBeVisible()
     await expect(page.getByRole('button', { name: /Criar conta/i })).toBeVisible()
     await expectNoHorizontalOverflow(page)
@@ -99,18 +121,31 @@ test.describe('mobile public layout', () => {
     await expectNoHorizontalOverflow(page)
   })
 
-  test('health endpoint reports deploy readiness shape without secrets', async ({ page }) => {
-    const response = await page.request.get('/api/health')
-    const body = await response.json()
+  test('operational endpoints separate liveness from local readiness without secrets', async ({ page }) => {
+    const livenessResponse = await page.request.get('/api/health')
+    const livenessBody = await livenessResponse.json()
 
-    expect([200, 503]).toContain(response.status())
-    expect(body).toMatchObject({
+    expect(livenessResponse.status()).toBe(200)
+    expect(livenessResponse.headers()['cache-control']).toContain('no-store')
+    expect(livenessBody).toMatchObject({
+      ok: true,
+      status: 'alive',
       service: 'vetdorim-web',
-      checks: {
-        next: true,
-      },
+      checks: { runtime: true },
     })
-    expect(JSON.stringify(body)).not.toContain('SUPABASE_SERVICE_ROLE_KEY')
-    expect(JSON.stringify(body)).not.toContain('OPENAI_API_KEY')
+
+    const readinessResponse = await page.request.get('/api/health/readiness')
+    const readinessBody = await readinessResponse.json()
+    expect([200, 503]).toContain(readinessResponse.status())
+    expect(readinessResponse.headers()['cache-control']).toContain('no-store')
+    expect(readinessBody).toMatchObject({
+      status: readinessResponse.ok() ? 'ready' : 'not_ready',
+      service: 'vetdorim-web',
+      checks: { runtime: true },
+    })
+
+    const serialized = JSON.stringify([livenessBody, readinessBody])
+    expect(serialized).not.toContain('SUPABASE_SERVICE_ROLE_KEY')
+    expect(serialized).not.toContain('OPENAI_API_KEY')
   })
 })

@@ -25,7 +25,7 @@ cp .env.example .env.local
 Para rodar E2E remoto que cria usuarios/dados temporarios, tambem defina localmente:
 
 ```bash
-SUPABASE_PROJECT_REF=ycclyzoslirpnnwgzrqx
+SUPABASE_PROJECT_REF=<staging-project-ref>
 SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
@@ -49,10 +49,17 @@ npm run build
 npm run check:predeploy
 npm run check:remote-readiness
 npm run test:e2e
+npm run test:e2e:cross-browser
 npm run test:e2e:auth-rls
 npm run test:e2e:lab-crud
 npm run test:e2e:upload-ia
 ```
+
+`test:e2e` executa a matriz pública principal em Chromium, de forma serial para
+evitar falsos negativos durante a compilação incremental do servidor local. As
+matrizes usam portas isoladas e recusam reutilizar qualquer preview existente.
+`test:e2e:cross-browser` é o gate separado de tablet, Firefox e WebKit e requer
+os três navegadores Playwright instalados no ambiente de execução.
 
 Limpeza manual segura de residuos E2E, sempre primeiro em dry-run:
 
@@ -83,11 +90,13 @@ Migrations ficam em `../supabase/migrations`. Aplique primeiro em staging antes 
 - Publicas: `/`, `/blog`, `/ferramentas`, `/auth/login`, `/auth/cadastro`
 - Protegidas: `/lab`, `/lab/pacientes`, `/lab/tutores`, `/lab/perfil`
 - Tutor: `/portal`
-- Operacional: `/api/health`
+- Operacional: `/api/health` (liveness) e `/api/health/readiness` (configuracao local)
 
 ## Observabilidade Basica
 
-- `/api/health` retorna estado do app Next.js e presenca das variaveis publicas obrigatorias, sem expor segredos.
+- `/api/health` comprova apenas que o processo Next.js responde; nao consulta dependencias.
+- `/api/health/readiness` valida localmente URL/chave publica obrigatorias, sem consultar a rede e sem expor valores.
+- `check:remote-readiness` e local-only por padrao. Consultas externas read-only exigem `npm run check:remote-readiness -- --remote`.
 - Edge Function `parse-laudo` registra falhas no log do Supabase e persiste `status = 'erro'` com `erro_ia` em `laudos_pdf`.
 - Erros globais do App Router passam por `web/src/app/error.tsx`, sem exibir stack trace em producao.
 - Antes de deploy, rode a bateria de qualidade e confira logs da Edge Function apos um upload real.

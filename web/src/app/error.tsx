@@ -17,8 +17,11 @@ export default function GlobalError({
   reset: () => void
 }) {
   useEffect(() => {
-    // Log do erro para monitoramento (ex: Sentry)
-    console.error('[GlobalError]', error.digest ?? error.message)
+    // Mantém o log correlacionável sem copiar mensagem, stack ou dados do provedor.
+    console.error('[GlobalError]', {
+      digest: error.digest ?? 'unavailable',
+      type: error.name,
+    })
   }, [error])
 
   return (
@@ -36,8 +39,7 @@ export default function GlobalError({
           Algo deu errado
         </h1>
         <p className="text-slate-500 text-sm leading-relaxed mb-8">
-          Ocorreu um erro inesperado. Nossa equipe foi notificada.
-          Tente novamente ou volte ao início.
+          Ocorreu um erro inesperado. Tente novamente ou volte ao início.
           {error.digest && (
             <span className="block mt-2 text-xs text-slate-300 font-mono">
               Ref: {error.digest}

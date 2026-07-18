@@ -1,8 +1,14 @@
 import fs from 'fs'
 import path from 'path'
 import { parse as parseYaml } from 'yaml'
+import { assertCivilDate, compareCivilDatesDescending } from './civil-date.ts'
 
-const POSTS_DIR = path.join(process.cwd(), 'src', 'content', 'blog')
+const POSTS_DIR = path.resolve(process.cwd(), 'src', 'content', 'blog')
+const BLOG_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+function isValidBlogSlug(value: string) {
+  return BLOG_SLUG_RE.test(value)
+}
 
 export interface PostFrontmatter {
   title: string
@@ -29,8 +35,11 @@ function parsePost(raw: string): { frontmatter: PostFrontmatter; content: string
     throw new Error('Frontmatter ausente ou invalido no post MDX.')
   }
 
+  const frontmatter = parseYaml(match[1]) as PostFrontmatter
+  assertCivilDate(frontmatter.date)
+
   return {
-    frontmatter: parseYaml(match[1]) as PostFrontmatter,
+    frontmatter,
     content: match[2],
   }
 }
@@ -45,6 +54,9 @@ export function getAllPosts(): Post[] {
 
   const posts = files.map((filename) => {
     const slug = filename.replace(/\.mdx$/, '')
+    if (!isValidBlogSlug(slug)) {
+      throw new Error('Nome de arquivo invalido no diretorio de posts.')
+    }
     const raw = fs.readFileSync(path.join(POSTS_DIR, filename), 'utf-8')
     const { frontmatter, content } = parsePost(raw)
     return {
@@ -54,19 +66,26 @@ export function getAllPosts(): Post[] {
     }
   })
 
-  return posts.sort(
-    (a, b) =>
-      new Date(b.frontmatter.date).getTime() - new Date(a.frontmatter.date).getTime()
-  )
+  return posts.sort((a, b) => compareCivilDatesDescending(
+    a.frontmatter.date,
+    b.frontmatter.date,
+  ))
 }
 
 /**
  * Retorna um post pelo slug. Lança erro se não encontrado.
  */
 export function getPostBySlug(slug: string): Post {
-  const filePath = path.join(POSTS_DIR, `${slug}.mdx`)
+  if (!isValidBlogSlug(slug)) {
+    throw new Error('Post nao encontrado.')
+  }
+
+  const filePath = path.resolve(POSTS_DIR, `${slug}.mdx`)
+  if (path.dirname(filePath) !== POSTS_DIR) {
+    throw new Error('Post nao encontrado.')
+  }
   if (!fs.existsSync(filePath)) {
-    throw new Error(`Post não encontrado: ${slug}`)
+    throw new Error('Post nao encontrado.')
   }
   const raw = fs.readFileSync(filePath, 'utf-8')
   const { frontmatter, content } = parsePost(raw)

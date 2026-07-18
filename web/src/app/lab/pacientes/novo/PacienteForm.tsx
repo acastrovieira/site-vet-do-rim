@@ -1,10 +1,15 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PawPrint, User, Scale, Loader2 } from 'lucide-react'
 import { useToast } from '@/components/ui/Toast'
+import {
+  getMutationErrorCopy,
+  isMutationOutcomeAmbiguous,
+  requestJsonMutation,
+} from '@/lib/client-mutation'
 
 const especies = [
   { value: 'canino', label: 'Canino (Cão)' },
@@ -39,13 +44,17 @@ export function PacienteForm({ tutores, defaultTutorId }: Props) {
   const router = useRouter()
   const { toast } = useToast()
   const [isPending, startTransition] = useTransition()
+  const [submissionLocked, setSubmissionLocked] = useState(false)
+  const [requiresVerification, setRequiresVerification] = useState(false)
+  const submitInFlightRef = useRef(false)
 
   const temTutores = tutores.length > 0
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    const fd = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const fd = new FormData(form)
     const nome = (fd.get('nome') as string)?.trim()
     const tutor_id = (fd.get('tutor_id') as string)?.trim()
     const especie = (fd.get('especie') as string)?.trim()
@@ -59,59 +68,71 @@ export function PacienteForm({ tutores, defaultTutorId }: Props) {
       return
     }
 
+    if (!form.reportValidity()) {
+      toast({
+        type: 'warning',
+        title: 'Revise os campos',
+        message: 'Há um campo com formato inválido. Corrija o valor indicado antes de salvar.',
+      })
+      return
+    }
+    if (submitInFlightRef.current) return
+    submitInFlightRef.current = true
+    setSubmissionLocked(true)
+
     const idadeAnosRaw = fd.get('idade_anos') as string
     const idadeMesesRaw = fd.get('idade_meses') as string
     const pesoRaw = fd.get('peso_atual') as string
+    const payload = {
+      nome,
+      tutor_id,
+      especie,
+      raca: (fd.get('raca') as string)?.trim() || null,
+      idade_anos: idadeAnosRaw ? Number(idadeAnosRaw) : null,
+      idade_meses: idadeMesesRaw ? Number(idadeMesesRaw) : null,
+      peso_atual: pesoRaw ? Number(pesoRaw) : null,
+      status_paciente: (fd.get('status_paciente') as string) || 'ativo',
+    }
 
     startTransition(async () => {
-      const res = await fetch('/api/pets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nome,
-          tutor_id,
-          especie,
-          raca: (fd.get('raca') as string)?.trim() || null,
-          idade_anos: idadeAnosRaw ? Number(idadeAnosRaw) : null,
-          idade_meses: idadeMesesRaw ? Number(idadeMesesRaw) : null,
-          peso_atual: pesoRaw ? Number(pesoRaw) : null,
-          status_paciente: (fd.get('status_paciente') as string) || 'ativo',
-        }),
-      })
+      let releaseSubmission = true
+      try {
+        const result = await requestJsonMutation('/api/pets', payload)
 
-      const result = await res.json() as {
-        ok: boolean
-        id?: string
-        error?: string
-        code?: string
-        hint?: string
-      }
+        if (!result.ok || !result.id) {
+          if (isMutationOutcomeAmbiguous(result)) {
+            releaseSubmission = false
+            setRequiresVerification(true)
+          }
+          const copy = getMutationErrorCopy(result, 'paciente')
+          toast({
+            type: 'error',
+            ...copy,
+          })
+          return
+        }
 
-      if (!result.ok || !result.id) {
-        const isRLS = result.code === 'RLS_DENIED'
+        releaseSubmission = false
+
         toast({
-          type: 'error',
-          title: isRLS ? 'Sem permissão de acesso (RLS)' : 'Erro ao salvar paciente',
-          message: isRLS
-            ? `Política de segurança bloqueou o cadastro. Acesse o Supabase Dashboard → Policies → pets e adicione política INSERT para usuários autenticados.${result.hint ? ` Dica: ${result.hint}` : ''}`
-            : result.error ?? 'Erro desconhecido. Verifique sua conexão e tente novamente.',
+          type: 'success',
+          title: 'Paciente salvo!',
+          message: `${nome} foi cadastrado com sucesso.`,
         })
-        return
+
+        router.push(`/lab/pacientes/${result.id}/laudos`)
+        router.refresh()
+      } finally {
+        if (releaseSubmission) {
+          submitInFlightRef.current = false
+          setSubmissionLocked(false)
+        }
       }
-
-      toast({
-        type: 'success',
-        title: 'Paciente salvo!',
-        message: `${nome} foi cadastrado com sucesso.`,
-      })
-
-      router.push(`/lab/pacientes/${result.id}/laudos`)
-      router.refresh()
     })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate aria-busy={isPending}>
       {/* Dados do paciente */}
       <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 p-6 space-y-5">
         <div className="flex items-center gap-2 mb-1">
@@ -131,6 +152,7 @@ export function PacienteForm({ tutores, defaultTutorId }: Props) {
               name="nome"
               type="text"
               required
+              maxLength={120}
               placeholder="Ex: Thor, Luna, Mia…"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
             />
@@ -161,6 +183,7 @@ export function PacienteForm({ tutores, defaultTutorId }: Props) {
               id="raca"
               name="raca"
               type="text"
+              maxLength={120}
               placeholder="Ex: Golden Retriever, SRD…"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
             />
@@ -241,7 +264,7 @@ export function PacienteForm({ tutores, defaultTutorId }: Props) {
               name="idade_anos"
               type="number"
               min={0}
-              max={30}
+              max={40}
               step={1}
               placeholder="0"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
@@ -272,7 +295,8 @@ export function PacienteForm({ tutores, defaultTutorId }: Props) {
               id="peso_atual"
               name="peso_atual"
               type="number"
-              min={0}
+              min={0.01}
+              max={250}
               step={0.1}
               placeholder="0.0"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
@@ -282,6 +306,18 @@ export function PacienteForm({ tutores, defaultTutorId }: Props) {
       </div>
 
       {/* Ações */}
+      {requiresVerification && (
+        <div
+          role="alert"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+        >
+          O resultado deste envio não pôde ser confirmado.{' '}
+          <Link href="/lab/pacientes" className="font-semibold underline hover:no-underline">
+            Confira a lista de pacientes
+          </Link>{' '}
+          antes de iniciar um novo cadastro.
+        </div>
+      )}
       <div className="flex items-center justify-end gap-3 pb-2">
         <Link
           href="/lab/pacientes"
@@ -292,7 +328,7 @@ export function PacienteForm({ tutores, defaultTutorId }: Props) {
         <button
           type="submit"
           id="btn-salvar-paciente"
-          disabled={!temTutores || isPending}
+          disabled={!temTutores || submissionLocked || isPending}
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isPending ? (
@@ -300,6 +336,8 @@ export function PacienteForm({ tutores, defaultTutorId }: Props) {
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               Salvando…
             </>
+          ) : requiresVerification ? (
+            'Confira a lista antes de reenviar'
           ) : (
             'Salvar paciente'
           )}

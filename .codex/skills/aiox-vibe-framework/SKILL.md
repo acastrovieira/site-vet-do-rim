@@ -69,19 +69,19 @@ Esta skill é operada de forma coordenada pelo squad de agentes especializados. 
 
 ## Roteamento e Ativação de X-Squads
 
-Sempre que a tarefa exigir conhecimentos de negócio, tráfego, design, segurança ou branding, consulte a lista de squads disponíveis no catálogo e indique ao modelo para ler o respectivo prompt compilado em `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia/`.
+Sempre que a tarefa exigir conhecimentos de negócio, tráfego, design, segurança ou branding, consulte a lista de squads disponíveis no catálogo e indique ao modelo para ler o respectivo prompt compilado no diretório definido por `X_SQUADS_HOME`. Se a variável não estiver configurada ou o arquivo não existir, trate o recurso como indisponível e não invente seu conteúdo.
 
 | Caso de Uso / Problema | Squad Recomendado | Caminho do Prompt Condensado |
 | :--- | :--- | :--- |
-| Estratégia de Negócios / Investimentos | Advisory Board | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\01-advisory-board.md` |
-| Branding / Naming / Identidade Visual | Brand Squad | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\02-brand-squad.md` |
-| Estruturação e Decisões de Diretoria (C-Level) | C-Level Squad | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\03-c-level-squad.md` |
-| Automações MCP, Workflows de IA, Claude Code | Claude Code Mastery | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\04-claude-code-mastery.md` |
-| Copywriting / Páginas de Venda / Anúncios | Copy Master / Copy Squad | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\05-copy-master.md` |
-| Auditoria de Segurança / Pentest / IAM / LGPD | Cybersecurity | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\07-cybersecurity.md` |
-| Análise de Dados / Growth Experiments / SQL | Data Squad | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\08-data-squad.md` |
-| Design Systems / Atomic Design / UX / UI | Design Squad | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\09-design-squad.md` |
-| Ofertas Irresistíveis / Geração de Leads (Hormozi) | Hormozi Squad | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\10-hormozi-squad.md` |
-| Criação de Comunidades e Movimentos de Marca | Movement | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\11-movement.md` |
-| Apresentações / Pitch / Narrativa do Produto | Storytelling | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\12-storytelling.md` |
-| Tráfego Pago / Facebook Ads / Google Ads / Mídia | Traffic Masters | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\13-traffic-masters.md` |
+| Estratégia de Negócios / Investimentos | Advisory Board | `${X_SQUADS_HOME}/01-advisory-board.md` |
+| Branding / Naming / Identidade Visual | Brand Squad | `${X_SQUADS_HOME}/02-brand-squad.md` |
+| Estruturação e Decisões de Diretoria (C-Level) | C-Level Squad | `${X_SQUADS_HOME}/03-c-level-squad.md` |
+| Automações MCP, Workflows de IA, Claude Code | Claude Code Mastery | `${X_SQUADS_HOME}/04-claude-code-mastery.md` |
+| Copywriting / Páginas de Venda / Anúncios | Copy Master / Copy Squad | `${X_SQUADS_HOME}/05-copy-master.md` |
+| Auditoria de Segurança / Pentest / IAM / LGPD | Cybersecurity | `${X_SQUADS_HOME}/07-cybersecurity.md` |
+| Análise de Dados / Growth Experiments / SQL | Data Squad | `${X_SQUADS_HOME}/08-data-squad.md` |
+| Design Systems / Atomic Design / UX / UI | Design Squad | `${X_SQUADS_HOME}/09-design-squad.md` |
+| Ofertas Irresistíveis / Geração de Leads (Hormozi) | Hormozi Squad | `${X_SQUADS_HOME}/10-hormozi-squad.md` |
+| Criação de Comunidades e Movimentos de Marca | Movement | `${X_SQUADS_HOME}/11-movement.md` |
+| Apresentações / Pitch / Narrativa do Produto | Storytelling | `${X_SQUADS_HOME}/12-storytelling.md` |
+| Tráfego Pago / Facebook Ads / Google Ads / Mídia | Traffic Masters | `${X_SQUADS_HOME}/13-traffic-masters.md` |

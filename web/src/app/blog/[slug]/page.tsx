@@ -5,6 +5,8 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
 import { getAllPosts, getPostBySlug } from '@/lib/blog'
+import { formatCivilDate } from '@/lib/civil-date'
+import { serializeJsonLd } from '@/lib/json-ld'
 import { ArrowLeft, Calendar, Clock, Tag } from 'lucide-react'
 
 interface Props {
@@ -77,7 +79,7 @@ export default async function BlogPostPage({ params }: Props) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema) }}
       />
       <Header />
       <main id="main-content" className="pt-24 pb-16">
@@ -102,7 +104,7 @@ export default async function BlogPostPage({ params }: Props) {
               </span>
               <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
                 <Calendar className="h-3.5 w-3.5" aria-hidden />
-                {new Date(frontmatter.date).toLocaleDateString('pt-BR', {
+                {formatCivilDate(frontmatter.date, {
                   day: '2-digit',
                   month: 'long',
                   year: 'numeric',

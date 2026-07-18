@@ -2,6 +2,9 @@
   "name": "vetdorim-web",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.18.0"
+  },
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next dev",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next build",
@@ -9,9 +12,14 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "typecheck": "tsc --noEmit",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/unit/production-safety.test.ts tests/unit/frontend-safety.test.ts tests/unit/staging-audit-safety.test.ts tests/unit/parse-laudo-contracts.test.ts tests/unit/migration-integrity.test.ts",
+    "check:migrations": "node scripts/verify-migration-integrity.mjs --check",
+    "check:edge": "node scripts/verify-edge-functions.mjs",
     "check:predeploy": "node scripts/predeploy-check.mjs",
     "check:remote-readiness": "node scripts/remote-readiness-check.mjs",
-    "test:e2e": "playwright test",
+    "audit:staging": "node scripts/staging-audit.mjs",
+    "test:e2e": "cross-env PORT=3310 PLAYWRIGHT_HOST=127.0.0.1 PLAYWRIGHT_REUSE_EXISTING_SERVER=0 playwright test --project=chromium --workers=1",
+    "test:e2e:cross-browser": "cross-env PORT=3312 PLAYWRIGHT_HOST=127.0.0.1 PLAYWRIGHT_REUSE_EXISTING_SERVER=0 playwright test tests/e2e/cross-browser-smoke.spec.ts --project=chromium-tablet-smoke --project=firefox-smoke --project=webkit-smoke --workers=3",
     "test:e2e:auth-rls": "node scripts/e2e-auth-rls-cycle.mjs",
     "test:e2e:lab-crud": "node scripts/e2e-lab-crud-cycle.mjs",
     "test:e2e:upload-ia": "node scripts/e2e-upload-ia-cycle.mjs",
@@ -21,8 +29,8 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
-    "@supabase/ssr": "^0.10.3",
-    "@supabase/supabase-js": "^2.105.4",
+    "@supabase/ssr": "0.10.3",
+    "@supabase/supabase-js": "2.105.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

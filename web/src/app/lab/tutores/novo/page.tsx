@@ -47,7 +47,7 @@ export default async function NovoTutorPage() {
       )}
 
       {/* Formulário — erros/sucesso via Toast */}
-      <TutorForm />
+      {user && <TutorForm />}
     </div>
   )
 }

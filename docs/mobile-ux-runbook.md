@@ -1,5 +1,9 @@
 # Runbook: Sprint Mobile/UX Refinada
 
+> **RUNBOOK DE VALIDACAO, NAO APROVACAO DE RELEASE:** a cobertura local de
+> viewport nao elimina os bloqueios de tenancy, IA transacional e validacao
+> clinica. O estado vigente e **NO-GO**; consulte `docs/README.md`.
+
 ## Objetivo
 
 Validar a experiencia mobile real do site Vet do Rim e do Lab Evolution, cobrindo menus, formularios longos, modais, tabelas, ferramentas publicas/profissionais e fluxo Lab autenticado.
@@ -7,7 +11,8 @@ Validar a experiencia mobile real do site Vet do Rim e do Lab Evolution, cobrind
 ## Entrada
 
 - `npm run check:predeploy` passando.
-- Sprint Lab CRUD real concluida para validar areas autenticadas com usuario vet temporario.
+- Evidencia historica do ciclo Lab CRUD disponivel para orientar a validacao de
+  areas autenticadas; ela nao comprova o RLS multi-clinica atual.
 - Ambiente publicado ou servidor local acessivel no dispositivo/navegador de teste.
 
 ## Cobertura automatizada existente
@@ -33,7 +38,7 @@ O spec `web/tests/e2e/lab-crud.spec.ts` tambem inclui um smoke mobile autenticad
 Comando:
 
 ```powershell
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim\web"
+Set-Location (Join-Path (git rev-parse --show-toplevel) "web")
 npm run check:predeploy
 ```
 

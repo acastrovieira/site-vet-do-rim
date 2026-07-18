@@ -1,75 +1,86 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
 
 /**
- * FormulÃ¡rio de recuperaÃ§Ã£o de senha.
+ * Formulário de recuperação de senha.
  * Chama supabase.auth.resetPasswordForEmail() com redirectTo apontando
- * para /auth/callback?next=/auth/redefinir-senha.
+ * para o callback PKCE. O SDK preserva o tipo `recovery` junto ao verificador.
  */
 export function RecoverForm() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const submitInFlightRef = useRef(false)
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (!e.currentTarget.reportValidity()) return
     if (!email.trim()) return
+    if (submitInFlightRef.current) return
+    submitInFlightRef.current = true
 
     setStatus('loading')
     setErrorMsg('')
 
     const supabase = createClient()
-    // redirectTo deve ser exatamente a URL cadastrada no Supabase Redirect URLs.
-    // O Supabase adiciona automaticamente ?code=...&type=recovery ao final.
-    // O /auth/callback detecta type=recovery e redireciona para /auth/redefinir-senha.
-    const redirectTo = `${window.location.origin}/auth/callback`
+    const redirectTo = new URL('/auth/callback', window.location.origin).toString()
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo,
-    })
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo,
+      })
 
-    if (error) {
-      console.error('[RecoverForm] resetPasswordForEmail error:', error)
-      setStatus('error')
-      // Mensagens amigÃ¡veis por cÃ³digo de erro Supabase
-      if (error.message?.includes('rate limit') || error.message?.includes('429')) {
-        setErrorMsg('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.')
-      } else if (error.message?.includes('redirect')) {
-        setErrorMsg('Erro de configuraÃ§Ã£o de redirecionamento. Contate o suporte.')
+      if (error) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('[RecoverForm] resetPasswordForEmail failed', {
+            code: error.code ?? 'unknown',
+          })
+        }
+        setStatus('error')
+        if (error.message?.includes('rate limit') || error.message?.includes('429')) {
+          setErrorMsg('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.')
+        } else if (error.message?.includes('redirect')) {
+          setErrorMsg('Não foi possível concluir a recuperação. Contate o suporte.')
+        } else {
+          setErrorMsg('Não foi possível processar a solicitação agora. Tente novamente em instantes.')
+        }
       } else {
-        setErrorMsg('Nao foi possivel processar a solicitacao agora. Tente novamente em instantes.')
+        setStatus('sent')
       }
-    } else {
-      setStatus('sent')
+    } catch {
+      setStatus('error')
+      setErrorMsg('Não foi possível processar a solicitação agora. Verifique sua conexão e tente novamente.')
+    } finally {
+      submitInFlightRef.current = false
     }
   }
 
   if (status === 'sent') {
     return (
-      <div className="flex flex-col items-center gap-4 py-4 text-center">
+      <div role="status" aria-live="polite" className="flex flex-col items-center gap-4 py-4 text-center">
         <CheckCircle className="h-12 w-12 text-green-500" />
-        <h2 className="font-display text-xl font-bold text-slate-900">E-mail enviado!</h2>
-        <p className="text-sm text-slate-500 max-w-xs">
-          Verifique sua caixa de entrada em <strong>{email}</strong> e clique no link para
+        <h2 className="font-display text-xl font-bold text-slate-900 dark:text-white">E-mail enviado!</h2>
+        <p className="text-sm text-slate-500 dark:text-science-200 max-w-xs">
+          Verifique sua caixa de entrada em <strong className="break-all">{email}</strong> e clique no link para
           redefinir sua senha.
         </p>
-        <p className="text-xs text-slate-400 mt-2">
-          NÃ£o recebeu?{' '}
+        <p className="text-xs text-slate-400 dark:text-science-400 mt-2">
+          Não recebeu?{' '}
           <button
             type="button"
             onClick={() => setStatus('idle')}
-            className="text-brand-600 font-semibold hover:underline"
+            className="text-brand-600 dark:text-gold-400 font-semibold hover:underline"
           >
             Tentar novamente
           </button>
         </p>
         <Link
           href="/auth/login"
-          className="mt-2 text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1"
+          className="mt-2 text-sm text-slate-500 dark:text-science-200 hover:text-slate-700 dark:hover:text-white flex items-center gap-1"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Voltar ao login
@@ -81,28 +92,30 @@ export function RecoverForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       <div>
-        <label htmlFor="recover-email" className="block text-sm font-medium text-slate-700 mb-1.5">
+        <label htmlFor="recover-email" className="block text-sm font-medium text-slate-700 dark:text-science-100 mb-1.5">
           E-mail cadastrado
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-science-400" />
           <input
             id="recover-email"
             type="email"
             autoComplete="email"
             required
+            maxLength={254}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={status === 'loading'}
             placeholder="seu@email.com"
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white
                        focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent
-                       placeholder:text-slate-400 transition-all"
+                       placeholder:text-slate-400 dark:placeholder:text-science-500 transition-all"
           />
         </div>
       </div>
 
       {status === 'error' && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-lg px-3 py-2">
           {errorMsg}
         </p>
       )}
@@ -114,13 +127,13 @@ export function RecoverForm() {
                    hover:bg-brand-600 active:scale-[0.98] transition-all duration-150
                    disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {status === 'loading' ? 'Enviando...' : 'Enviar link de recuperaÃ§Ã£o'}
+        {status === 'loading' ? 'Enviando...' : 'Enviar link de recuperação'}
       </button>
 
       <div className="text-center">
         <Link
           href="/auth/login"
-          className="text-sm text-slate-500 hover:text-slate-700 flex items-center justify-center gap-1"
+          className="text-sm text-slate-500 dark:text-science-200 hover:text-slate-700 dark:hover:text-white flex items-center justify-center gap-1"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Voltar ao login

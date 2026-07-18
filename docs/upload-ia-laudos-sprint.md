@@ -1,5 +1,9 @@
 # Sprint Upload/IA de Laudos
 
+> **REGISTRO HISTORICO PARCIAL:** este documento nao comprova transacao,
+> idempotencia ou release remoto do fluxo de IA. O estado vigente e **NO-GO**;
+> consulte `docs/README.md`.
+
 ## Status
 
 Parcialmente concluida em ambiente local. A aplicacao remota no Supabase ainda exige pre-requisitos externos e confirmacao explicita.
@@ -36,7 +40,7 @@ Runbook operacional: `docs/upload-ia-laudos-runbook.md`.
 - `deno check supabase/functions/parse-laudo/index.ts`: pendente porque `deno` nao esta acessivel nesta sessao.
 - `supabase db push --dry-run`: pendente porque `SUPABASE_DB_PASSWORD` ainda nao esta configurado para a CLI Postgres.
 - Cadastrar secret remoto `OPENAI_API_KEY` para a Edge Function, sem expor o valor em chat ou logs.
-- Aplicar migration `20260626010000_ai_quota_rpc_and_parse_laudo_hardening.sql` no projeto `ycclyzoslirpnnwgzrqx`.
+- Aplicar migration `20260626010000_ai_quota_rpc_and_parse_laudo_hardening.sql` somente no projeto `<staging-project-ref>` explicitamente confirmado.
 - Deploy da Edge Function `parse-laudo`.
 - `npm run test:e2e:upload-ia` com usuario vet temporario, pet temporario, upload de PDF, Edge Function e limpeza final.
 - Se houver interrupcao forte, rodar `E2E_CLEANUP_RUN_ID=<runId> npm run cleanup:e2e:upload-ia -- --apply`.

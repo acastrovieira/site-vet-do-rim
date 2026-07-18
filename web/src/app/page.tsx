@@ -7,7 +7,6 @@ import {
   HeartPulse,
   BookOpen,
   ArrowRight,
-  CheckCircle2,
   BarChart3,
   Sparkles,
   Shield,
@@ -16,10 +15,11 @@ import {
 } from 'lucide-react'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
-import { AnimatedStats } from '@/components/marketing/AnimatedStats'
+import { PracticePrinciples } from '@/components/marketing/AnimatedStats'
 import { FerramentasShowcase } from '@/components/marketing/FerramentasShowcase'
-import { TestimonialsCarousel } from '@/components/marketing/TestimonialsCarousel'
+import { PublicEvidenceCommitments } from '@/components/marketing/TestimonialsCarousel'
 import { ProductDemo } from '@/components/marketing/ProductDemo'
+import { serializeJsonLd } from '@/lib/json-ld'
 
 export const metadata: Metadata = {
   title: 'Nefrologia e Urologia Veterinária Avançada',
@@ -75,7 +75,7 @@ const especialidades = [
 
 const diferenciais = [
   { text: 'Laudos com interpretação clínica detalhada', icon: Shield },
-  { text: 'Protocolos baseados em diretrizes IRIS e ACVIM', icon: Award },
+  { text: 'Condutas apoiadas por diretrizes e literatura veterinária', icon: Award },
   { text: 'Comunicação humanizada com tutores', icon: HeartPulse },
   { text: 'Dashboard digital de acompanhamento', icon: BarChart3 },
   { text: 'Educação continuada para vets parceiros', icon: BookOpen },
@@ -96,11 +96,11 @@ const artigosFeatured = [
   },
   {
     slug: 'taxa-filtracao-glomerular-veterinaria',
-    title: 'TFG em pequenos animais: por que ela é o biomarcador mais importante',
+    title: 'TFG, creatinina e SDMA: o que cada marcador realmente informa',
     excerpt:
-      'A Taxa de Filtração Glomerular é o melhor indicador da função renal. Saiba como interpretar e calcular em cães e gatos.',
+      'Creatinina e SDMA ajudam na avaliação renal, mas não calculam diretamente a TFG. Entenda os limites.',
     categoria: 'Diagnóstico',
-    leitura: '10 min',
+    leitura: '6 min',
     icon: Microscope,
     accentColor: '#0068BF',
     accentBg: '#EDF6FF',
@@ -120,11 +120,13 @@ const artigosFeatured = [
 
 /* ── Componente de seção heading ──────────────────────────────── */
 function SectionHeading({
+  id,
   label,
   title,
   description,
   light = false,
 }: {
+  id?: string
   label: string
   title: string
   description?: string
@@ -141,6 +143,7 @@ function SectionHeading({
       </p>
       <div className={`section-divider mb-4 ${light ? 'section-divider-sand' : 'section-divider'}`} />
       <h2
+        id={id}
         className={`font-display text-3xl sm:text-4xl font-bold ${
           light ? 'text-white' : 'text-science-900 dark:text-navy-100'
         }`}
@@ -168,7 +171,7 @@ export default function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationSchema) }}
       />
       <Header />
 
@@ -258,12 +261,12 @@ export default function HomePage() {
                     id="hero-cta-primary"
                   >
                     <Sparkles className="h-4 w-4" aria-hidden />
-                    Calcular TFG grátis
+                    Consultar faixas IRIS
                     <ArrowRight className="h-4 w-4" aria-hidden />
                   </Link>
                   <Link
                     href="/blog"
-                    className="btn-secondary"
+                    className="btn-secondary hero-light-button"
                     id="hero-cta-secondary"
                   >
                     <BookOpen className="h-4 w-4" aria-hidden />
@@ -276,7 +279,7 @@ export default function HomePage() {
                   className="mt-8 text-xs animate-fade-up"
                   style={{ animationDelay: '0.32s', color: '#7A9BC8' }}
                 >
-                  Referência em nefrologia veterinária · Protocolos IRIS e ACVIM · Educação continuada
+                  Nefrologia veterinária · Ciência aplicada · Educação continuada
                 </p>
 
                 {/* Sociais */}
@@ -384,15 +387,15 @@ export default function HomePage() {
         </section>
 
         {/* ════════════════════════════════════════════════════════
-            STATS — Branco limpo
+            PRINCÍPIOS — Branco limpo
         ════════════════════════════════════════════════════════ */}
         <section
-          aria-label="Números do Vet do Rim"
+          aria-label="Princípios do Vet do Rim"
           className="bg-theme-white transition-colors duration-300"
           style={{ borderBottom: '1px solid var(--card-border, #D4E2F5)' }}
         >
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <AnimatedStats />
+            <PracticePrinciples />
           </div>
         </section>
 
@@ -408,6 +411,7 @@ export default function HomePage() {
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 
             <SectionHeading
+              id="especialidades-heading"
               label="Áreas de atuação"
               title="Especialidades veterinárias"
               description="Diagnóstico preciso e manejo clínico especializado para as condições mais complexas do sistema renal e urinário."
@@ -469,6 +473,7 @@ export default function HomePage() {
 
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <SectionHeading
+              id="demo-heading"
               label="Lab Evolution em ação"
               title="Veja como funciona"
               description="Desde o cadastro do tutor até a interpretação do laudo por IA — tudo em uma plataforma fluida e intuitiva."
@@ -491,9 +496,10 @@ export default function HomePage() {
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 
             <SectionHeading
+              id="ferramentas-heading"
               label="Ferramentas clínicas"
               title="Ferramentas públicas e profissionais"
-              description="Calculadoras e recursos clínicos desenvolvidos para a rotina da nefrologia veterinária. Parte funciona sem cadastro; ferramentas com conduta ou dosagem exigem conta veterinária gratuita."
+              description="Recursos clínicos para a rotina da nefrologia veterinária. Parte funciona sem cadastro; ferramentas ainda não homologadas ficam indisponíveis e exibem claramente o status de revisão."
               light
             />
 
@@ -666,27 +672,23 @@ export default function HomePage() {
         </section>
 
         {/* ════════════════════════════════════════════════════════
-            DEPOIMENTOS — Verde clínico médio (humanizado)
+            EVIDÊNCIA PÚBLICA — Azul clínico
         ════════════════════════════════════════════════════════ */}
         <section
           className="py-24 relative overflow-hidden"
-          aria-labelledby="avaliacoes-heading"
+          aria-labelledby="evidencias-heading"
           style={{ background: 'linear-gradient(160deg, #1A3A6B 0%, #0F2244 100%)' }}
         >
           <div className="aurora" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <SectionHeading
-              label="Depoimentos"
-              title="O que dizem os tutores"
-              description="Histórias reais de tutores que confiaram o cuidado de seus companheiros ao Vet do Rim."
+              id="evidencias-heading"
+              label="Transparência"
+              title="Compromissos públicos verificáveis"
+              description="Alegações de marketing clínico devem ter fonte, metodologia e consentimento antes da publicação."
               light
             />
-            <TestimonialsCarousel />
-
-            {/* Métricas de confiança em cards menores e minimalistas */}
-            <div className="mt-16 border-t border-white/10 pt-12">
-              <AnimatedStats />
-            </div>
+            <PublicEvidenceCommitments />
           </div>
         </section>
 
@@ -872,10 +874,11 @@ export default function HomePage() {
                 {/* Logo símbolo */}
                 <div className="mb-8">
                   <Image
-                    src="/logo/5.png"
+                    src="/logo/symbol-gold.webp"
                     alt=""
                     width={56}
                     height={56}
+                    loading="eager"
                     className="w-12 h-auto object-contain logo-glow"
                     aria-hidden
                     draggable={false}
@@ -907,7 +910,7 @@ export default function HomePage() {
                     className="btn-secondary"
                     id="cta-final-secondary"
                   >
-                    Calcular TFG grátis
+                    Consultar faixas IRIS
                   </Link>
                 </div>
               </div>

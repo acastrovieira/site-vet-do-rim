@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, AlertTriangle, CheckCircle2, Info, AlertCircle } from 'lucide-react'
 
@@ -85,6 +85,7 @@ function ToastCard({
 }) {
   const c = config[toast.type]
   const Icon = c.icon
+  const isUrgent = toast.type === 'error' || toast.type === 'warning'
 
   return (
     <motion.div
@@ -93,8 +94,8 @@ function ToastCard({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.85, y: 40 }}
       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-      role="alert"
-      aria-live="assertive"
+      role={isUrgent ? 'alert' : 'status'}
+      aria-live={isUrgent ? 'assertive' : 'polite'}
       className="relative w-full max-w-sm overflow-hidden pointer-events-auto"
       style={{
         background: c.bg,
@@ -168,6 +169,11 @@ function ToastCard({
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+
+  useEffect(() => () => {
+    timers.current.forEach((timer) => clearTimeout(timer))
+    timers.current.clear()
+  }, [])
 
   const dismiss = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id))

@@ -1,5 +1,4 @@
 import { spawnSync } from 'node:child_process'
-import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 
 const placeholderEnv = {
@@ -25,8 +24,41 @@ const commands = [
   {
     command: process.execPath,
     args: [
+      'scripts/verify-supply-chain.mjs',
+    ],
+  },
+  {
+    command: process.execPath,
+    args: [
+      'scripts/verify-migration-integrity.mjs',
+      '--check',
+    ],
+  },
+  {
+    command: process.execPath,
+    args: [
+      'scripts/verify-edge-functions.mjs',
+    ],
+  },
+  {
+    command: process.execPath,
+    args: [
       '--check',
       'scripts/lib/env-file.mjs',
+    ],
+  },
+  {
+    command: process.execPath,
+    args: [
+      '--check',
+      'scripts/lib/readiness-safety.mjs',
+    ],
+  },
+  {
+    command: process.execPath,
+    args: [
+      '--check',
+      'scripts/lib/supabase-target.mjs',
     ],
   },
   {
@@ -54,6 +86,13 @@ const commands = [
     command: process.execPath,
     args: [
       '--check',
+      'scripts/remote-readiness-check.mjs',
+    ],
+  },
+  {
+    command: process.execPath,
+    args: [
+      '--check',
       'scripts/cleanup-e2e-lab-crud.mjs',
     ],
   },
@@ -66,26 +105,42 @@ const commands = [
   },
   npmRun('lint'),
   npmRun('typecheck'),
+  npmRun('test'),
   npmRun('build'),
   {
     command: process.execPath,
     args: [
       join(process.cwd(), 'node_modules', '@playwright', 'test', 'cli.js'),
       'test',
+      'tests/e2e/api-security.spec.ts',
+      'tests/e2e/auth.spec.ts',
+      'tests/e2e/public-smoke.spec.ts',
+      'tests/e2e/public-flows.spec.ts',
       'tests/e2e/mobile-layout.spec.ts',
-      'tests/e2e/lab-crud.spec.ts',
-      'tests/e2e/upload-ia.spec.ts',
+      'tests/e2e/tools-functional.spec.ts',
+      'tests/e2e/seo-metadata.spec.ts',
+      'tests/e2e/accessibility-navigation.spec.ts',
+      'tests/e2e/motion-runtime.spec.ts',
+      'tests/e2e/weight-history-safety.spec.ts',
+      '--workers=1',
     ],
+    env: {
+      PORT: process.env.PREDEPLOY_E2E_PORT || '3310',
+      PLAYWRIGHT_HOST: '127.0.0.1',
+      PLAYWRIGHT_REUSE_EXISTING_SERVER: '0',
+      PLAYWRIGHT_USE_PRODUCTION_SERVER: '1',
+    },
   },
 ]
 
-for (const { command, args } of commands) {
+for (const { command, args, env = {} } of commands) {
   console.log(`\n> ${command} ${args.join(' ')}`)
   const result = spawnSync(command, args, {
     cwd: process.cwd(),
     env: {
       ...process.env,
       ...placeholderEnv,
+      ...env,
     },
     shell: false,
     stdio: 'inherit',
@@ -97,5 +152,4 @@ for (const { command, args } of commands) {
   }
 }
 
-rmSync(join(process.cwd(), 'test-results'), { recursive: true, force: true, maxRetries: 5, retryDelay: 500 })
 console.log('\nPredeploy check completed.')

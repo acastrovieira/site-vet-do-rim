@@ -20,6 +20,8 @@ export type LabCategory =
   | 'Bioquímica Renal'
   | 'Bioquímica Hepática'
 
+export type SupportedReferenceSpecies = 'canino' | 'felino'
+
 /** Chaves do schema resultado_ia que contêm valores numéricos */
 export type HemogramaKey =
   // série vermelha
@@ -114,16 +116,34 @@ export const FELINE_REF: Record<HemogramaKey, RefRange> = {
   ast_tgo: { min: 12,  max: 40,  unit: 'U/L', label: 'AST (TGO)', category: 'Bioquímica Hepática' },
 }
 
-/**
- * Retorna a tabela de referência adequada para a espécie.
- * Default: canino (mais comum em nefrologia vet).
- */
-export function getRefForSpecies(especie: string): Record<HemogramaKey, RefRange> {
+/** Resolve somente espécies com intervalos explicitamente cadastrados. */
+export function resolveReferenceSpecies(
+  especie: string,
+): SupportedReferenceSpecies | null {
   const lower = especie.toLowerCase().trim()
   if (lower.includes('felino') || lower.includes('gato') || lower.includes('felin') || lower.includes('cat')) {
-    return FELINE_REF
+    return 'felino'
   }
-  return CANINE_REF
+  if (lower.includes('canino') || lower.includes('cão') || lower.includes('cao') || lower.includes('dog')) {
+    return 'canino'
+  }
+  return null
+}
+
+/**
+ * Retorna referências apenas para uma espécie suportada. Nunca usa uma espécie
+ * diferente como fallback clínico.
+ */
+export function getRefForSpecies(especie: string): Record<HemogramaKey, RefRange> {
+  const supportedSpecies = resolveReferenceSpecies(especie)
+  if (supportedSpecies === 'felino') return FELINE_REF
+  if (supportedSpecies === 'canino') return CANINE_REF
+  throw new Error('Referência laboratorial indisponível para esta espécie.')
+}
+
+/** Metadado de agrupamento, sem selecionar intervalo clínico por espécie. */
+export function getCategoryForLabKey(key: HemogramaKey): LabCategory {
+  return CANINE_REF[key].category
 }
 
 /** Ordem das categorias na tabela evolutiva */

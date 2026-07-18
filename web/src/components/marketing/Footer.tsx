@@ -23,7 +23,7 @@ const footerLinks = {
   conteudo: [
     { href: '/blog', label: 'Blog Científico' },
     { href: '/ferramentas', label: 'Ferramentas Clínicas' },
-    { href: '/ferramentas/calculadora-tfg', label: 'Calculadora TFG' },
+    { href: '/ferramentas/calculadora-tfg', label: 'Estadiamento IRIS' },
   ],
   institucional: [
     { href: '/#sobre', label: 'Sobre' },
@@ -63,20 +63,30 @@ export function Footer() {
 
           {/* Brand — logo PNG dourada */}
           <div className="md:col-span-2">
-            <Link href="/" className="inline-block mb-6 group" aria-label="Vet do Rim">
+            <Link href="/" className="mb-6 inline-flex items-center gap-3 group" aria-label="Vet do Rim">
               <Image
-                src="/logo/Monocromática - Dourada.png"
-                alt="Vet do Rim"
-                width={200}
-                height={200}
-                className="w-40 h-auto object-contain logo-glow-dark group-hover:scale-105 transition-transform duration-300"
+                src="/logo/symbol-gold.webp"
+                alt=""
+                width={96}
+                height={96}
+                loading="eager"
+                unoptimized
+                className="h-20 w-20 object-contain logo-glow-dark group-hover:scale-105 transition-transform duration-300"
                 draggable={false}
               />
+              <span aria-hidden className="text-gold-400">
+                <span className="block whitespace-nowrap font-display text-xl font-semibold tracking-[0.13em]">
+                  VET DO RIM
+                </span>
+                <span className="mt-1 block whitespace-nowrap text-[8px] font-semibold tracking-[0.08em] text-gold-400/80">
+                  NEFROLOGIA E UROLOGIA VETERINÁRIA
+                </span>
+              </span>
             </Link>
 
             <p
               className="text-sm leading-relaxed max-w-xs"
-              style={{ color: 'rgba(200,230,215,0.5)' }}
+              style={{ color: 'rgba(220,235,255,0.72)' }}
             >
               Nefrologia e urologia veterinária avançada. Ciência, empatia e
               tecnologia para cuidar de cães e gatos com excelência.
@@ -87,7 +97,7 @@ export function Footer() {
               {/* E-mail */}
               <a
                 href="mailto:contato@vetdorim.com.br"
-                className="group/icon p-2.5 rounded-xl transition-all duration-250 hover:scale-110"
+                className="group/icon inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2.5 transition-all duration-250 hover:scale-110"
                 style={{ border: '1px solid rgba(200,230,215,0.1)' }}
                 aria-label="Enviar e-mail"
               >
@@ -101,7 +111,7 @@ export function Footer() {
                 href="https://www.instagram.com/vetdorim/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-xl transition-all duration-250 hover:scale-110"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2.5 transition-all duration-250 hover:scale-110"
                 style={{ border: '1px solid rgba(200,230,215,0.1)' }}
                 aria-label="Instagram @vetdorim"
               >
@@ -114,7 +124,7 @@ export function Footer() {
                 href="https://wa.me/5527997987058"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-xl transition-all duration-250 hover:scale-110"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2.5 transition-all duration-250 hover:scale-110"
                 style={{ border: '1px solid rgba(200,230,215,0.1)' }}
                 aria-label="WhatsApp"
               >
@@ -129,7 +139,7 @@ export function Footer() {
           <div>
             <h3
               className="text-xs font-semibold uppercase tracking-[0.15em] mb-5"
-              style={{ color: 'rgba(200,169,122,0.6)' }}
+              style={{ color: 'rgba(216,200,164,0.9)' }}
             >
               Conteúdo
             </h3>
@@ -139,7 +149,7 @@ export function Footer() {
                   <Link
                     href={link.href}
                     className="text-sm transition-colors duration-200 hover:opacity-90"
-                    style={{ color: 'rgba(200,230,215,0.45)' }}
+                    style={{ color: 'rgba(220,235,255,0.72)' }}
                   >
                     {link.label}
                   </Link>
@@ -152,7 +162,7 @@ export function Footer() {
           <div>
             <h3
               className="text-xs font-semibold uppercase tracking-[0.15em] mb-5"
-              style={{ color: 'rgba(200,169,122,0.6)' }}
+              style={{ color: 'rgba(216,200,164,0.9)' }}
             >
               Institucional
             </h3>
@@ -162,7 +172,7 @@ export function Footer() {
                   <Link
                     href={link.href}
                     className="text-sm transition-colors duration-200 hover:opacity-90"
-                    style={{ color: 'rgba(200,230,215,0.45)' }}
+                    style={{ color: 'rgba(220,235,255,0.72)' }}
                   >
                     {link.label}
                   </Link>

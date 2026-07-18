@@ -6,9 +6,9 @@ import { VetOnlyGate } from '@/components/ferramentas/VetOnlyGate'
 import { Zap } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Classificação de Injúria Renal Aguda (IRA) — Cães e Gatos | Vet do Rim',
+  title: 'Classificação de Injúria Renal Aguda (IRA) — Cães e Gatos',
   description:
-    'Classifique a IRA em cães e gatos conforme IRIS AKI (Graus I–V) e KDIGO. Critérios de creatinina, débito urinário e Δ creatinina em 48h. Condutas clínicas por grau de gravidade.',
+    'Compare a creatinina com as faixas IRIS AKI 2026 e registre o subgrau urinário O/NO. A ferramenta exige evidência de IRA e não substitui avaliação veterinária.',
   keywords: [
     'injúria renal aguda veterinária',
     'IRA cão gato classificação',
@@ -24,7 +24,7 @@ export default function InjuriaRenalAgudaPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-science-50 pt-28 pb-20">
+      <main id="main-content" className="min-h-screen bg-science-50 pt-28 pb-20">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
 
           {/* Hero */}
@@ -39,9 +39,8 @@ export default function InjuriaRenalAgudaPage() {
             </h1>
             <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
               Graus <strong className="text-slate-800">I–V</strong> conforme{' '}
-              <strong className="text-slate-800">IRIS AKI 2016</strong> e critérios{' '}
-              <strong className="text-slate-800">KDIGO</strong>.
-              Creatinina sérica, débito urinário e variação em 48h — com condutas recomendadas por grau.
+              <strong className="text-slate-800">IRIS AKI 2026</strong>.
+              A creatinina define o grau; o débito urinário é registrado separadamente como subgrau O/NO.
             </p>
           </div>
 
@@ -54,16 +53,16 @@ export default function InjuriaRenalAgudaPage() {
                   <tr className="border-b border-slate-100">
                     <th className="text-left py-2 pr-4 font-semibold text-slate-500 uppercase tracking-wider">Grau IRIS AKI</th>
                     <th className="text-left py-2 pr-4 font-semibold text-slate-500 uppercase tracking-wider">Creatinina (mg/dL)</th>
-                    <th className="text-left py-2 font-semibold text-slate-500 uppercase tracking-wider">Débito urinário</th>
+                    <th className="text-left py-2 font-semibold text-slate-500 uppercase tracking-wider">Subgrau urinário</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {[
-                    { g: 'I', creat: '< 1,6 (+ evidência IRA)', uo: 'Normal ou oligúria < 6h' },
-                    { g: 'II', creat: '1,7 – 2,5', uo: 'Oligúria persistente' },
-                    { g: 'III', creat: '2,6 – 5,0', uo: 'Oligúria / anúria inicial' },
-                    { g: 'IV', creat: '5,1 – 10,0', uo: 'Oligúria / anúria' },
-                    { g: 'V', creat: '> 10,0', uo: 'Anúria frequente' },
+                    { g: 'I', creat: '< 1,6 (+ evidência IRA)', uo: 'O ou NO' },
+                    { g: 'II', creat: '1,7 – 2,5', uo: 'O ou NO' },
+                    { g: 'III', creat: '2,6 – 5,0', uo: 'O ou NO' },
+                    { g: 'IV', creat: '5,1 – 10,0', uo: 'O ou NO' },
+                    { g: 'V', creat: '> 10,0', uo: 'O ou NO' },
                   ].map(row => (
                     <tr key={row.g} className="hover:bg-slate-50 transition-colors">
                       <td className="py-2 pr-4 font-bold text-brand-600">Grau {row.g}</td>
@@ -75,7 +74,8 @@ export default function InjuriaRenalAgudaPage() {
               </table>
             </div>
             <p className="mt-3 text-[11px] text-slate-400">
-              Critério adicional KDIGO: Δ creatinina ≥ 0,3 mg/dL em 48h ou ≥ 1,5× basal em 7 dias classifica como IRA Grau I mínimo.
+              Subgrau O: débito &lt; 1 mL/kg/h ou ausência de produção de urina por 6 horas.
+              O subgrau não eleva automaticamente o grau.
             </p>
           </div>
 

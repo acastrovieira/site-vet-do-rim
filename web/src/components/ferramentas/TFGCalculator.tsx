@@ -138,11 +138,10 @@ function ResultCard({ result }: { result: IRISResult }) {
       </div>
 
       {/* Métricas */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: 'Creatinina', value: result.creatininaRef },
           { label: 'SDMA', value: result.sdmaRef },
-          { label: 'TFG estimada', value: `${result.tfgEstimadaMin}–${result.tfgEstimadaMax} mL/min/kg` },
           { label: 'Proteinúria', value: proteinuriaLabel[result.proteinuriaSubstage] },
         ].map(({ label, value }) => (
           <div key={label} className="bg-white rounded-xl border border-slate-100 p-3 text-center">
@@ -166,7 +165,7 @@ function ResultCard({ result }: { result: IRISResult }) {
       {/* Recomendações clínicas */}
       <div className="bg-white rounded-2xl border border-slate-100 p-5">
         <h3 className="font-display font-semibold text-slate-900 mb-4 text-sm">
-          Recomendações clínicas baseadas no IRIS 2023
+          Observações para interpretação — IRIS 2026
         </h3>
         <ul className="space-y-2">
           {result.recommendations.map((rec) => (
@@ -199,7 +198,7 @@ function ResultCard({ result }: { result: IRISResult }) {
 }
 
 /**
- * Calculadora interativa de TFG com funil de aquisição (STORY-301 + STORY-302).
+ * Triagem interativa de faixas IRIS com funil de aquisição.
  */
 export function TFGCalculator() {
   const posthog = usePostHog()
@@ -212,9 +211,6 @@ export function TFGCalculator() {
 
     const species = data.get('species') as Species
     if (!species) errs.species = 'Selecione a espécie'
-
-    const weight = parseFloat(data.get('weight') as string)
-    if (isNaN(weight) || weight <= 0 || weight > 200) errs.weight = 'Peso inválido (0–200 kg)'
 
     const creatinina = parseFloat(data.get('creatinina') as string)
     if (isNaN(creatinina) || creatinina <= 0 || creatinina > 30) {
@@ -229,7 +225,6 @@ export function TFGCalculator() {
     setErrors({})
     return {
       species,
-      weightKg: weight,
       creatininaMgDl: creatinina,
       sdmaMcgDl: parseFloat(data.get('sdma') as string) || undefined,
       upcRatio: parseFloat(data.get('upc') as string) || undefined,
@@ -252,7 +247,7 @@ export function TFGCalculator() {
 
     // Rastreio de produto (PostHog)
     if (posthog) {
-      posthog.capture('tfg_calculator_used', {
+      posthog.capture('iris_staging_used', {
         species: input.species,
         stage: calcResult.stage,
         requires_auth: calcResult.requiresAuth
@@ -282,26 +277,11 @@ export function TFGCalculator() {
               {errors.species && <p className="mt-1 text-xs text-red-600">{errors.species}</p>}
             </InputField>
 
-            {/* Peso */}
-            <InputField id="weight" label="Peso corporal (kg)" required>
-              <input
-                id="weight"
-                name="weight"
-                type="number"
-                step="0.1"
-                min="0.1"
-                max="200"
-                placeholder="Ex: 8.5"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-              {errors.weight && <p className="mt-1 text-xs text-red-600">{errors.weight}</p>}
-            </InputField>
-
             {/* Creatinina */}
             <InputField
               id="creatinina"
               label="Creatinina sérica (mg/dL)"
-              hint="Padrão: cão < 1,6 · gato < 1,4"
+              hint="IRIS 2026: cão < 1,4 · gato < 1,6 no estágio 1"
               required
             >
               <input
@@ -385,7 +365,7 @@ export function TFGCalculator() {
             ) : (
               <>
                 <FlaskConical className="h-4 w-4" aria-hidden />
-                Calcular TFG e estadiamento IRIS
+                Classificar faixa de estadiamento IRIS
               </>
             )}
           </button>

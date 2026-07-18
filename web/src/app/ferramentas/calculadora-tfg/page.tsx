@@ -3,14 +3,13 @@ import Script from 'next/script'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
 import { TFGCalculator } from '@/components/ferramentas/TFGCalculator'
+import { serializeJsonLd } from '@/lib/json-ld'
 
 export const metadata: Metadata = {
-  title: 'Calculadora de Taxa de Filtração Glomerular (TFG) Veterinária — Grátis',
+  title: 'Estadiamento IRIS de DRC para Cães e Gatos — Ferramenta Gratuita',
   description:
-    'Calcule a TFG e o estadiamento IRIS para cães e gatos gratuitamente. Ferramenta clínica baseada em creatinina e SDMA, desenvolvida por especialistas em nefrologia veterinária.',
+    'Compare creatinina, SDMA, UPC e pressão arterial com as faixas IRIS 2026. A ferramenta não calcula a taxa de filtração glomerular nem substitui avaliação veterinária.',
   keywords: [
-    'calculadora TFG veterinária',
-    'taxa filtração glomerular cão gato',
     'estadiamento IRIS calculadora',
     'SDMA creatinina calculadora veterinária',
     'ferramenta nefrologia veterinária grátis',
@@ -22,12 +21,12 @@ export const metadata: Metadata = {
 const appSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'Calculadora de TFG Veterinária — Vet do Rim',
+  name: 'Ferramenta de Estadiamento IRIS — Vet do Rim',
   applicationCategory: 'MedicalApplication',
   operatingSystem: 'Web',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'BRL' },
   description:
-    'Calcule a Taxa de Filtração Glomerular e o estadiamento IRIS para cães e gatos com base em creatinina, SDMA e peso corporal.',
+    'Compare marcadores renais de cães e gatos com as faixas de estadiamento IRIS 2026.',
   author: { '@type': 'Organization', name: 'Vet do Rim', url: 'https://vetdorim.com.br' },
 }
 
@@ -37,7 +36,7 @@ export default function CalculadoraTFGPage() {
       <Script
         id="calculadora-tfg-schema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(appSchema) }}
       />
       <Header />
       <main id="main-content" className="pt-24 pb-16">
@@ -49,11 +48,11 @@ export default function CalculadoraTFGPage() {
             </span>
             <h1 className="font-display text-4xl sm:text-5xl font-bold text-slate-900 text-balance mb-4">
               Calculadora de{' '}
-              <span className="text-gradient-brand">TFG Veterinária</span>
+              <span className="text-gradient-brand">Estadiamento IRIS</span>
             </h1>
             <p className="text-slate-500 text-lg max-w-xl mx-auto leading-relaxed">
-              Estime a Taxa de Filtração Glomerular e o estadiamento IRIS para cães e gatos.
-              Baseada em creatinina sérica e SDMA.
+              Compare creatinina, SDMA, UPC e pressão arterial com as faixas IRIS 2026.
+              Esta ferramenta não mede nem estima a TFG.
             </p>
           </div>
 
@@ -61,9 +60,9 @@ export default function CalculadoraTFGPage() {
 
           {/* Aviso científico */}
           <p className="mt-8 text-center text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
-            ⚠️ Esta calculadora é uma ferramenta de apoio clínico baseada nas diretrizes IRIS 2023.
-            Não substitui avaliação clínica presencial nem o julgamento do médico veterinário
-            responsável.
+            ⚠️ Ferramenta educativa baseada nas faixas IRIS 2026. O estadiamento só se aplica após
+            diagnóstico de DRC em paciente estável e hidratado, com resultados confirmados. Não
+            substitui avaliação clínica presencial nem o julgamento do médico-veterinário.
           </p>
         </div>
       </main>

@@ -6,7 +6,7 @@ import { Activity, ChevronRight, Lock, FlaskConical, Droplets, TestTube, Scale, 
 
 
 export const metadata: Metadata = {
-  title: 'Ferramentas Clínicas — Nefrologia Veterinária | Vet do Rim',
+  title: 'Ferramentas Clínicas — Nefrologia Veterinária',
   description:
     'Ferramentas de nefrologia veterinária: calculadoras públicas, recursos freemium e ferramentas profissionais com login veterinário para cães e gatos.',
   keywords: [
@@ -27,8 +27,8 @@ const activeTools = [
     title: 'Estadiamento IRIS da DRC',
     subtitle: 'Doença Renal Crônica',
     description:
-      'Visualize o estágio da DRC conforme as diretrizes IRIS 2023. Inclui sub-estadiamento por proteinúria (UPC) e pressão arterial. Modo tutor e modo veterinário.',
-    tags: ['IRIS 2023', 'Proteinúria', 'Pressão arterial', 'Progressão'],
+      'Compare marcadores com as faixas IRIS 2026 após diagnóstico de DRC. Inclui subestadiamento por UPC e pressão arterial.',
+    tags: ['IRIS 2026', 'Proteinúria', 'Pressão arterial', 'Estadiamento'],
     iconBg: 'bg-gold-50',
     iconColor: 'text-gold-500',
     access: 'Sem cadastro',
@@ -38,10 +38,10 @@ const activeTools = [
     href: '/ferramentas/injuria-renal-aguda',
     icon: Zap,
     title: 'Classificação de Injúria Renal Aguda',
-    subtitle: 'IRIS AKI · KDIGO · Condutas por Grau',
+    subtitle: 'IRIS AKI 2026 · Classificação por Grau',
     description:
-      'Classifique a IRA em cães e gatos conforme o sistema IRIS AKI (Graus I–V). Inclui critério de creatinina, débito urinário e condutas recomendadas por grau de gravidade. Baseada nas diretrizes IRIS 2016 e KDIGO.',
-    tags: ['IRIS AKI', 'KDIGO', 'Oligúria', 'Urgência renal'],
+      'Compare creatinina e débito urinário com a classificação IRIS AKI 2026 (Graus I–V). O resultado é apoio educacional e requer correlação com a avaliação clínica.',
+    tags: ['IRIS AKI 2026', 'Débito urinário', 'Oligúria', 'Urgência renal'],
     iconBg: 'bg-red-50',
     iconColor: 'text-red-500',
     access: 'Login vet',
@@ -66,12 +66,12 @@ const activeTools = [
     title: 'Calculadora de Fluidoterapia',
     subtitle: 'Manutenção, Déficit e Ressuscitação',
     description:
-      'Calcule taxas de manutenção hídrica, reposição de déficit por desidratação e bolus de ressuscitação para cães e gatos. Baseada nas diretrizes AAHA/AAFP 2013.',
-    tags: ['Manutenção', 'Déficit hídrico', 'Bolus de choque', 'AAHA/AAFP'],
+      'Temporariamente indisponível enquanto fases, unidades e limites passam por revisão clínica independente.',
+    tags: ['Revisão clínica', 'Unidades', 'Golden cases', 'Segurança'],
     iconBg: 'bg-sky-50',
     iconColor: 'text-sky-500',
-    access: 'Login vet',
-    cta: 'Entrar para acessar',
+    access: 'Em revisão',
+    cta: 'Ver status',
   },
   {
     href: '/ferramentas/reposicao-eletrolitica',
@@ -79,12 +79,12 @@ const activeTools = [
     title: 'Reposição Eletrolítica',
     subtitle: 'K⁺ · HCO₃⁻ · Ca²⁺ · PO₄³⁻ · Mg²⁺',
     description:
-      'Calcule reposição de potássio, bicarbonato, cálcio, fósforo e magnésio em cães e gatos. Protocolos baseados em DiBartola 4ª ed. e diretrizes ACVIM atualizadas.',
-    tags: ['Hipocalemia', 'Acidose metabólica', 'Hipocalcemia', 'DiBartola'],
+      'Temporariamente indisponível enquanto fórmulas, produtos, unidades e limites passam por revisão clínica independente.',
+    tags: ['Revisão clínica', 'Análise dimensional', 'Monitoramento', 'Segurança'],
     iconBg: 'bg-violet-50',
     iconColor: 'text-violet-500',
-    access: 'Login vet',
-    cta: 'Entrar para acessar',
+    access: 'Em revisão',
+    cta: 'Ver status',
   },
   {
     href: '/ferramentas/controle-de-peso',
@@ -105,12 +105,12 @@ const activeTools = [
     title: 'Dieta Terapêutica Renal',
     subtitle: 'Royal Canin · Hill\'s · Premier · Vet Life',
     description:
-      'Calcule a quantidade diária de dieta renal por espécie, peso atual, ECC e marca. Ajuste automático pelo escore corporal. Comparativo entre Royal Canin, Hill\'s k/d, Premier Pet e Vet Life Farmina.',
-    tags: ['Dieta renal', 'ECC ajuste', 'Multimarca', 'Cão e Gato'],
+      'Temporariamente indisponível enquanto tabelas por produto, ingestão e critérios clínicos passam por revisão independente.',
+    tags: ['Revisão clínica', 'Catálogo versionado', 'ECC e MCS', 'Segurança'],
     iconBg: 'bg-orange-50',
     iconColor: 'text-orange-500',
-    access: 'Sem cadastro',
-    cta: 'Acessar ferramenta',
+    access: 'Em revisão',
+    cta: 'Ver status',
   },
 ]
 
@@ -118,7 +118,7 @@ export default function FerramentasPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24 pb-20">
+      <main id="main-content" className="min-h-screen pt-24 pb-20">
         {/* Hero */}
         <section className="mx-auto max-w-3xl px-4 sm:px-6 text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/20 text-xs font-semibold text-gold-400 mb-5">
@@ -129,11 +129,10 @@ export default function FerramentasPage() {
             Ferramentas de Nefrologia
           </h1>
           <p className="text-lg text-slate-500 dark:text-science-200 leading-relaxed max-w-2xl mx-auto">
-            Calculadoras e modelos clínicos baseados nas diretrizes{' '}
-            <strong className="text-slate-900 dark:text-white">IRIS 2023</strong> e{' '}
-            <strong className="text-slate-900 dark:text-white">ACVIM</strong> para apoio ao diagnóstico
-            e estadiamento da doença renal crônica em cães e gatos. Algumas ferramentas são públicas;
-            calculadoras com conduta ou dosagem exigem login veterinário.
+            Calculadoras e modelos clínicos com fontes identificadas, incluindo as diretrizes{' '}
+            <strong className="text-slate-900 dark:text-white">IRIS 2026</strong>, para apoio ao
+            estadiamento renal em cães e gatos. Algumas ferramentas são públicas;
+            recursos ainda não homologados permanecem indisponíveis durante a revisão clínica.
           </p>
         </section>
 
@@ -159,6 +158,10 @@ export default function FerramentasPage() {
                     ) : tool.access === 'Login vet' ? (
                       <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-sky-400/10 border border-sky-400/20 text-sky-400">
                         Login vet
+                      </span>
+                    ) : tool.access === 'Em revisão' ? (
+                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-600 dark:text-amber-300">
+                        Em revisão
                       </span>
                     ) : (
                       <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-400">
@@ -224,7 +227,7 @@ export default function FerramentasPage() {
               rel="noopener noreferrer"
               className="text-gold-400 font-semibold hover:underline"
             >
-              IRIS 2023
+              IRIS 2026
             </a>
             . Caráter exclusivamente educacional e de suporte clínico.
             Não substituem a avaliação veterinária presencial.

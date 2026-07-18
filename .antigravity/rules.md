@@ -64,22 +64,22 @@ Orquestrar a execução de desenvolvimento de software de forma segura, eficient
 
 ## 🏛️ Roteamento de X-Squads Integrados
 
-Sempre que a tarefa exigir competências específicas de negócio, tráfego, design, segurança ou branding, consulte a lista abaixo e leia o prompt compilado correspondente em `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia/`.
+Sempre que a tarefa exigir competências específicas de negócio, tráfego, design, segurança ou branding, consulte a lista abaixo e leia o prompt compilado correspondente no diretório indicado por `X_SQUADS_HOME`. Se a variável não estiver configurada ou o arquivo não existir, trate o recurso como indisponível e não invente seu conteúdo.
 
 | Squad Recomendado | Caso de Uso / Problema | Caminho do Prompt Condensado |
 | :--- | :--- | :--- |
-| **Advisory Board** | Planejamento estratégico, tomada de decisão e análise de riscos de negócios. | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\01-advisory-board.md` |
-| **Brand Squad** | Naming, identidade visual, marca e posicionamento de comunicação. | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\02-brand-squad.md` |
-| **C-Level Squad** | Alinhamento executivo, análise GTM (Go-To-Market) e infraestrutura. | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\03-c-level-squad.md` |
-| **Claude Code Mastery** | Otimização de prompts, ferramentas MCP e automações avançadas. | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\04-claude-code-mastery.md` |
-| **Copy Master / Copy Squad** | E-mails de conversão, VSLs, páginas de venda e anúncios persuasivos. | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\05-copy-master.md` |
-| **Cybersecurity** | Auditoria de segurança, pentests, LGPD e conformidade ISO. | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\07-cybersecurity.md` |
-| **Data Squad** | Growth hacking, SQL complexo, analítica de funil e métricas. | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\08-data-squad.md` |
-| **Design Squad** | Design Systems, Atomic Design, UX Research e layouts UI. | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\09-design-squad.md` |
-| **Hormozi Squad** | Estruturação de ofertas comerciais irresistíveis e captação de leads. | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\10-hormozi-squad.md` |
-| **Movement** | Criação de comunidades de marca, narrativas e programas de embaixadores. | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\11-movement.md` |
-| **Storytelling** | Apresentações impactantes, pitch decks e narrativa do produto. | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\12-storytelling.md` |
-| **Traffic Masters** | Gestão de tráfego pago (Meta Ads, Google Ads, TikTok Ads, YouTube). | `C:\Users\acast\PROJETOS\.x-squads\squad-prompts - cópia\13-traffic-masters.md` |
+| **Advisory Board** | Planejamento estratégico, tomada de decisão e análise de riscos de negócios. | `${X_SQUADS_HOME}/01-advisory-board.md` |
+| **Brand Squad** | Naming, identidade visual, marca e posicionamento de comunicação. | `${X_SQUADS_HOME}/02-brand-squad.md` |
+| **C-Level Squad** | Alinhamento executivo, análise GTM (Go-To-Market) e infraestrutura. | `${X_SQUADS_HOME}/03-c-level-squad.md` |
+| **Claude Code Mastery** | Otimização de prompts, ferramentas MCP e automações avançadas. | `${X_SQUADS_HOME}/04-claude-code-mastery.md` |
+| **Copy Master / Copy Squad** | E-mails de conversão, VSLs, páginas de venda e anúncios persuasivos. | `${X_SQUADS_HOME}/05-copy-master.md` |
+| **Cybersecurity** | Auditoria de segurança, pentests, LGPD e conformidade ISO. | `${X_SQUADS_HOME}/07-cybersecurity.md` |
+| **Data Squad** | Growth hacking, SQL complexo, analítica de funil e métricas. | `${X_SQUADS_HOME}/08-data-squad.md` |
+| **Design Squad** | Design Systems, Atomic Design, UX Research e layouts UI. | `${X_SQUADS_HOME}/09-design-squad.md` |
+| **Hormozi Squad** | Estruturação de ofertas comerciais irresistíveis e captação de leads. | `${X_SQUADS_HOME}/10-hormozi-squad.md` |
+| **Movement** | Criação de comunidades de marca, narrativas e programas de embaixadores. | `${X_SQUADS_HOME}/11-movement.md` |
+| **Storytelling** | Apresentações impactantes, pitch decks e narrativa do produto. | `${X_SQUADS_HOME}/12-storytelling.md` |
+| **Traffic Masters** | Gestão de tráfego pago (Meta Ads, Google Ads, TikTok Ads, YouTube). | `${X_SQUADS_HOME}/13-traffic-masters.md` |
 
 ---
 
@@ -101,7 +101,7 @@ try {
 ```
 
 ### Operações com Arquivos
-- Sempre resolva caminhos usando caminhos absolutos baseados no diretório do projeto para evitar inconsistências entre ambientes.
+- Resolva caminhos a partir da raiz do projeto ou de uma variável de ambiente explicitamente configurada; nunca grave caminhos ligados a um usuário ou estação específica.
 
 ---
 *Synkra AIOX & Vibe Coding Governance Rules v1.1*

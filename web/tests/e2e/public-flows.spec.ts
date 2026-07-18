@@ -56,13 +56,41 @@ test.describe('public routes and CTA integrity', () => {
   test('home primary CTAs route to live public destinations', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.getByRole('link', { name: /Calcular TFG grátis/i }).first()).toHaveAttribute(
+    await expect(page.getByRole('link', { name: /Consultar faixas IRIS/i }).first()).toHaveAttribute(
       'href',
       '/ferramentas/calculadora-tfg'
     )
+    const heroCta = page.locator('#hero-cta-primary')
+    await expect(heroCta).toBeVisible()
+    expect(await heroCta.evaluate((element) => getComputedStyle(element).display)).toMatch(/flex/)
+    await expect(heroCta).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
     await expect(page.getByRole('link', { name: /Blog científico/i }).first()).toHaveAttribute('href', '/blog')
     await expect(page.getByRole('link', { name: /Ver todas as ferramentas/i })).toHaveAttribute('href', '/ferramentas')
     await expect(page.getByRole('link', { name: /Acessar gratuitamente/i })).toHaveAttribute('href', '/auth/login')
+  })
+
+  test('password reset page rejects a direct unverified visit', async ({ page }) => {
+    await page.goto('/auth/redefinir-senha')
+
+    await expect(page.getByText('Link de recuperação inválido ou expirado.', { exact: true })).toBeVisible()
+    await expect(page.locator('input[type="password"]')).toHaveCount(0)
+    await expectNoFrameworkOverlay(page)
+  })
+
+  test('password recovery completion rejects an anonymous request and clears its marker', async ({ request }) => {
+    const response = await request.post('/auth/redefinir-senha/concluir')
+
+    expect(response.status()).toBe(403)
+    expect(response.headers()['cache-control']).toContain('no-store')
+    expect(response.headers()['referrer-policy']).toBe('no-referrer')
+    const setCookie = response.headers()['set-cookie'] ?? ''
+    expect(setCookie).toContain('vetdorim_recovery_verified=')
+    expect(setCookie).toMatch(/Max-Age=0/i)
+    expect(setCookie).toMatch(/Path=\/auth\/redefinir-senha/i)
+    await expect(response.json()).resolves.toMatchObject({
+      ok: false,
+      code: 'RECOVERY_NOT_AUTHORIZED',
+    })
   })
 
   test('public entry pages do not expose broken internal links', async ({ page, request, baseURL }) => {

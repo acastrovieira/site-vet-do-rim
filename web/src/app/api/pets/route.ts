@@ -1,67 +1,59 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import {
+  ApiUnsupportedMediaTypeError,
+  ApiPayloadTooLargeError,
+  ApiValidationError,
+  assertAllowedKeys,
+  optionalNumber,
+  optionalText,
+  readJsonObject,
+  requiredText,
+  safeErrorSummary,
+} from '@/lib/api-validation'
+import { authorizeServerRoles } from '@/lib/server-authorization'
+import {
+  authorizationFailureJson,
+  privateApiJson,
+} from '@/lib/server-api-response'
+import { isUuid } from '@/lib/identifiers'
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const ESPECIES = new Set(['canino', 'felino', 'equino', 'bovino', 'suino', 'ave', 'roedor', 'reptil', 'outro'])
 const STATUS = new Set(['ativo', 'em_tratamento', 'alta', 'inativo', 'obito'])
 
 function badRequest(error: string) {
-  return NextResponse.json({ ok: false, error, code: 'VALIDATION' }, { status: 400 })
-}
-
-function requiredString(value: unknown, field: string) {
-  if (typeof value !== 'string') throw new Error(`${field} invalido`)
-  const trimmed = value.trim()
-  if (!trimmed) throw new Error(`${field} e obrigatorio`)
-  return trimmed
-}
-
-function optionalString(value: unknown, field: string) {
-  if (value === null || value === undefined) return null
-  if (typeof value !== 'string') throw new Error(`${field} invalido`)
-  return value.trim() || null
-}
-
-function optionalNumber(value: unknown, field: string, min: number, max: number) {
-  if (value === null || value === undefined) return null
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max) {
-    throw new Error(`${field} invalido`)
-  }
-  return value
+  return privateApiJson({ ok: false, error, code: 'VALIDATION' }, { status: 400 })
 }
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
+    const authorization = await authorizeServerRoles(supabase, ['vet', 'admin'])
+    if (!authorization.ok) return authorizationFailureJson(authorization)
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ ok: false, error: 'Nao autenticado', code: 'UNAUTHENTICATED' }, { status: 401 })
-    }
+    const body = await readJsonObject(request)
+    assertAllowedKeys(body, [
+      'nome',
+      'tutor_id',
+      'especie',
+      'raca',
+      'idade_anos',
+      'idade_meses',
+      'peso_atual',
+      'status_paciente',
+    ])
 
-    const body = await request.json() as {
-      nome?: unknown
-      tutor_id?: unknown
-      especie?: unknown
-      raca?: unknown
-      idade_anos?: unknown
-      idade_meses?: unknown
-      peso_atual?: unknown
-      status_paciente?: unknown
-    }
-
-    const nome = requiredString(body.nome, 'Nome')
-    const tutorId = requiredString(body.tutor_id, 'Tutor')
-    const especie = requiredString(body.especie, 'Especie').toLowerCase()
-    const raca = optionalString(body.raca, 'Raca')
-    const idadeAnos = optionalNumber(body.idade_anos, 'Idade em anos', 0, 40)
-    const idadeMeses = optionalNumber(body.idade_meses, 'Idade em meses', 0, 11)
+    const nome = requiredText(body.nome, 'Nome', 120)
+    const tutorId = requiredText(body.tutor_id, 'Tutor', 36)
+    const especie = requiredText(body.especie, 'Especie', 32).toLowerCase()
+    const raca = optionalText(body.raca, 'Raca', 120)
+    const idadeAnos = optionalNumber(body.idade_anos, 'Idade em anos', 0, 40, { integer: true })
+    const idadeMeses = optionalNumber(body.idade_meses, 'Idade em meses', 0, 11, { integer: true })
     const pesoAtual = optionalNumber(body.peso_atual, 'Peso atual', 0.01, 250)
     const statusPaciente = body.status_paciente === undefined || body.status_paciente === null
       ? 'ativo'
-      : requiredString(body.status_paciente, 'Status').toLowerCase()
+      : requiredText(body.status_paciente, 'Status', 32).toLowerCase()
 
-    if (!UUID_RE.test(tutorId)) return badRequest('Tutor invalido')
+    if (!isUuid(tutorId)) return badRequest('Tutor invalido')
     if (!ESPECIES.has(especie)) return badRequest('Especie invalida')
     if (!STATUS.has(statusPaciente)) return badRequest('Status invalido')
 
@@ -82,15 +74,12 @@ export async function POST(request: Request) {
 
     if (error || !data) {
       console.error('[POST /api/pets]', {
-        message: error?.message,
-        code: error?.code,
-        details: error?.details,
-        userId: user.id,
+        code: error?.code ?? 'UNKNOWN',
       })
 
       const isRLS = error?.code === '42501' || error?.message?.toLowerCase().includes('row-level')
       const isConstraint = error?.code === '23503' || error?.code === '23514' || error?.code === '22P02'
-      return NextResponse.json(
+      return privateApiJson(
         {
           ok: false,
           error: isRLS
@@ -98,19 +87,28 @@ export async function POST(request: Request) {
             : isConstraint
               ? 'Dados invalidos para criar paciente.'
               : 'Nao foi possivel criar o paciente.',
-          code: isRLS ? 'RLS_DENIED' : isConstraint ? 'VALIDATION' : (error?.code ?? 'UNKNOWN'),
+          code: isRLS ? 'RLS_DENIED' : isConstraint ? 'VALIDATION' : 'DATABASE',
         },
         { status: isRLS ? 403 : isConstraint ? 400 : 500 }
       )
     }
 
-    return NextResponse.json({ ok: true, id: data.id })
+    return privateApiJson({ ok: true, id: data.id }, { status: 201 })
   } catch (err) {
-    console.error('[POST /api/pets] Unexpected error:', err)
-    if (err instanceof SyntaxError) return badRequest('JSON invalido')
-    if (err instanceof Error && (err.message.endsWith('invalido') || err.message.endsWith('obrigatorio'))) {
-      return badRequest(err.message)
+    if (err instanceof ApiPayloadTooLargeError) {
+      return privateApiJson(
+        { ok: false, error: err.message, code: 'PAYLOAD_TOO_LARGE' },
+        { status: 413 },
+      )
     }
-    return NextResponse.json({ ok: false, error: 'Erro interno inesperado', code: 'INTERNAL' }, { status: 500 })
+    if (err instanceof ApiUnsupportedMediaTypeError) {
+      return privateApiJson(
+        { ok: false, error: err.message, code: 'UNSUPPORTED_MEDIA_TYPE' },
+        { status: 415 },
+      )
+    }
+    if (err instanceof ApiValidationError) return badRequest(err.message)
+    console.error('[POST /api/pets] Unexpected error:', safeErrorSummary(err))
+    return privateApiJson({ ok: false, error: 'Erro interno inesperado', code: 'INTERNAL' }, { status: 500 })
   }
 }

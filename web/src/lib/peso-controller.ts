@@ -33,6 +33,7 @@ export interface HistoricoPeso {
 
 const STORAGE_KEY = 'vetdorim:peso-historico'
 const MAX_REGISTROS = 500 // limite de segurança para o localStorage
+let ultimoErroStorage: string | null = null
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
 
@@ -40,20 +41,55 @@ function gerarId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
+function registroValido(value: unknown): value is RegistroPeso {
+  if (!value || typeof value !== 'object') return false
+  const registro = value as Partial<RegistroPeso>
+  return (
+    typeof registro.id === 'string' &&
+    (registro.especie === 'cao' || registro.especie === 'gato') &&
+    typeof registro.pesoKg === 'number' &&
+    Number.isFinite(registro.pesoKg) &&
+    typeof registro.ecc === 'number' &&
+    registro.ecc >= 1 &&
+    registro.ecc <= 9 &&
+    typeof registro.data === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(registro.data) &&
+    typeof registro.criadoEm === 'number' &&
+    Number.isFinite(registro.criadoEm)
+  )
+}
+
 function lerStorage(): RegistroPeso[] {
   if (typeof window === 'undefined') return []
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    return JSON.parse(raw) as RegistroPeso[]
+    if (!raw) {
+      ultimoErroStorage = null
+      return []
+    }
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed) || !parsed.every(registroValido)) {
+      throw new Error('Formato de histórico inválido')
+    }
+    ultimoErroStorage = null
+    return parsed
   } catch {
+    ultimoErroStorage =
+      'O histórico local não pôde ser lido. Exporte uma cópia do armazenamento do navegador antes de limpar ou substituir os dados.'
     return []
   }
 }
 
 function escreverStorage(registros: RegistroPeso[]): void {
   if (typeof window === 'undefined') return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(registros))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(registros))
+    ultimoErroStorage = null
+  } catch {
+    ultimoErroStorage =
+      'O navegador não permitiu salvar o histórico. Verifique o espaço disponível e as configurações de armazenamento antes de tentar novamente.'
+    throw new Error(ultimoErroStorage)
+  }
 }
 
 // ─── API Pública ─────────────────────────────────────────────────────────────
@@ -67,15 +103,21 @@ function escreverStorage(registros: RegistroPeso[]): void {
 export function salvarPeso(
   dados: Omit<RegistroPeso, 'id' | 'criadoEm'>,
 ): RegistroPeso {
+  const historico = lerStorage()
+  if (ultimoErroStorage) throw new Error(ultimoErroStorage)
+  if (historico.length >= MAX_REGISTROS) {
+    throw new Error(
+      `O limite de ${MAX_REGISTROS} registros foi atingido. Exporte o histórico e remova registros conscientemente antes de continuar.`,
+    )
+  }
+
   const registro: RegistroPeso = {
     ...dados,
     id: gerarId(),
     criadoEm: Date.now(),
   }
 
-  const historico = lerStorage()
-  // Remove registros mais antigos se exceder o limite
-  const atualizado = [registro, ...historico].slice(0, MAX_REGISTROS)
+  const atualizado = [registro, ...historico]
   escreverStorage(atualizado)
   return registro
 }
@@ -97,6 +139,11 @@ export function listarPesos(filtro?: { nomePaciente?: string }): RegistroPeso[] 
   }
 
   return historico.sort((a, b) => b.criadoEm - a.criadoEm)
+}
+
+/** Retorna um aviso seguro quando o histórico local não pôde ser validado. */
+export function obterErroStorage(): string | null {
+  return ultimoErroStorage
 }
 
 /**
@@ -132,14 +179,21 @@ export function exportarCSV(registros: RegistroPeso[]): string {
   const header = 'Data,Paciente,Espécie,Peso (kg),ECC,Observações'
   const especies: Record<Especie, string> = { cao: 'Cão', gato: 'Gato' }
 
+  const csvCell = (value: string | number): string => {
+    let text = String(value).replace(/\r?\n/g, ' ')
+    // Evita que Excel/Sheets interpretem dados livres como fórmulas.
+    if (/^[=+\-@]/.test(text)) text = `'${text}`
+    return `"${text.replace(/"/g, '""')}"`
+  }
+
   const linhas = registros.map((r) => {
     const cols = [
-      r.data,
-      `"${r.nomePaciente ?? '-'}"`,
-      especies[r.especie],
-      r.pesoKg.toFixed(2),
-      r.ecc.toString(),
-      `"${r.observacoes ?? ''}"`,
+      csvCell(r.data),
+      csvCell(r.nomePaciente ?? '-'),
+      csvCell(especies[r.especie]),
+      csvCell(r.pesoKg.toFixed(2)),
+      csvCell(r.ecc.toString()),
+      csvCell(r.observacoes ?? ''),
     ]
     return cols.join(',')
   })

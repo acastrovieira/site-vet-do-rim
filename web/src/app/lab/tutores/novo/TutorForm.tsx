@@ -1,12 +1,17 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { User, Phone, MapPin, Loader2 } from 'lucide-react'
 import { useToast } from '@/components/ui/Toast'
+import {
+  getMutationErrorCopy,
+  isMutationOutcomeAmbiguous,
+  requestJsonMutation,
+} from '@/lib/client-mutation'
 
-async function salvarTutorAPI(formData: {
+interface TutorPayload {
   nome: string
   telefone: string
   email: string | null
@@ -15,19 +20,6 @@ async function salvarTutorAPI(formData: {
   endereco: string | null
   cidade: string | null
   estado: string | null
-}) {
-  const res = await fetch('/api/tutores', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData),
-  })
-  return res.json() as Promise<{
-    ok: boolean
-    id?: string
-    error?: string
-    code?: string
-    hint?: string
-  }>
 }
 
 /**
@@ -38,11 +30,15 @@ export function TutorForm() {
   const router = useRouter()
   const { toast } = useToast()
   const [isPending, startTransition] = useTransition()
+  const [submissionLocked, setSubmissionLocked] = useState(false)
+  const [requiresVerification, setRequiresVerification] = useState(false)
+  const submitInFlightRef = useRef(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    const fd = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const fd = new FormData(form)
     const nome = (fd.get('nome') as string)?.trim()
     const telefone = (fd.get('telefone') as string)?.trim()
 
@@ -55,44 +51,68 @@ export function TutorForm() {
       return
     }
 
-    startTransition(async () => {
-      const result = await salvarTutorAPI({
-        nome,
-        telefone,
-        email: (fd.get('email') as string)?.trim() || null,
-        cpf: (fd.get('cpf') as string)?.trim() || null,
-        cep: (fd.get('cep') as string)?.trim() || null,
-        endereco: (fd.get('endereco') as string)?.trim() || null,
-        cidade: (fd.get('cidade') as string)?.trim() || null,
-        estado: (fd.get('estado') as string)?.trim() || null,
-      })
-
-      if (!result.ok || !result.id) {
-        // Mensagem de erro clara com diagnóstico do Supabase
-        const isRLS = result.code === 'RLS_DENIED'
-        toast({
-          type: 'error',
-          title: isRLS ? 'Sem permissão de acesso (RLS)' : 'Erro ao salvar tutor',
-          message: isRLS
-            ? `Política de segurança bloqueou o cadastro. Acesse o Supabase Dashboard → Policies → tutores e adicione política INSERT para usuários autenticados.${result.hint ? ` Dica: ${result.hint}` : ''}`
-            : result.error ?? 'Erro desconhecido. Verifique sua conexão e tente novamente.',
-        })
-        return
-      }
-
+    if (!form.reportValidity()) {
       toast({
-        type: 'success',
-        title: 'Tutor salvo!',
-        message: `${nome} foi cadastrado com sucesso.`,
+        type: 'warning',
+        title: 'Revise os campos',
+        message: 'Há um campo com formato inválido. Corrija o valor indicado antes de salvar.',
       })
+      return
+    }
+    if (submitInFlightRef.current) return
+    submitInFlightRef.current = true
+    setSubmissionLocked(true)
 
-      router.push(`/lab/tutores/${result.id}`)
-      router.refresh()
+    const payload: TutorPayload = {
+      nome,
+      telefone,
+      email: (fd.get('email') as string)?.trim() || null,
+      cpf: (fd.get('cpf') as string)?.trim() || null,
+      cep: (fd.get('cep') as string)?.trim() || null,
+      endereco: (fd.get('endereco') as string)?.trim() || null,
+      cidade: (fd.get('cidade') as string)?.trim() || null,
+      estado: (fd.get('estado') as string)?.trim() || null,
+    }
+
+    startTransition(async () => {
+      let releaseSubmission = true
+      try {
+        const result = await requestJsonMutation('/api/tutores', payload)
+
+        if (!result.ok || !result.id) {
+          if (isMutationOutcomeAmbiguous(result)) {
+            releaseSubmission = false
+            setRequiresVerification(true)
+          }
+          const copy = getMutationErrorCopy(result, 'tutor')
+          toast({
+            type: 'error',
+            ...copy,
+          })
+          return
+        }
+
+        releaseSubmission = false
+
+        toast({
+          type: 'success',
+          title: 'Tutor salvo!',
+          message: `${nome} foi cadastrado com sucesso.`,
+        })
+
+        router.push(`/lab/tutores/${result.id}`)
+        router.refresh()
+      } finally {
+        if (releaseSubmission) {
+          submitInFlightRef.current = false
+          setSubmissionLocked(false)
+        }
+      }
     })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate aria-busy={isPending}>
       {/* Dados pessoais */}
       <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 p-6 space-y-5">
         <div className="flex items-center gap-2 mb-1">
@@ -112,6 +132,7 @@ export function TutorForm() {
               name="nome"
               type="text"
               required
+              maxLength={120}
               autoComplete="name"
               placeholder="Ex: Ana Paula Ferreira"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
@@ -154,6 +175,7 @@ export function TutorForm() {
               name="telefone"
               type="tel"
               required
+              maxLength={32}
               autoComplete="tel"
               placeholder="(27) 99999-9999"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
@@ -168,6 +190,7 @@ export function TutorForm() {
               id="email"
               name="email"
               type="email"
+              maxLength={254}
               autoComplete="email"
               placeholder="tutor@email.com"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
@@ -194,6 +217,7 @@ export function TutorForm() {
               id="endereco"
               name="endereco"
               type="text"
+              maxLength={255}
               autoComplete="street-address"
               placeholder="Rua, Avenida…"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
@@ -223,6 +247,7 @@ export function TutorForm() {
               id="cidade"
               name="cidade"
               type="text"
+              maxLength={120}
               autoComplete="address-level2"
               placeholder="Cidade"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
@@ -248,6 +273,18 @@ export function TutorForm() {
       </div>
 
       {/* Ações */}
+      {requiresVerification && (
+        <div
+          role="alert"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+        >
+          O resultado deste envio não pôde ser confirmado.{' '}
+          <Link href="/lab/tutores" className="font-semibold underline hover:no-underline">
+            Confira a lista de tutores
+          </Link>{' '}
+          antes de iniciar um novo cadastro.
+        </div>
+      )}
       <div className="flex items-center justify-end gap-3 pb-2">
         <Link
           href="/lab/tutores"
@@ -258,7 +295,7 @@ export function TutorForm() {
         <button
           type="submit"
           id="btn-salvar-tutor"
-          disabled={isPending}
+          disabled={submissionLocked || isPending}
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isPending ? (
@@ -266,6 +303,8 @@ export function TutorForm() {
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               Salvando…
             </>
+          ) : requiresVerification ? (
+            'Confira a lista antes de reenviar'
           ) : (
             'Salvar tutor'
           )}

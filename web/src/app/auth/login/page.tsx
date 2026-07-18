@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 interface LoginPageProps {
   searchParams?: Promise<{
     redirectTo?: string | string[]
+    error?: string | string[]
   }>
 }
 
@@ -21,6 +22,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const redirectTo = Array.isArray(params?.redirectTo)
     ? params?.redirectTo[0]
     : params?.redirectTo
+  const errorCode = Array.isArray(params?.error) ? params?.error[0] : params?.error
+  const authErrorMessage = errorCode === 'profile'
+    ? 'Seu perfil de acesso não pôde ser validado. Contate o suporte.'
+    : errorCode === 'callback'
+      ? 'Não foi possível concluir o acesso pelo link. Tente entrar novamente.'
+      : ''
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-science-50 dark:bg-[#0A0A0C] px-4 py-12 relative transition-colors duration-300">
@@ -44,7 +51,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <div className="w-full max-w-md">
         <div className="glass-card rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl shadow-slate-200/50 dark:shadow-none p-8">
           <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white mb-1">Entrar na plataforma</h1>
-          <p className="text-sm text-slate-500 dark:text-science-200 mb-8">Acesse o painel clínico do Lab Evolution</p>
+          <p className={`text-sm text-slate-500 dark:text-science-200 ${authErrorMessage ? 'mb-4' : 'mb-8'}`}>Acesse o painel clínico do Lab Evolution</p>
+          {authErrorMessage && (
+            <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300" role="alert">
+              {authErrorMessage}
+            </p>
+          )}
           <LoginForm redirectTo={redirectTo} />
         </div>
 

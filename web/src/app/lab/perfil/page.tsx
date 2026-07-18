@@ -3,6 +3,10 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ProfileForm } from './ProfileForm'
 import { UserCircle } from 'lucide-react'
+import {
+  assertServerQuerySucceeded,
+  throwServerQueryFailure,
+} from '@/lib/server-query-safety'
 
 export const metadata: Metadata = {
   title: 'Meu Perfil — Lab Evolution',
@@ -17,11 +21,13 @@ export default async function PerfilPage() {
 
   type ProfileRow = { full_name: string | null; phone: string | null; address: string | null }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('full_name, phone, address')
     .eq('id', user.id)
-    .single() as { data: ProfileRow | null; error: unknown }
+    .maybeSingle() as { data: ProfileRow | null; error: unknown }
+  assertServerQuerySucceeded(profileError, 'PROFILE_QUERY_FAILED')
+  if (!profile) throwServerQueryFailure('PROFILE_NOT_FOUND')
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -31,8 +37,8 @@ export default async function PerfilPage() {
           <UserCircle className="h-9 w-9" strokeWidth={1.5} />
         </div>
         <div>
-          <h1 className="font-display text-2xl font-bold text-slate-900">Meu perfil</h1>
-          <p className="text-slate-500 mt-0.5 text-sm">
+          <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white">Meu perfil</h1>
+          <p className="text-slate-500 dark:text-science-200 mt-0.5 text-sm">
             Gerencie seus dados pessoais, contato e senha de acesso.
           </p>
         </div>

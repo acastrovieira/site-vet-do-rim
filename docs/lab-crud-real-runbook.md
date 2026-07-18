@@ -1,15 +1,17 @@
 # Runbook: Sprint Lab CRUD Real
 
+> **RUNBOOK LEGADO EM REVISAO:** o RLS atual nao comprova isolamento entre clinicas. Nao executar contra producao; use somente homologacao isolada com o gate de `docs/README.md`.
+
 ## Objetivo
 
-Executar a validacao real de Lab Evolution CRUD no projeto Supabase `ycclyzoslirpnnwgzrqx`, criando um usuario vet temporario, validando tutor/paciente/laudos e removendo todos os dados temporarios ao final.
+Executar a validacao real de Lab Evolution CRUD em um projeto Supabase de staging explicitamente confirmado, criando um usuario vet temporario, validando tutor/paciente/laudos e removendo todos os dados temporarios ao final.
 
 ## Confirmacao exigida
 
 Antes de rodar comandos que criam ou deletam dados reais, registrar confirmacao explicita:
 
 ```text
-Confirmo executar test:e2e:lab-crud com usuário vet temporário e limpeza final no projeto ycclyzoslirpnnwgzrqx
+Confirmo executar test:e2e:lab-crud com usuário vet temporário e limpeza final no projeto <staging-project-ref>
 ```
 
 ## Pre-checagem segura
@@ -17,7 +19,7 @@ Confirmo executar test:e2e:lab-crud com usuário vet temporário e limpeza final
 Rodar no terminal em que Supabase CLI e envs reais estejam disponiveis:
 
 ```powershell
-cd "C:\Users\acast\PROJETOS\SITE VET DO RIM\site-vet-do-rim\web"
+Set-Location (Join-Path (git rev-parse --show-toplevel) "web")
 npm run check:remote-readiness
 ```
 
@@ -36,8 +38,8 @@ Observacao: `Deno no PATH` e obrigatorio para validacao/deploy de Edge Function 
 Podem estar no shell ou em `web/.env.local`.
 
 ```powershell
-SUPABASE_PROJECT_REF=ycclyzoslirpnnwgzrqx
-NEXT_PUBLIC_SUPABASE_URL=https://ycclyzoslirpnnwgzrqx.supabase.co
+SUPABASE_PROJECT_REF=<staging-project-ref>
+NEXT_PUBLIC_SUPABASE_URL=https://<staging-project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable key ou anon key legacy ativa>
 SUPABASE_SERVICE_ROLE_KEY=<secret key ou service_role legacy ativa>
 ```

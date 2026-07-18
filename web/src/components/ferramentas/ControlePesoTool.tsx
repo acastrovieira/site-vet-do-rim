@@ -7,6 +7,7 @@ import {
   deletarPeso,
   downloadCSV,
   limparHistorico,
+  obterErroStorage,
   type RegistroPeso,
 } from '@/lib/peso-controller'
 import type { Especie, ECC } from '@/lib/dieta-renal-calculator'
@@ -53,9 +54,8 @@ function MiniLineChart({ dados }: { dados: { data: string; peso: number }[] }) {
 
   const fillD = `${pathD} L ${points[points.length - 1].x.toFixed(1)} ${H} L ${points[0].x.toFixed(1)} ${H} Z`
 
-  const trend = pesos[pesos.length - 1] - pesos[0]
-  const strokeColor = trend < -0.1 ? '#16a34a' : trend > 0.1 ? '#dc2626' : '#0ea5e9'
-  const fillColor = trend < -0.1 ? '#16a34a22' : trend > 0.1 ? '#dc262622' : '#0ea5e922'
+  const strokeColor = '#0f766e'
+  const fillColor = '#0f766e22'
 
   return (
     <div className="mt-4">
@@ -93,14 +93,14 @@ function TendenciaBadge({ atual, anterior }: { atual: number; anterior: number }
 
   if (diff < 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
         <TrendingDown className="h-3 w-3" aria-hidden /> -{pct}%
       </span>
     )
   }
 
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded-full">
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
       <TrendingUp className="h-3 w-3" aria-hidden /> +{pct}%
     </span>
   )
@@ -117,13 +117,46 @@ interface FormState {
   observacoes: string
 }
 
-const FORM_INICIAL: FormState = {
-  nomePaciente: '',
-  especie: '',
-  pesoKg: '',
-  ecc: '',
-  data: new Date().toISOString().slice(0, 10),
-  observacoes: '',
+function dataAtualISO(): string {
+  const agora = new Date()
+  const ano = agora.getFullYear()
+  const mes = String(agora.getMonth() + 1).padStart(2, '0')
+  const dia = String(agora.getDate()).padStart(2, '0')
+  return `${ano}-${mes}-${dia}`
+}
+
+function criarFormInicial(): FormState {
+  return {
+    nomePaciente: '',
+    especie: '',
+    pesoKg: '',
+    ecc: '',
+    data: dataAtualISO(),
+    observacoes: '',
+  }
+}
+
+function mesmoPaciente(a: RegistroPeso, b: RegistroPeso): boolean {
+  const nomeA = a.nomePaciente?.trim().toLocaleLowerCase('pt-BR')
+  const nomeB = b.nomePaciente?.trim().toLocaleLowerCase('pt-BR')
+  return Boolean(nomeA && nomeB && a.especie === b.especie && nomeA === nomeB)
+}
+
+function registroAnterior(
+  atual: RegistroPeso,
+  registros: RegistroPeso[],
+): RegistroPeso | undefined {
+  return registros
+    .filter(
+      (registro) =>
+        mesmoPaciente(atual, registro) &&
+        (registro.data < atual.data ||
+          (registro.data === atual.data && registro.criadoEm < atual.criadoEm)),
+    )
+    .sort(
+      (a, b) =>
+        b.data.localeCompare(a.data) || b.criadoEm - a.criadoEm,
+    )[0]
 }
 
 function InputField({
@@ -146,15 +179,17 @@ function InputField({
 
 export function ControlePesoTool() {
   const [registros, setRegistros] = useState<RegistroPeso[]>([])
-  const [form, setForm] = useState<FormState>(FORM_INICIAL)
+  const [form, setForm] = useState<FormState>(criarFormInicial)
   const [erros, setErros] = useState<Partial<Record<keyof FormState, string>>>({})
+  const [erroStorage, setErroStorage] = useState<string | null>(null)
   const [mostrarForm, setMostrarForm] = useState(false)
   const [confirmLimpar, setConfirmLimpar] = useState(false)
+  const [confirmDeletar, setConfirmDeletar] = useState<string | null>(null)
   const [eccAberto, setEccAberto] = useState(false)
-  const [salvando, setSalvando] = useState(false)
 
   const carregarRegistros = useCallback(() => {
     setRegistros(listarPesos())
+    setErroStorage(obterErroStorage())
   }, [])
 
   useEffect(() => {
@@ -164,37 +199,47 @@ export function ControlePesoTool() {
 
   function validar(): boolean {
     const e: typeof erros = {}
+    const nome = form.nomePaciente.trim()
+    if (!nome) e.nomePaciente = 'Informe o nome do paciente'
+    else if (nome.length > 120) e.nomePaciente = 'Use no máximo 120 caracteres'
     if (!form.especie) e.especie = 'Selecione a espécie'
     const peso = parseFloat(form.pesoKg)
     if (isNaN(peso) || peso <= 0 || peso > 200) e.pesoKg = 'Peso inválido (0,1–200 kg)'
     if (!form.ecc) e.ecc = 'Selecione o ECC'
     if (!form.data) e.data = 'Informe a data'
+    else if (form.data > dataAtualISO()) e.data = 'A data não pode estar no futuro'
     setErros(e)
     return Object.keys(e).length === 0
   }
 
-  async function handleSalvar(e: React.FormEvent) {
+  function handleSalvar(e: React.FormEvent) {
     e.preventDefault()
     if (!validar()) return
-    setSalvando(true)
-    await new Promise((r) => setTimeout(r, 300))
-    salvarPeso({
-      nomePaciente: form.nomePaciente || undefined,
-      especie: form.especie as Especie,
-      pesoKg: parseFloat(form.pesoKg),
-      ecc: Number(form.ecc) as ECC,
-      data: form.data,
-      observacoes: form.observacoes || undefined,
-    })
-    setForm(FORM_INICIAL)
-    setErros({})
-    setMostrarForm(false)
-    setSalvando(false)
-    carregarRegistros()
+    try {
+      salvarPeso({
+        nomePaciente: form.nomePaciente.trim(),
+        especie: form.especie as Especie,
+        pesoKg: parseFloat(form.pesoKg),
+        ecc: Number(form.ecc) as ECC,
+        data: form.data,
+        observacoes: form.observacoes.trim() || undefined,
+      })
+      setForm(criarFormInicial())
+      setErros({})
+      setMostrarForm(false)
+      carregarRegistros()
+    } catch (error) {
+      setErroStorage(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível salvar o histórico neste navegador.',
+      )
+    }
   }
 
   function handleDeletar(id: string) {
     deletarPeso(id)
+    setConfirmDeletar(null)
     carregarRegistros()
   }
 
@@ -204,7 +249,18 @@ export function ControlePesoTool() {
     carregarRegistros()
   }
 
-  const chartDados = registros.slice(0, 20).map((r) => ({ data: r.data, peso: r.pesoKg }))
+  const pacienteGrafico = registros.find(
+    (registro) =>
+      Boolean(registro.nomePaciente?.trim()) &&
+      registros.filter((item) => mesmoPaciente(registro, item)).length >= 2,
+  )
+  const registrosGrafico = pacienteGrafico
+    ? registros.filter((registro) => mesmoPaciente(pacienteGrafico, registro)).slice(0, 20)
+    : []
+  const chartDados = registrosGrafico.map((registro) => ({
+    data: registro.data,
+    peso: registro.pesoKg,
+  }))
 
   const especiesLabel: Record<Especie, string> = { cao: 'Cão', gato: 'Gato' }
 
@@ -252,21 +308,40 @@ export function ControlePesoTool() {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-display font-semibold text-slate-900">Novo Registro</h3>
-            <button onClick={() => setMostrarForm(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+            <button
+              type="button"
+              onClick={() => setMostrarForm(false)}
+              aria-label="Fechar formulário de peso"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
+            >
               <X className="h-5 w-5" aria-hidden />
             </button>
           </div>
           <form onSubmit={handleSalvar} noValidate>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Nome do paciente */}
-              <InputField id="nomePaciente" label="Nome do paciente" hint="Opcional — ex: Thor">
+              <InputField
+                id="nomePaciente"
+                label="Nome do paciente"
+                hint="Usado com a espécie para separar o histórico de cada paciente"
+                required
+              >
                 <input
                   id="nomePaciente"
                   value={form.nomePaciente}
                   onChange={(e) => setForm({ ...form, nomePaciente: e.target.value })}
                   placeholder="Ex: Thor, Mia…"
+                  maxLength={120}
+                  required
+                  aria-invalid={Boolean(erros.nomePaciente)}
+                  aria-describedby={erros.nomePaciente ? 'nomePaciente-erro' : undefined}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
+                {erros.nomePaciente && (
+                  <p id="nomePaciente-erro" className="mt-1 text-xs text-red-600">
+                    {erros.nomePaciente}
+                  </p>
+                )}
               </InputField>
 
               {/* Data */}
@@ -276,9 +351,13 @@ export function ControlePesoTool() {
                   type="date"
                   value={form.data}
                   onChange={(e) => setForm({ ...form, data: e.target.value })}
+                  max={dataAtualISO()}
+                  required
+                  aria-invalid={Boolean(erros.data)}
+                  aria-describedby={erros.data ? 'data-erro' : undefined}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
-                {erros.data && <p className="mt-1 text-xs text-red-600">{erros.data}</p>}
+                {erros.data && <p id="data-erro" className="mt-1 text-xs text-red-600">{erros.data}</p>}
               </InputField>
 
               {/* Espécie */}
@@ -369,24 +448,14 @@ export function ControlePesoTool() {
             <div className="flex gap-3 mt-5">
               <button
                 type="submit"
-                disabled={salvando}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-teal-600 text-white font-bold text-sm hover:bg-teal-700 transition-colors disabled:opacity-60"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-teal-600 text-white font-bold text-sm hover:bg-teal-700 transition-colors"
               >
-                {salvando ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Salvando…
-                  </span>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" aria-hidden />
-                    Salvar Registro
-                  </>
-                )}
+                <CheckCircle2 className="h-4 w-4" aria-hidden />
+                Salvar Registro
               </button>
               <button
                 type="button"
-                onClick={() => { setMostrarForm(false); setForm(FORM_INICIAL); setErros({}) }}
+                onClick={() => { setMostrarForm(false); setForm(criarFormInicial()); setErros({}) }}
                 className="px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
               >
                 Cancelar
@@ -396,14 +465,26 @@ export function ControlePesoTool() {
         </div>
       )}
 
+      {erroStorage && (
+        <div role="alert" className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+          <div>
+            <p className="font-semibold">O histórico local precisa de atenção</p>
+            <p className="mt-1 leading-relaxed">{erroStorage}</p>
+          </div>
+        </div>
+      )}
+
       {/* Gráfico de evolução */}
-      {registros.length >= 2 && (
+      {registrosGrafico.length >= 2 && pacienteGrafico && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp className="h-4 w-4 text-teal-600" aria-hidden />
             <h3 className="font-display font-semibold text-slate-900 text-sm">Evolução do Peso</h3>
           </div>
-          <p className="text-xs text-slate-400 mb-2">Últimos {Math.min(registros.length, 20)} registros</p>
+          <p className="text-xs text-slate-400 mb-2">
+            {pacienteGrafico.nomePaciente} · {especiesLabel[pacienteGrafico.especie]} · últimos {registrosGrafico.length} registros
+          </p>
           <MiniLineChart dados={chartDados} />
         </div>
       )}
@@ -461,8 +542,8 @@ export function ControlePesoTool() {
           )}
 
           <div className="divide-y divide-slate-50">
-            {registros.map((r, i) => {
-              const anterior = registros[i + 1]
+            {registros.map((r) => {
+              const anterior = registroAnterior(r, registros)
               return (
                 <div key={r.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50/50 transition-colors">
                   {/* Data */}
@@ -500,14 +581,31 @@ export function ControlePesoTool() {
                   </div>
 
                   {/* Deletar */}
-                  <button
-                    onClick={() => handleDeletar(r.id)}
-                    className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                    title="Remover registro"
-                    aria-label="Remover registro"
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden />
-                  </button>
+                  {confirmDeletar === r.id ? (
+                    <div className="shrink-0 flex flex-col gap-1" role="group" aria-label="Confirmar remoção">
+                      <button
+                        onClick={() => handleDeletar(r.id)}
+                        className="rounded-lg bg-red-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-red-700"
+                      >
+                        Confirmar
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeletar(null)}
+                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-100"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeletar(r.id)}
+                      className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      title="Remover registro"
+                      aria-label={`Solicitar remoção do registro de ${r.nomePaciente ?? 'paciente'}`}
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                    </button>
+                  )}
                 </div>
               )
             })}
@@ -517,7 +615,7 @@ export function ControlePesoTool() {
 
       {/* Aviso de privacidade */}
       <p className="text-center text-xs text-slate-400 leading-relaxed">
-        🔒 Todos os dados ficam armazenados apenas neste navegador (localStorage). Nenhuma informação é enviada para servidores.
+        🔒 Os nomes, pesos e observações ficam sem criptografia no armazenamento deste navegador e não são enviados ao servidor. Evite dados identificáveis em computadores ou perfis compartilhados.
       </p>
     </div>
   )

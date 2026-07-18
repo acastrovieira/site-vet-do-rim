@@ -32,6 +32,23 @@ export interface FreeLabExam {
   createdAt: string
 }
 
+export const FREE_LAB_LIMITS = {
+  patients: 5_000,
+  exams: 50_000,
+  parametersPerExam: 100,
+  id: 128,
+  patientName: 120,
+  tutorName: 120,
+  species: 32,
+  breed: 120,
+  labName: 120,
+  parameterName: 80,
+  parameterValue: 32,
+  unit: 24,
+  reference: 32,
+  timestamp: 64,
+} as const
+
 export const KNOWN_PARAMETERS = [
   'Eritrócitos', 'Hemoglobina', 'Hematócrito', 'VCM', 'HCM', 'CHCM', 'RDW',
   'Leucócitos', 'Neutrófilos', 'Linfócitos', 'Monócitos', 'Eosinófilos', 'Basófilos',

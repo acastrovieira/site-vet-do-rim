@@ -1,6 +1,35 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { requirePublicEnv } from '@/lib/env'
+import {
+  isRoleAuthorized,
+  parseAppRole,
+  requiredRoles,
+  requiresAuthentication,
+  roleHome,
+} from '@/lib/route-authorization'
+
+const AUTH_NO_STORE = 'private, no-store, no-cache, max-age=0, must-revalidate'
+
+function markAuthResponsePrivate(response: NextResponse) {
+  response.headers.set('Cache-Control', AUTH_NO_STORE)
+  response.headers.set('Pragma', 'no-cache')
+  response.headers.set('Expires', '0')
+  return response
+}
+
+function redirectPreservingSession(
+  request: NextRequest,
+  sessionResponse: NextResponse,
+  pathname: string,
+) {
+  const url = request.nextUrl.clone()
+  url.pathname = pathname
+  url.search = ''
+  const response = NextResponse.redirect(url)
+  sessionResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
+  return markAuthResponsePrivate(response)
+}
 
 /**
  * Proxy de autenticação — Next.js 16.2+ renomeou middleware para proxy.
@@ -10,6 +39,23 @@ import { requirePublicEnv } from '@/lib/env'
  * Rotas públicas (/, /blog, /ferramentas, /auth) são sempre acessíveis.
  */
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  const code = request.nextUrl.searchParams.get('code')
+  const tokenHash = request.nextUrl.searchParams.get('token_hash')
+
+  // Defesa: um código PKCE/token de recuperação pode cair na raiz se o Site URL
+  // estiver incorreto. O callback fará a troca; não é preciso consultar Auth aqui.
+  if ((code || tokenHash) && pathname !== '/auth/callback') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/callback'
+    return markAuthResponsePrivate(NextResponse.redirect(url))
+  }
+
+  const isProtected = requiresAuthentication(pathname)
+  // Rotas públicas e APIs com autenticação própria não pagam uma chamada remota
+  // a Auth. Liveness/readiness também permanecem independentes da sessão.
+  if (!isProtected) return NextResponse.next()
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -20,13 +66,16 @@ export async function proxy(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
+          )
+          Object.entries(headers).forEach(([name, value]) =>
+            supabaseResponse.headers.set(name, value)
           )
         },
       },
@@ -39,70 +88,34 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // ── Defesa: code/token_hash pousou em página errada ─────────────────────────
-  // Acontece quando o Site URL no Supabase aponta para a raiz em vez de /auth/callback.
-  // Redireciona qualquer ?code= ou ?token_hash= para o callback correto.
-  const pathname = request.nextUrl.pathname
-  const code      = request.nextUrl.searchParams.get('code')
-  const tokenHash = request.nextUrl.searchParams.get('token_hash')
-
-  if ((code || tokenHash) && pathname !== '/auth/callback') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/callback'
-    return NextResponse.redirect(url)
-  }
-
-  // Rotas protegidas — requer autenticação
-  const protectedRoutes = ['/lab', '/portal', '/dashboard', '/admin']
-  const isProtected = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
-  )
-
-  if (isProtected && !user) {
+  if (!user) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     url.searchParams.set('redirectTo', request.nextUrl.pathname)
-    return NextResponse.redirect(url)
+    const response = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
+    return markAuthResponsePrivate(response)
   }
 
-  if (user) {
-    // Já autenticado tentando acessar login/cadastro — Server Component decide
-    if (pathname === '/auth/login' || pathname === '/auth/cadastro') {
-      return supabaseResponse
+  const roles = requiredRoles(pathname)
+  if (roles) {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const role = parseAppRole(profile?.role)
+    if (profileError || !role) {
+      return redirectPreservingSession(request, supabaseResponse, '/auth/login')
     }
 
-    // Tutor tentando acessar área de vet
-    if (pathname.startsWith('/lab') || pathname.startsWith('/admin')) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'tutor') {
-        const url = request.nextUrl.clone()
-        url.pathname = '/portal'
-        return NextResponse.redirect(url)
-      }
-    }
-
-    // Vet tentando acessar área de tutor
-    if (pathname.startsWith('/portal')) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'vet' || profile?.role === 'admin') {
-        const url = request.nextUrl.clone()
-        url.pathname = '/lab'
-        return NextResponse.redirect(url)
-      }
+    if (!isRoleAuthorized(pathname, role)) {
+      return redirectPreservingSession(request, supabaseResponse, roleHome(role))
     }
   }
 
-  return supabaseResponse
+  return markAuthResponsePrivate(supabaseResponse)
 }
 
 export const config = {

@@ -8,7 +8,6 @@ const ROOT = path.join(__dirname, '..')
 
 // Source image: the gold symbol-only image provided by the user for favicons
 const SYMBOL_SRC = path.join(ROOT, 'public', 'logo', '5.png')
-const LOGO_PNG_PATH = path.join(ROOT, 'public', 'logo.png')
 
 async function resizePng(size) {
   // Crop tightly, no margin/padding, transparent background
@@ -51,21 +50,10 @@ function buildIco(entries) {
 }
 
 async function main() {
-  // 1. Delete logo.png as requested by the user
-  try {
-    await fs.unlink(LOGO_PNG_PATH)
-    console.log(`✓ Deleted old logo.png at ${LOGO_PNG_PATH}`)
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      console.error(`Error deleting logo.png:`, err)
-    } else {
-      console.log(`logo.png did not exist at ${LOGO_PNG_PATH}, skipping deletion.`)
-    }
-  }
-
+  await sharp(SYMBOL_SRC).metadata()
   console.log(`Generating assets from cropped symbol: ${SYMBOL_SRC}`)
 
-  // 2. Generate favicon.ico (16, 32, 48px)
+  // 1. Generate favicon.ico (16, 32, 48px)
   const icoSizes = [16, 32, 48]
   const icoEntries = await Promise.all(
     icoSizes.map(async (size) => {
@@ -78,22 +66,22 @@ async function main() {
   await fs.writeFile(path.join(ROOT, 'src', 'app', 'favicon.ico'), icoBuffer)
   console.log('✓ Generated public/favicon.ico and src/app/favicon.ico')
 
-  // 3. Generate favicon.png (32x32, transparent)
+  // 2. Generate favicon.png (32x32, transparent)
   const faviconPng = await resizePng(32)
   await fs.writeFile(path.join(ROOT, 'public', 'favicon.png'), faviconPng)
   console.log('✓ Generated public/favicon.png')
 
-  // 4. Generate apple-touch-icon.png (180x180, transparent, full fit)
+  // 3. Generate apple-touch-icon.png (180x180, transparent, full fit)
   const appleTouch = await resizePng(180)
   await fs.writeFile(path.join(ROOT, 'public', 'apple-touch-icon.png'), appleTouch)
   console.log('✓ Generated public/apple-touch-icon.png')
 
-  // 5. Generate icon-192.png (192x192, transparent)
+  // 4. Generate icon-192.png (192x192, transparent)
   const icon192 = await resizePng(192)
   await fs.writeFile(path.join(ROOT, 'public', 'icon-192.png'), icon192)
   console.log('✓ Generated public/icon-192.png')
 
-  // 6. Generate icon-512.png (512x512, transparent)
+  // 5. Generate icon-512.png (512x512, transparent)
   const icon512 = await resizePng(512)
   await fs.writeFile(path.join(ROOT, 'public', 'icon-512.png'), icon512)
   console.log('✓ Generated public/icon-512.png')
@@ -101,4 +89,7 @@ async function main() {
   console.log('✅ Asset generation complete.')
 }
 
-main().catch(console.error)
+main().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})

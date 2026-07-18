@@ -3,10 +3,11 @@ import Script from 'next/script'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
 import { ControlePesoTool } from '@/components/ferramentas/ControlePesoTool'
+import { serializeJsonLd } from '@/lib/json-ld'
 import { Scale, Info } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Controle de Peso de Pacientes Veterinários — Gratuito | Vet do Rim',
+  title: 'Controle de Peso de Pacientes Veterinários — Gratuito',
   description:
     'Registre e acompanhe a evolução do peso corporal e do Escore de Condição Corporal (ECC) do seu pet. Ferramenta gratuita para tutores e veterinários. Exportação CSV grátis.',
   keywords: [
@@ -38,7 +39,7 @@ export default function ControlePesoPage() {
       <Script
         id="controle-peso-schema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(appSchema) }}
       />
       <Header />
       <main id="main-content" className="pt-24 pb-16">
@@ -67,8 +68,8 @@ export default function ControlePesoPage() {
             <Info className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" aria-hidden />
             <p className="text-sm text-teal-800 leading-relaxed">
               <strong>Para tutores e veterinários:</strong> Os dados ficam armazenados apenas no
-              seu navegador (sem envio para servidores).             Use o botão <em>&ldquo;Exportar CSV&rdquo;</em> para
-              fazer backup e compartilhar com o veterinário.
+              seu navegador (sem envio para servidores). Use o botão{' '}
+              <em>&ldquo;Exportar CSV&rdquo;</em> para fazer backup e compartilhar com o veterinário.
             </p>
           </div>
 

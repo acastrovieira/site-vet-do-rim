@@ -2,9 +2,15 @@
 
 import { useState, useMemo } from 'react'
 import { AlertTriangle, CheckCircle2, Info, Activity, Droplets, Heart, ChevronRight } from 'lucide-react'
+import {
+  getHypertensionSubstage,
+  getProteinuriaSubstage,
+  getStageByCreatinine,
+  getStageBySdma,
+  type IRISStage as Stage,
+  type Species,
+} from '@/lib/tfg-calculator'
 
-type Species = 'cao' | 'gato'
-type Stage = 1 | 2 | 3 | 4
 type ProtSubstage = 'NP' | 'BP' | 'P'
 type BPSubstage = 'NT' | 'PH' | 'H' | 'SH'
 type ViewMode = 'tutor' | 'vet'
@@ -16,22 +22,18 @@ interface StagingResult {
   bp: BPSubstage | null
 }
 
-const CREAT: Record<Species, [number, number, number]> = {
-  cao:  [1.4, 2.0, 5.0],
-  gato: [1.6, 2.8, 5.0],
+function protStage(v: number, species: Species): ProtSubstage {
+  const stage = getProteinuriaSubstage(v, species)
+  return stage === 'nao-proteinurico' ? 'NP' : stage === 'borderline' ? 'BP' : 'P'
 }
 
-const SDMA_CUTS = [25, 35, 54]
-
-function stageFromCreat(sp: Species, v: number): Stage {
-  const [s2, s3, s4] = CREAT[sp]
-  return v < s2 ? 1 : v <= s3 ? 2 : v <= s4 ? 3 : 4
+function bpStage(v: number): BPSubstage {
+  const stage = getHypertensionSubstage(v)
+  if (stage === 'normotenso') return 'NT'
+  if (stage === 'pre-hipertensivo') return 'PH'
+  if (stage === 'hipertensivo') return 'H'
+  return 'SH'
 }
-function stageFromSDMA(v: number): Stage {
-  return v < 18 ? 1 : v <= SDMA_CUTS[0] ? 2 : v <= SDMA_CUTS[1] ? 3 : 4
-}
-function protStage(v: number): ProtSubstage { return v < 0.2 ? 'NP' : v <= 0.5 ? 'BP' : 'P' }
-function bpStage(v: number): BPSubstage { return v < 140 ? 'NT' : v < 160 ? 'PH' : v < 180 ? 'H' : 'SH' }
 
 const STAGE_META = {
   1: {
@@ -44,11 +46,11 @@ const STAGE_META = {
     label: 'Estágio 1',
     sub: 'Não Azotêmico',
     creat: { cao: '< 1,4 mg/dL', gato: '< 1,6 mg/dL' },
-    sdmaRange: '< 18 μg/dL',
+    sdmaRange: { cao: '< 18 μg/dL', gato: '< 18 μg/dL' },
     tutorDesc: 'A função renal ainda está relativamente preservada. Alterações precoces podem ser detectadas pelos exames antes de qualquer sintoma aparecer.',
-    vetDesc: 'Marcadores renais sugestivos de DRC sem azotemia. SDMA ≥ 18 μg/dL pode identificar este estágio precocemente.',
-    tutorRecs: ['Exames de controle a cada 6 meses', 'Ofereça sempre água fresca e limpa', 'Alimentação de qualidade, consulte o veterinário sobre a dieta', 'Observe sinais de sede excessiva ou mudança no volume urinário'],
-    vetRecs: ['Confirmar diagnóstico com repetição dos exames', 'Investigar causa subjacente', 'Avaliar proteinúria (UPC) e pressão arterial', 'Considerar biópsia renal se indicado'],
+    vetDesc: 'Faixa não azotêmica; exige outro indício de doença renal e confirmação em paciente estável.',
+    tutorRecs: ['Leve o resultado ao veterinário antes de mudar dieta ou medicação', 'Confirme os exames no intervalo definido pelo profissional', 'Observe mudanças de apetite, sede, urina e peso'],
+    vetRecs: ['Confirmar DRC em paciente estável e hidratado', 'Repetir creatinina/SDMA e investigar causas pré e pós-renais', 'Avaliar UPC e pressão arterial de forma padronizada'],
     signs: { tutor: 'Geralmente ausentes', vet: 'Não azotêmico; USG ↓ pode estar presente' },
   },
   2: {
@@ -60,12 +62,12 @@ const STAGE_META = {
     ring: 'ring-amber-400',
     label: 'Estágio 2',
     sub: 'Azotemia Leve',
-    creat: { cao: '1,4–2,0 mg/dL', gato: '1,6–2,8 mg/dL' },
-    sdmaRange: '18–35 μg/dL',
+    creat: { cao: '1,4–2,8 mg/dL', gato: '1,6–2,8 mg/dL' },
+    sdmaRange: { cao: '18–35 μg/dL', gato: '18–25 μg/dL' },
     tutorDesc: 'A função renal está reduzida, mas muitos pets ainda parecem saudáveis. Pode haver aumento na ingestão de água e na produção de urina.',
-    vetDesc: 'Azotemia leve. GFR reduzida em ~33-66%. Iniciar manejo específico para DRC.',
-    tutorRecs: ['Dieta renal específica (indicada pelo veterinário)', 'Sempre água fresca disponível', 'Monitorar apetite e peso quinzenalmente', 'Retorno veterinário a cada 3-6 meses'],
-    vetRecs: ['Tratar hipertensão se PAM ≥ 160 mmHg (RAAS inibidores)', 'Reduzir proteinúria se UPC > 0,5', 'Dieta com restrição de fósforo', 'Reavaliação em 3 meses'],
+    vetDesc: 'Faixa de azotemia leve. O estadiamento só se aplica após confirmação de DRC em paciente estável.',
+    tutorRecs: ['Agende avaliação veterinária para confirmar e contextualizar o resultado', 'Não altere dieta ou medicação sem orientação', 'Monitore apetite, sede, urina e peso'],
+    vetRecs: ['Confirmar persistência e estabilidade clínica', 'Subestadiar por UPC e pressão arterial', 'Definir manejo individual pelas recomendações IRIS vigentes'],
     signs: { tutor: 'Possível aumento na sede e na urina', vet: 'PU/PD pode estar presente; perda de peso leve' },
   },
   3: {
@@ -77,12 +79,12 @@ const STAGE_META = {
     ring: 'ring-orange-400',
     label: 'Estágio 3',
     sub: 'Azotemia Moderada',
-    creat: { cao: '2,1–5,0 mg/dL', gato: '2,9–5,0 mg/dL' },
-    sdmaRange: '36–54 μg/dL',
+    creat: { cao: '2,9–5,0 mg/dL', gato: '2,9–5,0 mg/dL' },
+    sdmaRange: { cao: '36–54 μg/dL', gato: '26–38 μg/dL' },
     tutorDesc: 'A função renal está comprometida de forma significativa. Sintomas como náusea, perda de apetite e cansaço podem afetar a qualidade de vida.',
-    vetDesc: 'Azotemia moderada. GFR reduzida em >66%. Sinais urêmicos possíveis. Manejo intensivo necessário.',
-    tutorRecs: ['Dieta renal estrita — fundamental neste estágio', 'Hidratação subcutânea pode ser indicada', 'Medicamentos antiêmese se houver náusea', 'Retorno veterinário mensal'],
-    vetRecs: ['Manejo de sinais urêmicos (antiêmese, protetor gástrico)', 'Quelantes de fósforo se fósforo > referência', 'Considerar eritropoietina se anemia', 'Fluidoterapia subcutânea domiciliar'],
+    vetDesc: 'Faixa de azotemia moderada. Correlacionar com sinais clínicos, tendência e complicações.',
+    tutorRecs: ['Procure avaliação veterinária em curto prazo', 'Não administre fluidos ou medicamentos sem prescrição', 'Registre alterações de apetite, vômitos, hidratação e atividade'],
+    vetRecs: ['Avaliar complicações e tendência dos marcadores', 'Subestadiar por UPC e pressão arterial', 'Individualizar suporte e monitoramento conforme o paciente'],
     signs: { tutor: 'Náusea, perda de apetite, perda de peso, letargia', vet: 'Síndrome urêmica inicial; anemia, hiperfosfatemia' },
   },
   4: {
@@ -95,26 +97,26 @@ const STAGE_META = {
     label: 'Estágio 4',
     sub: 'Azotemia Grave',
     creat: { cao: '> 5,0 mg/dL', gato: '> 5,0 mg/dL' },
-    sdmaRange: '> 54 μg/dL',
+    sdmaRange: { cao: '> 54 μg/dL', gato: '> 38 μg/dL' },
     tutorDesc: 'A função renal está gravemente comprometida. Seu pet precisa de cuidados intensivos. Converse com o veterinário sobre as melhores opções de conforto e qualidade de vida.',
-    vetDesc: 'Azotemia grave. GFR reduzida em >75%. Crise urêmica iminente. Considerar hospitalização e diálise.',
-    tutorRecs: ['Hospitalização pode ser necessária', 'Foco em conforto e qualidade de vida', 'Mantenha comunicação aberta com o veterinário', 'Considere cuidados paliativos'],
-    vetRecs: ['Hospitalização e fluidoterapia IV', 'Considerar hemodiálise se disponível', 'Manejo agressivo da uremia', 'Discussão de prognóstico e cuidados paliativos com o tutor'],
+    vetDesc: 'Faixa de azotemia grave. Requer avaliação imediata do estado clínico e das complicações.',
+    tutorRecs: ['Procure atendimento veterinário imediato, especialmente se houver vômitos ou prostração', 'Não administre fluidos ou medicamentos por conta própria', 'Leve exames anteriores para comparação'],
+    vetRecs: ['Avaliar urgência, complicações e necessidade de internação', 'Diferenciar DRC estável de descompensação ou injúria aguda sobreposta', 'Individualizar prognóstico e suporte'],
     signs: { tutor: 'Vômitos frequentes, prostração, possível recusa alimentar', vet: 'Uremia grave, acidose, hipocalemia, anemia grave' },
   },
 } as const
 
 const PROT_META: Record<ProtSubstage, { label: string; color: string; desc: string }> = {
   NP: { label: 'Não Proteinúrico', color: 'bg-emerald-100 text-emerald-700', desc: 'UPC < 0,2 — sem perda proteica significativa' },
-  BP: { label: 'Limítrofe', color: 'bg-amber-100 text-amber-700', desc: 'UPC 0,2–0,5 — perda proteica limítrofe, monitorar' },
-  P:  { label: 'Proteinúrico', color: 'bg-red-100 text-red-700', desc: 'UPC > 0,5 — perda proteica clinicamente relevante' },
+  BP: { label: 'Limítrofe', color: 'bg-amber-100 text-amber-700', desc: 'Faixa limítrofe específica da espécie' },
+  P:  { label: 'Proteinúrico', color: 'bg-red-100 text-red-700', desc: 'Acima da faixa limítrofe da espécie' },
 }
 
 const BP_META: Record<BPSubstage, { label: string; color: string; desc: string }> = {
   NT: { label: 'Normotenso', color: 'bg-emerald-100 text-emerald-700', desc: '< 140 mmHg — pressão arterial normal' },
   PH: { label: 'Pré-hipertenso', color: 'bg-amber-100 text-amber-700', desc: '140–159 mmHg — risco baixo de lesão orgânica' },
-  H:  { label: 'Hipertenso', color: 'bg-orange-100 text-orange-700', desc: '160–179 mmHg — risco moderado, tratar' },
-  SH: { label: 'Hiper. Grave', color: 'bg-red-100 text-red-700', desc: '≥ 180 mmHg — risco alto de lesão orgânica, tratar urgente' },
+  H:  { label: 'Hipertenso', color: 'bg-orange-100 text-orange-700', desc: '160–179 mmHg — risco moderado de lesão orgânica' },
+  SH: { label: 'Hiper. Grave', color: 'bg-red-100 text-red-700', desc: '≥ 180 mmHg — risco alto de lesão orgânica' },
 }
 
 export function IRISStagingModel() {
@@ -129,9 +131,9 @@ export function IRISStagingModel() {
     const c = parseFloat(creat.replace(',', '.'))
     if (isNaN(c) || c <= 0) return null
 
-    const creatStage = stageFromCreat(species, c)
+    const creatStage = getStageByCreatinine(c, species)
     const sdmaVal = parseFloat(sdma.replace(',', '.'))
-    const sdmaStage = !isNaN(sdmaVal) && sdmaVal > 0 ? stageFromSDMA(sdmaVal) : null
+    const sdmaStage = !isNaN(sdmaVal) && sdmaVal > 0 ? getStageBySdma(sdmaVal, species) : null
     const stage = sdmaStage ? (Math.max(creatStage, sdmaStage) as Stage) : creatStage
     const basis = sdmaStage
       ? sdmaStage > creatStage ? 'sdma' : sdmaStage === creatStage ? 'ambos' : 'creatinina'
@@ -143,7 +145,7 @@ export function IRISStagingModel() {
     return {
       stage,
       basis,
-      prot: !isNaN(upcVal) && upcVal >= 0 ? protStage(upcVal) : null,
+      prot: !isNaN(upcVal) && upcVal >= 0 ? protStage(upcVal, species) : null,
       bp: !isNaN(sbpVal) && sbpVal > 0 ? bpStage(sbpVal) : null,
     }
   }, [species, creat, sdma, upc, sbp])
@@ -281,7 +283,7 @@ export function IRISStagingModel() {
             {/* Recommendations */}
             <div className="sm:w-56 shrink-0">
               <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                {mode === 'tutor' ? 'O que fazer' : 'Conduta recomendada'}
+            {mode === 'tutor' ? 'Próximos passos' : 'Pontos de avaliação'}
               </p>
               <ul className="space-y-1.5">
                 {(mode === 'tutor' ? meta.tutorRecs : meta.vetRecs).map((r: string, i: number) => (
@@ -306,7 +308,7 @@ export function IRISStagingModel() {
       <div>
         <h2 className="font-display text-lg font-bold text-slate-900 mb-1">Progressão da Doença Renal Crônica</h2>
         <p className="text-slate-500 text-sm mb-5">
-          Como a DRC avança ao longo do tempo segundo as diretrizes IRIS 2023
+          Faixas de estadiamento segundo as diretrizes IRIS 2026
         </p>
 
         {/* Progress bar */}
@@ -367,7 +369,7 @@ export function IRISStagingModel() {
                 </span>
                 <p className="font-display font-bold text-sm text-slate-900 leading-tight">{m.sub}</p>
                 <p className="text-[11px] text-slate-500 mt-1">{m.creat[species]}</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">SDMA {m.sdmaRange}</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">SDMA {m.sdmaRange[species]}</p>
 
                 <div className="mt-3 pt-3 border-t border-slate-100/80">
                   <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3">

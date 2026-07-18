@@ -30,9 +30,9 @@ interface VetDoRimLogoProps {
  * Logo oficial Vet do Rim — Suporta SVG interno e PNGs reais.
  *
  * Variantes PNG:
- *  - 'golden-png'  → /logo/Monocromática - Dourada.png (vertical completo)
- *  - 'symbol-png'  → /logo/5.png (símbolo isolado dourado)
- *  - 'dark-png'    → /logo/Monocromática - Fundo Escuro.png (branca/cinza)
+ *  - 'golden-png'  → derivado WebP otimizado do logo dourado vertical
+ *  - 'symbol-png'  → derivado WebP otimizado do símbolo dourado
+ *  - 'dark-png'    → derivado WebP otimizado da versão para fundo escuro
  *
  * Variantes SVG (construídas inline):
  *  - 'color' | 'glow' | 'auto' | 'white'
@@ -61,7 +61,7 @@ export function VetDoRimLogo({
     return (
       <div className={`relative inline-block ${floatClass} ${className}`}>
         <Image
-          src="/logo/Monocromática - Dourada.png"
+          src="/logo/logo-gold-vertical.webp"
           alt={alt}
           width={400}
           height={400}
@@ -84,7 +84,7 @@ export function VetDoRimLogo({
     return (
       <div className={`relative inline-block ${floatClass} ${className}`}>
         <Image
-          src="/logo/5.png"
+          src="/logo/symbol-gold.webp"
           alt={alt}
           width={300}
           height={300}
@@ -101,7 +101,7 @@ export function VetDoRimLogo({
     return (
       <div className={`relative inline-block ${floatClass} ${className}`}>
         <Image
-          src="/logo/Monocromática - Fundo Escuro.png"
+          src="/logo/logo-dark-vertical.webp"
           alt={alt}
           width={400}
           height={400}

@@ -7,6 +7,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { FreePatient, FreeLabExam } from './types'
 import { getParamCategory, CATEGORY_ORDER, type LabCategory } from './categories'
+import { getLabReferenceStatus } from './reference-status'
 
 /**
  * Gera e dispara download de PDF com a planilha evolutiva completa.
@@ -84,14 +85,9 @@ export async function exportToPdf(
             const exam = exams[examIdx]
             if (exam) {
               const p = exam.parameters.find(par => par.name === paramName)
-              if (p?.refMin && p?.refMax) {
-                const v = parseFloat(p.value)
-                const mn = parseFloat(p.refMin)
-                const mx = parseFloat(p.refMax)
-                if (!isNaN(v) && !isNaN(mn) && !isNaN(mx) && (v < mn || v > mx)) {
-                  data.cell.styles.textColor = [220, 38, 38]
-                  data.cell.styles.fontStyle = 'bold'
-                }
+              if (p && getLabReferenceStatus(p) === 'abnormal') {
+                data.cell.styles.textColor = [220, 38, 38]
+                data.cell.styles.fontStyle = 'bold'
               }
             }
           }

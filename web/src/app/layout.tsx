@@ -2,6 +2,7 @@ import { Inter, Playfair_Display } from 'next/font/google'
 import type { Metadata } from 'next'
 import { PostHogProvider } from '@/components/providers/PostHogProvider'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
+import { MotionPreferencesProvider } from '@/components/providers/MotionPreferencesProvider'
 import { WhatsAppFloat } from '@/components/marketing/WhatsAppFloat'
 import { CookieBanner } from '@/components/ui/CookieBanner'
 import './globals.css'
@@ -88,11 +89,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full flex flex-col transition-colors duration-300">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <PostHogProvider>
-            {children}
-          </PostHogProvider>
-          <WhatsAppFloat />
-          <CookieBanner />
+          <MotionPreferencesProvider>
+            <PostHogProvider>
+              {children}
+            </PostHogProvider>
+            <WhatsAppFloat />
+            <CookieBanner />
+          </MotionPreferencesProvider>
         </ThemeProvider>
       </body>
     </html>

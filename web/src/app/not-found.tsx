@@ -5,7 +5,7 @@ import { Search, ArrowLeft } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Página não encontrada — Vet do Rim',
+  title: 'Página não encontrada',
   robots: { index: false, follow: false },
 }
 
@@ -59,7 +59,7 @@ export default function NotFound() {
               href="/ferramentas/calculadora-tfg"
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors"
             >
-              Calculadora TFG gratuita
+              Estadiamento IRIS gratuito
             </Link>
           </div>
 

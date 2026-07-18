@@ -3,8 +3,13 @@
  * em formato tabular para a tabela de acompanhamento evolutivo.
  */
 
-import type { HemogramaKey, LabCategory } from './reference-values'
-import { CATEGORY_ORDER, getRefForSpecies } from './reference-values'
+import type { HemogramaKey, LabCategory } from './reference-values.ts'
+import { CATEGORY_ORDER, getCategoryForLabKey } from './reference-values.ts'
+import {
+  formatCivilDate,
+  formatSaoPauloTimestampDate,
+  isCivilDate,
+} from '../civil-date.ts'
 
 /** Estrutura de um laudo processado vindo do Supabase */
 export interface LaudoRow {
@@ -64,9 +69,66 @@ export interface ResultadoIA {
     alertas: string[]
     estadiamento_iris_sugerido: string | null
   }
-  laboratorio: string
-  data_coleta: string
-  data_resultado: string
+  laboratorio: string | null
+  data_coleta: string | null
+  data_resultado: string | null
+}
+
+export type LaudoDateSource = 'collection' | 'upload' | 'unavailable'
+
+export interface LaudoChronology {
+  sortTimestamp: number
+  uploadTimestamp: number
+  displayDate: string
+  source: LaudoDateSource
+}
+
+export function resolveLaudoChronology(laudo: LaudoRow): LaudoChronology {
+  const collectionDate = laudo.resultado_ia?.data_coleta
+  const uploadTimestamp = Date.parse(laudo.created_at)
+  const safeUploadTimestamp = Number.isFinite(uploadTimestamp)
+    ? uploadTimestamp
+    : Number.MAX_SAFE_INTEGER
+
+  if (isCivilDate(collectionDate)) {
+    const [year, month, day] = collectionDate.split('-').map(Number)
+    return {
+      sortTimestamp: Date.UTC(year, month - 1, day),
+      uploadTimestamp: safeUploadTimestamp,
+      displayDate: formatCivilDate(collectionDate, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }),
+      source: 'collection',
+    }
+  }
+
+  if (Number.isFinite(uploadTimestamp)) {
+    return {
+      sortTimestamp: uploadTimestamp,
+      uploadTimestamp,
+      displayDate: formatSaoPauloTimestampDate(laudo.created_at),
+      source: 'upload',
+    }
+  }
+
+  return {
+    sortTimestamp: Number.MAX_SAFE_INTEGER,
+    uploadTimestamp: Number.MAX_SAFE_INTEGER,
+    displayDate: 'Data indisponível',
+    source: 'unavailable',
+  }
+}
+
+export function sortLaudosChronologically<T extends LaudoRow>(laudos: readonly T[]): T[] {
+  return [...laudos].sort((a, b) => {
+    const aDate = resolveLaudoChronology(a)
+    const bDate = resolveLaudoChronology(b)
+    return aDate.sortTimestamp - bDate.sortTimestamp
+      || aDate.uploadTimestamp - bDate.uploadTimestamp
+      || a.id.localeCompare(b.id)
+  })
 }
 
 /** Ponto de dados na tabela evolutiva */
@@ -85,37 +147,41 @@ export interface EvolutionTableGroup {
  * Extrai um valor numérico do resultado_ia dado uma key.
  * Resolve o mapeamento entre key plana e a estrutura aninhada.
  */
+function finiteLabNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
 function extractValue(result: ResultadoIA, key: HemogramaKey): number | null {
   switch (key) {
     // Série Vermelha
-    case 'hemacias':     return result.serie_vermelha.hemacias
-    case 'hemoglobina':  return result.serie_vermelha.hemoglobina
-    case 'hematocrito':  return result.serie_vermelha.hematocrito
-    case 'vcm':          return result.serie_vermelha.vcm
-    case 'hcm':          return result.serie_vermelha.hcm
-    case 'chcm':         return result.serie_vermelha.chcm
-    case 'rdw':          return result.serie_vermelha.rdw
+    case 'hemacias':     return finiteLabNumber(result.serie_vermelha?.hemacias)
+    case 'hemoglobina':  return finiteLabNumber(result.serie_vermelha?.hemoglobina)
+    case 'hematocrito':  return finiteLabNumber(result.serie_vermelha?.hematocrito)
+    case 'vcm':          return finiteLabNumber(result.serie_vermelha?.vcm)
+    case 'hcm':          return finiteLabNumber(result.serie_vermelha?.hcm)
+    case 'chcm':         return finiteLabNumber(result.serie_vermelha?.chcm)
+    case 'rdw':          return finiteLabNumber(result.serie_vermelha?.rdw)
     // Série Branca
-    case 'leucocitos_totais':       return result.serie_branca.leucocitos_totais
-    case 'neutrofilos_segmentados': return result.serie_branca.neutrofilos_segmentados
-    case 'neutrofilos_bastoes':     return result.serie_branca.neutrofilos_bastoes
-    case 'linfocitos':              return result.serie_branca.linfocitos
-    case 'monocitos':               return result.serie_branca.monocitos
-    case 'eosinofilos':             return result.serie_branca.eosinofilos
-    case 'basofilos':               return result.serie_branca.basofilos
+    case 'leucocitos_totais':       return finiteLabNumber(result.serie_branca?.leucocitos_totais)
+    case 'neutrofilos_segmentados': return finiteLabNumber(result.serie_branca?.neutrofilos_segmentados)
+    case 'neutrofilos_bastoes':     return finiteLabNumber(result.serie_branca?.neutrofilos_bastoes)
+    case 'linfocitos':              return finiteLabNumber(result.serie_branca?.linfocitos)
+    case 'monocitos':               return finiteLabNumber(result.serie_branca?.monocitos)
+    case 'eosinofilos':             return finiteLabNumber(result.serie_branca?.eosinofilos)
+    case 'basofilos':               return finiteLabNumber(result.serie_branca?.basofilos)
     // Plaquetas
-    case 'plaquetas_contagem': return result.plaquetas.contagem
-    case 'plaquetas_vpm':      return result.plaquetas.vpm
+    case 'plaquetas_contagem': return finiteLabNumber(result.plaquetas?.contagem)
+    case 'plaquetas_vpm':      return finiteLabNumber(result.plaquetas?.vpm)
     // Bioquímica
-    case 'ureia':          return result.bioquimica.ureia
-    case 'creatinina':     return result.bioquimica.creatinina
-    case 'alt_tgp':        return result.bioquimica.alt_tgp
-    case 'ast_tgo':        return result.bioquimica.ast_tgo
-    case 'fosforo':        return result.bioquimica.fosforo
-    case 'potassio':       return result.bioquimica.potassio
-    case 'sodio':          return result.bioquimica.sodio
-    case 'albumina':       return result.bioquimica.albumina
-    case 'proteina_total': return result.bioquimica.proteina_total
+    case 'ureia':          return finiteLabNumber(result.bioquimica?.ureia)
+    case 'creatinina':     return finiteLabNumber(result.bioquimica?.creatinina)
+    case 'alt_tgp':        return finiteLabNumber(result.bioquimica?.alt_tgp)
+    case 'ast_tgo':        return finiteLabNumber(result.bioquimica?.ast_tgo)
+    case 'fosforo':        return finiteLabNumber(result.bioquimica?.fosforo)
+    case 'potassio':       return finiteLabNumber(result.bioquimica?.potassio)
+    case 'sodio':          return finiteLabNumber(result.bioquimica?.sodio)
+    case 'albumina':       return finiteLabNumber(result.bioquimica?.albumina)
+    case 'proteina_total': return finiteLabNumber(result.bioquimica?.proteina_total)
     default:               return null
   }
 }
@@ -139,14 +205,15 @@ export function transformLaudosToEvolution(
   laudos: LaudoRow[],
   especie: string,
 ): EvolutionTableGroup[] {
+  // A espécie é mantida no contrato para compatibilidade da UI, mas nunca é
+  // usada para escolher intervalos neste agrupamento estrutural.
+  void especie
   // Filtra laudos concluídos com dados
-  const validLaudos = laudos
-    .filter((l) => l.status === 'concluido' && l.resultado_ia)
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  const validLaudos = sortLaudosChronologically(
+    laudos.filter((l) => l.status === 'concluido' && l.resultado_ia),
+  )
 
   if (validLaudos.length === 0) return []
-
-  const ref = getRefForSpecies(especie)
 
   // Monta dados por key
   const dataByKey: Map<HemogramaKey, EvolutionDataPoint> = new Map()
@@ -154,7 +221,7 @@ export function transformLaudosToEvolution(
   for (const key of ALL_KEYS) {
     const values = validLaudos.map((laudo) => ({
       laudoId: laudo.id,
-      date: laudo.resultado_ia?.data_coleta || new Date(laudo.created_at).toLocaleDateString('pt-BR'),
+      date: resolveLaudoChronology(laudo).displayDate,
       value: laudo.resultado_ia ? extractValue(laudo.resultado_ia, key) : null,
     }))
 
@@ -171,8 +238,7 @@ export function transformLaudosToEvolution(
     const rows: EvolutionDataPoint[] = []
 
     for (const key of ALL_KEYS) {
-      const refInfo = ref[key]
-      if (refInfo?.category !== category) continue
+      if (getCategoryForLabKey(key) !== category) continue
       const dp = dataByKey.get(key)
       if (dp) rows.push(dp)
     }
@@ -198,6 +264,7 @@ export function detectTrend(
   const last = nums[nums.length - 1]
   const prev = nums[nums.length - 2]
   const diff = last - prev
+  if (diff === 0) return 'estavel'
   const pct = Math.abs(diff / prev) * 100
 
   if (pct < 5) return 'estavel'

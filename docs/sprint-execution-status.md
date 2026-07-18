@@ -1,5 +1,7 @@
 # Status das Sprints
 
+> **REGISTRO HISTORICO:** os resultados abaixo refletem execucoes anteriores e nao autorizam producao nem operacoes remotas. O estado vigente e **NO-GO**; consulte `docs/README.md`.
+
 Plano mestre: `docs/sprint-master-execution-plan.md`.
 
 ## Lab Evolution CRUD real
@@ -14,8 +16,8 @@ Evidencias locais:
 - Fluxo de laudos validado ate a tela de upload, `accept=application/pdf`, selecao de PDF e botoes de IA/troca.
 - `cleanup:e2e:lab-crud` criado em dry-run por padrao.
 - `npm run check:predeploy` passou.
-- `npm run test:e2e:lab-crud` passou no projeto `ycclyzoslirpnnwgzrqx`.
-- Usuario vet temporario `e2e-vet-labcrud-20260628130136@example.test` foi deletado pelo script.
+- `npm run test:e2e:lab-crud` passou no projeto de staging registrado na evidência privada da execução.
+- Usuario vet temporario `e2e-vet-<run-id>@example.test` foi deletado pelo script.
 - `npm run cleanup:e2e:lab-crud` em dry-run retornou zero residuos: usuarios 0, tutores 0, pets 0, laudos 0, storageObjects 0.
 
 Pendente:
@@ -52,7 +54,7 @@ Pendente:
 - Cadastrar `OPENAI_API_KEY` nos secrets da Edge Function, sem expor o valor em logs/chat.
 - Aplicar migration de quota.
 - Deploy da Edge Function.
-- Rodar `npm run test:e2e:upload-ia` no projeto `ycclyzoslirpnnwgzrqx`.
+- Rodar `npm run test:e2e:upload-ia` somente no projeto `<staging-project-ref>` explicitamente confirmado.
 
 Pre-checagem apos Sprint Lab CRUD:
 - Supabase CLI disponivel nesta sessao: `2.107.0`.

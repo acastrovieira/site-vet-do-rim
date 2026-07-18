@@ -58,15 +58,7 @@ function normalizeCommand(command) {
     .trim();
 }
 
-function getCommandScopedAgent(command) {
-  const match = String(command || '').match(
-    /(?:^|\s)(?:export\s+)?(?:AIOX_ACTIVE_AGENT|AIOX_AGENT|ACTIVE_AGENT|CLAUDE_AGENT_NAME)=["']?(@?[a-z0-9-]+)["']?/i,
-  );
-
-  return match ? match[1].toLowerCase() : '';
-}
-
-function getActiveAgent(command) {
+function getActiveAgent() {
   const candidates = [
     process.env.AIOX_ACTIVE_AGENT,
     process.env.AIOX_AGENT,
@@ -74,7 +66,6 @@ function getActiveAgent(command) {
     process.env.CLAUDE_AGENT_NAME,
     process.env.CLAUDE_CODE_AGENT,
     process.env.AIOX_CURRENT_AGENT,
-    getCommandScopedAgent(command),
   ];
 
   return String(candidates.find(Boolean) || '').toLowerCase();
@@ -118,7 +109,7 @@ function main() {
     return;
   }
 
-  const activeAgent = getActiveAgent(command);
+  const activeAgent = getActiveAgent();
   if (isDevOpsAgent(activeAgent)) {
     return;
   }

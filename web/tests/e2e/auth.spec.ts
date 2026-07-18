@@ -69,5 +69,6 @@ test.describe('protected routes', () => {
     await expect(page.getByRole('heading', { name: /entrar/i })).toBeVisible()
     await expect(page.getByLabel(/email/i)).toBeVisible()
     await expect(page.getByLabel(/^Senha$/i)).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Fale conosco pelo WhatsApp' })).toHaveCount(0)
   })
 })

@@ -1,0 +1,64 @@
+{
+  "formatVersion": 1,
+  "algorithm": "sha256",
+  "hashMode": "raw-file-bytes",
+  "scope": "repository-baseline-only; remote-equality-not-asserted",
+  "remoteAttestation": false,
+  "migrations": [
+    {
+      "file": "20260531000000_full_schema_setup.sql",
+      "sha256": "14f1afd52999c9fccae009ae329b56b37a13df6759d11d553b964f358e743e1b"
+    },
+    {
+      "file": "20260531000050_ai_usage_limits.sql",
+      "sha256": "5d36e2b2001f07c68b992b0515f3bd279ac1a7d8dd2d0bd573f83396620d985d"
+    },
+    {
+      "file": "20260531000100_rls_policies_all_tables.sql",
+      "sha256": "55b7cf294ca599fd07b87b39e110a079349c3ab404764bb33fcf2c1cfb77b7a3"
+    },
+    {
+      "file": "20260623000100_auth_rls_hardening.sql",
+      "sha256": "f35206bdb380e4cf190f5dde16dd8a9d9dcadb9627024dba39579ddb39f6f44e"
+    },
+    {
+      "file": "20260623000200_schema_drift_completion.sql",
+      "sha256": "801fb4e372bbc8b92eb735e85ba03f09a31a12d56cb47967071c3def86de0a34"
+    },
+    {
+      "file": "20260624000100_security_advisor_fixes.sql",
+      "sha256": "01b3081fc3a2c9ba6186ec9b1d5b14cfbb87bcdf0e7ae7fd3b8324b52a3fd40a"
+    },
+    {
+      "file": "20260624211834_allow_admin_profile_role.sql",
+      "sha256": "f38bccb706a0f326c6acf4313e20338d890bb486d95440be37d452b5176c8cf5"
+    },
+    {
+      "file": "20260625051920_rls_performance_advisor_cleanup.sql",
+      "sha256": "9d62d3395d24657d4f2b7d3c78ffe18a069d82b31c9bb8c5830299e37a45cb83"
+    },
+    {
+      "file": "20260626010000_ai_quota_rpc_and_parse_laudo_hardening.sql",
+      "sha256": "b6cc4f9a759737ef62870176e38bebc2a761adc0f6a13f33b7bc3658a6ae3702"
+    },
+    {
+      "file": "20260717114557_add_colaboradores_supabase_uid_index.sql",
+      "sha256": "b04aa0ef7927e55c3d0c4111aad7241e22ae3f5020a84161ad01f5d08b34c2fd"
+    },
+    {
+      "file": "20260717114916_restrict_data_api_table_privileges.sql",
+      "sha256": "50a6b12fcbc0b3bd816611e20cf6e9546d7898c57981a32faf7a9a2e0e60de8c"
+    }
+  ],
+  "approvedHistoricalTransitions": [
+    {
+      "file": "20260625051920_rls_performance_advisor_cleanup.sql",
+      "baseSha256": "e85d6fd21db38ecbf393e0019eafb83120264be6645ba58d73bdc18b8671fe24",
+      "currentSha256": "9d62d3395d24657d4f2b7d3c78ffe18a069d82b31c9bb8c5830299e37a45cb83",
+      "remoteArtifactSha256": null,
+      "remoteReconciliationRequired": true,
+      "ticket": "AUDIT-001",
+      "reason": "The active baseline never creates public.subscriptions, so a guarded policy statement is required for deterministic fresh replay; the remote artifact remains unknown and must be reconciled read-only before release."
+    }
+  ]
+}

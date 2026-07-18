@@ -1,31 +1,101 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+# Public, non-mutating UI coverage. Authenticated and destructive remote flows remain separate gates.
 
-name: Node.js CI
+name: Public UI tests
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       with:
-        node-version: ${{ matrix.node-version }}
+        persist-credentials: false
+    - name: Use Node.js 22
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: '22.18.0'
         cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+        cache-dependency-path: web/package-lock.json
+    - name: Verify lockfile supply-chain metadata
+      run: node scripts/verify-supply-chain.mjs
+    - run: npm ci --no-fund --no-audit
+    - run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+    - name: Build production artifact
+      run: npm run build
+      env:
+        NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.placeholder
+    - name: Run non-mutating public flows
+      run: >
+        node node_modules/@playwright/test/cli.js test
+        tests/e2e/api-security.spec.ts
+        tests/e2e/auth.spec.ts
+        tests/e2e/public-smoke.spec.ts
+        tests/e2e/public-flows.spec.ts
+        tests/e2e/mobile-layout.spec.ts
+        tests/e2e/tools-functional.spec.ts
+        tests/e2e/seo-metadata.spec.ts
+        tests/e2e/accessibility-navigation.spec.ts
+        tests/e2e/weight-history-safety.spec.ts
+        --project=chromium
+        --workers=1
+      env:
+        NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.placeholder
+        PLAYWRIGHT_USE_PRODUCTION_SERVER: '1'
+
+  cross-browser-smoke:
+    name: Smoke ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: chromium-tablet-smoke
+            browser: chromium
+          - project: firefox-smoke
+            browser: firefox
+          - project: webkit-smoke
+            browser: webkit
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      with:
+        persist-credentials: false
+    - name: Use Node.js 22
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: '22.18.0'
+        cache: 'npm'
+        cache-dependency-path: web/package-lock.json
+    - name: Verify lockfile supply-chain metadata
+      run: node scripts/verify-supply-chain.mjs
+    - run: npm ci --no-fund --no-audit
+    - name: Install ${{ matrix.browser }} runtime
+      run: node node_modules/@playwright/test/cli.js install --with-deps ${{ matrix.browser }}
+    - name: Run non-mutating browser smoke
+      run: node node_modules/@playwright/test/cli.js test tests/e2e/cross-browser-smoke.spec.ts --project=${{ matrix.project }} --workers=1
+      env:
+        NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.placeholder

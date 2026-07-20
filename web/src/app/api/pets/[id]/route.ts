@@ -10,7 +10,7 @@ import {
   requiredText,
   safeErrorSummary,
 } from '@/lib/api-validation'
-import { authorizeServerRoles } from '@/lib/server-authorization'
+import { authorizeClinicAccess } from '@/lib/server-authorization'
 import {
   authorizationFailureJson,
   privateApiJson,
@@ -36,7 +36,7 @@ export async function PATCH(request: Request, { params }: Params) {
     }
 
     const supabase = await createClient()
-    const authorization = await authorizeServerRoles(supabase, ['vet', 'admin'])
+    const authorization = await authorizeClinicAccess(supabase, ['vet', 'admin'])
     if (!authorization.ok) return authorizationFailureJson(authorization)
 
     const body = await readJsonObject(request)
@@ -70,6 +70,34 @@ export async function PATCH(request: Request, { params }: Params) {
     if (body.tutor_id !== undefined) {
       const tutorId = requiredText(body.tutor_id, 'Tutor', 36)
       if (!isUuid(tutorId)) return badRequest('Tutor invalido')
+
+      // Fase 1.5 (ADR-001): mesma defesa em profundidade do POST — o novo
+      // tutor precisa pertencer a clinica ativa quando ha contexto resolvido.
+      if (authorization.clinicId) {
+        const { data: tutorRow, error: tutorLookupError } = await supabase
+          .from('tutores')
+          .select('id')
+          .eq('id', tutorId)
+          .eq('clinic_id', authorization.clinicId)
+          .maybeSingle()
+
+        if (tutorLookupError) {
+          console.error('[PATCH /api/pets/:id] Tutor lookup failed', {
+            code: tutorLookupError.code ?? 'UNKNOWN',
+          })
+          return privateApiJson(
+            { ok: false, error: 'Nao foi possivel confirmar o tutor.', code: 'DATABASE' },
+            { status: 500 },
+          )
+        }
+        if (!tutorRow) {
+          return privateApiJson(
+            { ok: false, error: 'Tutor nao encontrado.', code: 'NOT_FOUND' },
+            { status: 404 },
+          )
+        }
+      }
+
       updates.tutor_id = tutorId
     }
 
@@ -98,11 +126,14 @@ export async function PATCH(request: Request, { params }: Params) {
         )
       }
 
-      const { data: currentPet, error: currentPetError } = await supabase
+      let currentPetQuery = supabase
         .from('pets')
         .select('status_paciente')
         .eq('id', id)
-        .maybeSingle()
+      if (authorization.clinicId) {
+        currentPetQuery = currentPetQuery.eq('clinic_id', authorization.clinicId)
+      }
+      const { data: currentPet, error: currentPetError } = await currentPetQuery.maybeSingle()
 
       if (currentPetError || !currentPet) {
         console.error('[PATCH /api/pets/:id] Status lookup failed', {
@@ -147,6 +178,13 @@ export async function PATCH(request: Request, { params }: Params) {
       .from('pets')
       .update(updates)
       .eq('id', id)
+
+    // Fase 1.5 (ADR-001): filtra por clinica ativa quando ha contexto
+    // resolvido. UUID de outro tenant nao pode ser confirmado nem alterado —
+    // a ausencia de linha correspondente vira 404 abaixo (nunca 403).
+    if (authorization.clinicId) {
+      updateQuery = updateQuery.eq('clinic_id', authorization.clinicId)
+    }
 
     if (expectedStatus !== null) {
       updateQuery = updateQuery.eq('status_paciente', expectedStatus)

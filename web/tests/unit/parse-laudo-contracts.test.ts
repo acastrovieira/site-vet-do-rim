@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import test from 'node:test'
 import {
   assertJsonMatchesSchema,
@@ -140,4 +142,90 @@ test('parse-laudo validates provider output locally and removes clinical staging
     data_coleta: null,
     data_resultado: '2026-04-31',
   }, datedSchema), /data civil invalida/)
+})
+
+// AUDIT-001 Fase 2 (Tarefas 2.2/2.3): parse-laudo/index.ts e um arquivo Deno —
+// nao e importado/executado no test runner do Node (sem Deno no sandbox; a
+// validacao Deno roda no CI). Por isso este contrato e estatico/textual sobre
+// o fonte, no mesmo espirito do teste existente em production-safety.test.ts,
+// mas focado especificamente no contrato das RPCs transacionais
+// (supabase/migrations/20260718110000_laudo_claim_finalize_refund.sql) e na
+// proveniencia da IA gravada por finalize_laudo_ia.
+test('parse-laudo edge function calls claim/finalize/refund RPCs and never the old quota/status pattern', () => {
+  const source = readFileSync(
+    resolve(import.meta.dirname, '../../../supabase/functions/parse-laudo/index.ts'),
+    'utf8',
+  )
+  const dbTypes = readFileSync(
+    resolve(import.meta.dirname, '../../../supabase/functions/parse-laudo/database.types.ts'),
+    'utf8',
+  )
+
+  // Presenca das tres RPCs transacionais (claim reserva cota ANTES da chamada
+  // externa; finalize grava resultado+proveniencia+consumo; refund compensa).
+  assert.match(source, /\.rpc\("claim_laudo_ia",/)
+  assert.match(source, /\.rpc\("finalize_laudo_ia",/)
+  assert.match(source, /\.rpc\("refund_laudo_ia",/)
+
+  // Ausencia total do padrao antigo: SELECT de cota, update manual de status/
+  // erro_ia/resultado_ia e increment_ai_quota no fim do fluxo feliz.
+  assert.doesNotMatch(source, /increment_ai_quota/)
+  assert.doesNotMatch(source, /ai_quota_used|ai_quota_limit/)
+  assert.doesNotMatch(source, /\.update\(\{\s*status:/)
+  assert.doesNotMatch(source, /\.in\("status", \["pendente", "erro"\]\)/)
+
+  // idempotency_key e gerada uma vez por requisicao (nao reaproveitada entre
+  // chamadas nem lida do body do cliente).
+  assert.match(source, /const idempotencyKey = crypto\.randomUUID\(\)/)
+  assert.equal(source.match(/crypto\.randomUUID\(\)/g)?.length, 1)
+  assert.doesNotMatch(source, /body\??\.idempotencyKey|idempotencyKey:\s*body/)
+
+  // refund_laudo_ia nunca e chamado antes de activeClaim existir: a unica
+  // chamada a refund no arquivo fica dentro do bloco guardado por
+  // `if (supabase && activeClaim)`.
+  const guardIndex = source.indexOf('if (supabase && activeClaim)')
+  const refundIndex = source.indexOf('.rpc("refund_laudo_ia",')
+  assert.ok(guardIndex >= 0 && refundIndex > guardIndex)
+  assert.equal(source.match(/\.rpc\("refund_laudo_ia",/g)?.length, 1)
+
+  // PROMPT_VERSION versionado localmente e presente na proveniencia gravada
+  // por finalize_laudo_ia.
+  assert.match(source, /const PROMPT_VERSION = "2026-07-18\.1"/)
+  assert.match(source, /p_provenance: provenance/)
+  assert.match(source, /prompt_version: PROMPT_VERSION/)
+  assert.match(source, /pdf_sha256: input\.pdfSha256/)
+  assert.match(source, /pdf_bytes: input\.pdfBytes/)
+  assert.match(source, /schema_name: HEMOGRAMA_SCHEMA\.name/)
+  assert.match(source, /schema_version: HEMOGRAMA_SCHEMA\.version/)
+
+  // Todo error_code enviado a refund vem de um classificador tipado (nunca de
+  // string livre), e a allowlist fechada da migration 20260718110000 esta
+  // espelhada em database.types.ts.
+  assert.match(source, /p_error_code: classified\.code/)
+  const allowlist = [
+    'provider_timeout',
+    'provider_rate_limited',
+    'provider_unavailable',
+    'provider_rejected',
+    'storage_missing',
+    'invalid_pdf',
+    'invalid_provider_response',
+    'invalid_result_schema',
+    'result_too_large',
+    'worker_crashed',
+    'internal_processing_error',
+    'attempts_exhausted',
+  ]
+  for (const code of allowlist) {
+    assert.match(dbTypes, new RegExp(`"${code}"`))
+  }
+  // Nenhum error_code fora da allowlist deve ser produzido pelo classificador:
+  // todo `new ProviderFailure(..., "codigo", true|false)` no arquivo usa um dos
+  // 12 codigos (o token imediatamente antes do retryable boolean).
+  const providerFailureCodes = [...source.matchAll(/"([a-z_]+)"\s*,\s*(?:true|false)/g)]
+    .map((match) => match[1])
+  assert.ok(providerFailureCodes.length > 0)
+  for (const code of providerFailureCodes) {
+    assert.ok(allowlist.includes(code), `error_code fora da allowlist: ${code}`)
+  }
 })

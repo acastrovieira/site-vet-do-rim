@@ -1,6 +1,6 @@
 # ADR-001 — Tenancy por clínica e autorização RLS
 
-- **Status:** Proposto — requer aprovação de Produto, Segurança, DBA e responsável clínico
+- **Status:** Aprovado (owner, 2026-07-18) — defaults registrados
 - **Data:** 2026-07-16
 - **Responsáveis pela decisão:** Architect / DB Security
 - **Story:** `AUDIT-001`
@@ -416,6 +416,8 @@ Rejeitada porque desloca a segurança de RLS para checks manuais em cada endpoin
 Rejeitada porque o schema legado não contém evidência suficiente para backfill automático e porque mistura mudança estrutural, atribuição de PII e corte de acesso sem rollback seguro.
 
 ## 13. Decisões ainda exigidas antes da implementação
+
+> **Registro do owner (Dr. Anderson, 2026-07-18):** aprovadas as três decisões que destravam a Fase 1: (a) tenant = clínica, com tutor/paciente NÃO compartilhado entre clínicas, recepção sem acesso clínico (fail-closed) e admin nunca global (itens 1–3 abaixo, defaults do ADR confirmados); (b) todo o acervo legado pertence a uma única clínica, "Vet do Rim", por confirmação formal do responsável, autorizando backfill single-clinic auditável via `private.tenant_backfill_manifest` (item 4); (c) aplicação remota somente após auditoria read-only (`npm run audit:staging`) e CI (Database Contract) verdes — o trabalho da Fase 1 permanece local.
 
 1. Confirmar que “clínica” é a unidade comercial/legal de isolamento e quem pode criá-la.
 2. Aprovar o papel da recepção em dados de triagem, follow-up e opt-out.

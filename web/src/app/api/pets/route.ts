@@ -10,7 +10,7 @@ import {
   requiredText,
   safeErrorSummary,
 } from '@/lib/api-validation'
-import { authorizeServerRoles } from '@/lib/server-authorization'
+import { authorizeClinicAccess } from '@/lib/server-authorization'
 import {
   authorizationFailureJson,
   privateApiJson,
@@ -27,7 +27,7 @@ function badRequest(error: string) {
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
-    const authorization = await authorizeServerRoles(supabase, ['vet', 'admin'])
+    const authorization = await authorizeClinicAccess(supabase, ['vet', 'admin'])
     if (!authorization.ok) return authorizationFailureJson(authorization)
 
     const body = await readJsonObject(request)
@@ -57,6 +57,36 @@ export async function POST(request: Request) {
     if (!ESPECIES.has(especie)) return badRequest('Especie invalida')
     if (!STATUS.has(statusPaciente)) return badRequest('Status invalido')
 
+    // Fase 1.5 (ADR-001): quando ja existe contexto de clinica, o tutor
+    // precisa pertencer a mesma clinica antes do insert (defesa em
+    // profundidade alem da FK composta `fk_pets_tutor_same_clinic`, que ainda
+    // esta NOT VALID nesta fase). Tutor de outra clinica -> 404, nunca 403,
+    // para nao confirmar a existencia do registro (ADR §6.2).
+    if (authorization.clinicId) {
+      const { data: tutorRow, error: tutorLookupError } = await supabase
+        .from('tutores')
+        .select('id')
+        .eq('id', tutorId)
+        .eq('clinic_id', authorization.clinicId)
+        .maybeSingle()
+
+      if (tutorLookupError) {
+        console.error('[POST /api/pets] Tutor lookup failed', {
+          code: tutorLookupError.code ?? 'UNKNOWN',
+        })
+        return privateApiJson(
+          { ok: false, error: 'Nao foi possivel confirmar o tutor.', code: 'DATABASE' },
+          { status: 500 },
+        )
+      }
+      if (!tutorRow) {
+        return privateApiJson(
+          { ok: false, error: 'Tutor nao encontrado.', code: 'NOT_FOUND' },
+          { status: 404 },
+        )
+      }
+    }
+
     const { data, error } = await supabase
       .from('pets')
       .insert({
@@ -68,6 +98,12 @@ export async function POST(request: Request) {
         idade_meses: idadeMeses,
         peso_atual: pesoAtual,
         status_paciente: statusPaciente,
+        // clinic_id/created_by nunca vem do body (assertAllowedKeys ja
+        // bloqueia campos extras); so gravamos quando ha contexto de clinica
+        // resolvido no servidor (ver server-clinic-context.ts).
+        ...(authorization.clinicId
+          ? { clinic_id: authorization.clinicId, created_by: authorization.userId }
+          : {}),
       })
       .select('id')
       .single()

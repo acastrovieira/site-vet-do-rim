@@ -10,7 +10,7 @@ import {
   safeErrorSummary,
 } from '@/lib/api-validation'
 import type { Database } from '@/types/database'
-import { authorizeServerRoles } from '@/lib/server-authorization'
+import { authorizeClinicAccess } from '@/lib/server-authorization'
 import {
   authorizationFailureJson,
   privateApiJson,
@@ -38,7 +38,7 @@ export async function PATCH(request: Request, { params }: Params) {
     }
 
     const supabase = await createClient()
-    const authorization = await authorizeServerRoles(supabase, ['vet', 'admin'])
+    const authorization = await authorizeClinicAccess(supabase, ['vet', 'admin'])
     if (!authorization.ok) return authorizationFailureJson(authorization)
 
     const body = await readJsonObject(request)
@@ -88,10 +88,19 @@ export async function PATCH(request: Request, { params }: Params) {
       return badRequest('Nenhum campo para atualizar')
     }
 
-    const { data, error } = await supabase
+    let updateQuery = supabase
       .from('tutores')
       .update(updates)
       .eq('id', id)
+
+    // Fase 1.5 (ADR-001): filtra por clinica ativa quando ha contexto
+    // resolvido. UUID de outro tenant nao pode ser confirmado nem alterado —
+    // a ausencia de linha correspondente vira 404 abaixo (nunca 403).
+    if (authorization.clinicId) {
+      updateQuery = updateQuery.eq('clinic_id', authorization.clinicId)
+    }
+
+    const { data, error } = await updateQuery
       .select('id')
       .single()
 

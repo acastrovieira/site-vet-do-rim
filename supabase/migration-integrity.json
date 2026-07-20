@@ -48,6 +48,22 @@
     {
       "file": "20260717114916_restrict_data_api_table_privileges.sql",
       "sha256": "50a6b12fcbc0b3bd816611e20cf6e9546d7898c57981a32faf7a9a2e0e60de8c"
+    },
+    {
+      "file": "20260718100000_tenancy_expand.sql",
+      "sha256": "1e9f2ae550afaa190d8a94219e198a4f9b93b819e507b30cbbc09ea50b6dd34c"
+    },
+    {
+      "file": "20260718100100_tenancy_backfill_default_clinic.sql",
+      "sha256": "6444e50001516b226b3149df9b009d1938d2e1a7d14084efc0008b0c35b8039d"
+    },
+    {
+      "file": "20260718110000_laudo_claim_finalize_refund.sql",
+      "sha256": "51ced43014877be054042c597445281e043ec7ee8565f98452096a4d7ea4d449"
+    },
+    {
+      "file": "20260718120000_laudo_upload_reservation.sql",
+      "sha256": "131a842042a34974e8ba22a49e6262bace50a6e5b86f79584981ece3107d2bcf"
     }
   ],
   "approvedHistoricalTransitions": [

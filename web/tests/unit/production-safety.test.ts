@@ -599,7 +599,7 @@ test('clinical mutation handlers enforce server roles and private responses', ()
   ].map((relativePath) => readFileSync(resolve(webRoot, relativePath), 'utf8'))
 
   for (const source of handlers) {
-    assert.match(source, /authorizeServerRoles\(supabase, \['vet', 'admin'\]\)/)
+    assert.match(source, /authorizeClinicAccess\(supabase, \['vet', 'admin'\]\)/)
     assert.match(source, /authorizationFailureJson\(authorization\)/)
     assert.match(source, /privateApiJson\(/)
     assert.match(source, /assertAllowedKeys\(body,/)
@@ -928,7 +928,7 @@ test('asset maintenance scripts fail closed and avoid destructive legacy behavio
   assert.match(generateIcons, /Kept existing favicon\.ico unchanged/)
 })
 
-test('parse-laudo keeps bounded attempts, ownership-scoped claim and sanitized failures', () => {
+test('parse-laudo keeps bounded attempts, transactional claim and sanitized failures', () => {
   const source = readFileSync(
     resolve(import.meta.dirname, '../../../supabase/functions/parse-laudo/index.ts'),
     'utf8',
@@ -940,16 +940,86 @@ test('parse-laudo keeps bounded attempts, ownership-scoped claim and sanitized f
 
   assert.match(source, /const MAX_ATTEMPTS = 3/)
   assert.equal(source.match(/redirect:\s*"error"/g)?.length, 2)
-  assert.match(source, /\.select\("role, ai_quota_used, ai_quota_limit"\)/)
+  // AUDIT-001 Fase 2 (Tarefa 2.2): a cota deixou de ser lida/decidida localmente
+  // (TOCTOU) — o profile so e consultado para o papel profissional; a reserva
+  // atomica de cota vive inteiramente dentro de claim_laudo_ia.
+  assert.match(source, /\.select\("role"\)/)
+  assert.doesNotMatch(source, /ai_quota_used|ai_quota_limit/)
   assert.match(source, /!\["vet", "admin"\]\.includes\(profile\.role\)/)
   assert.match(source, /return authorizationUnavailable\(corsHeaders\)/)
   assert.match(source, /return forbidden\(corsHeaders\)/)
-  assert.match(source, /\.eq\("vet_id", user\.id\)/)
   assert.match(source, /laudoError \|\| !laudo \|\| laudo\.vet_id !== user\.id/)
   assert.doesNotMatch(source, /Acesso negado a este laudo/)
-  assert.match(source, /\.in\("status", \["pendente", "erro"\]\)/)
-  assert.match(source, /erro_ia: `PROCESSING_FAILED:\$\{code\}`/)
+
+  // O padrao antigo (SELECT de cota + update manual de status + RPC de
+  // incremento no fim) foi eliminado por completo: nenhum update direto de
+  // status/erro_ia/resultado_ia na tabela e nenhuma chamada a increment_ai_quota.
+  assert.doesNotMatch(source, /increment_ai_quota/)
+  assert.doesNotMatch(source, /\.update\(\{\s*status:/)
+  assert.doesNotMatch(source, /\.in\("status", \["pendente", "erro"\]\)/)
+  assert.doesNotMatch(source, /erro_ia: `PROCESSING_FAILED/)
   assert.doesNotMatch(source, /errBody|attempt\s*<=\s*MAX_RETRIES/)
+
+  // As tres RPCs transacionais substituem o padrao antigo; claim reserva a
+  // cota ANTES de qualquer chamada externa, finalize grava resultado+
+  // proveniencia+consumo de cota atomicamente, refund compensa exatamente uma
+  // vez. actor_user_id vem sempre do usuario autenticado, nunca do body.
+  assert.match(source, /\.rpc\("claim_laudo_ia",/)
+  assert.match(source, /\.rpc\("finalize_laudo_ia",/)
+  assert.match(source, /\.rpc\("refund_laudo_ia",/)
+  assert.match(source, /p_actor_user_id: user\.id/)
+  assert.match(source, /p_actor_user_id: activeClaim\.actorUserId/)
+  assert.match(source, /idempotencyKey = crypto\.randomUUID\(\)/)
+
+  // refund_laudo_ia nunca pode ser invocado antes de um claim existir: a
+  // chamada fica sob uma guarda explicita de activeClaim dentro do catch geral.
+  assert.match(source, /if \(supabase && activeClaim\)/)
+  const refundCallIndex = source.indexOf('.rpc("refund_laudo_ia",')
+  const guardIndex = source.indexOf('if (supabase && activeClaim)')
+  assert.ok(guardIndex >= 0)
+  assert.ok(refundCallIndex > guardIndex)
+
+  // error_code enviado a refund precisa vir de um classificador tipado restrito
+  // a allowlist da migration 20260718110000 — nunca de texto livre inventado
+  // no catch geral.
+  assert.match(source, /class ProviderFailure extends Error/)
+  assert.match(source, /errorCode: LaudoIaErrorCode/)
+  assert.match(source, /p_error_code: classified\.code/)
+
+  // Contrato de metadados/schema import da allowlist fechada (fonte de
+  // verdade: database.types.ts, espelhando a migration).
+  const dbTypes = readFileSync(
+    resolve(import.meta.dirname, '../../../supabase/functions/parse-laudo/database.types.ts'),
+    'utf8',
+  )
+  const allowlist = [
+    'provider_timeout',
+    'provider_rate_limited',
+    'provider_unavailable',
+    'provider_rejected',
+    'storage_missing',
+    'invalid_pdf',
+    'invalid_provider_response',
+    'invalid_result_schema',
+    'result_too_large',
+    'worker_crashed',
+    'internal_processing_error',
+    'attempts_exhausted',
+  ]
+  for (const code of allowlist) {
+    assert.match(dbTypes, new RegExp(`"${code}"`))
+  }
+
+  // Proveniencia da IA (Tarefa 2.3): PROMPT_VERSION versionado localmente,
+  // sha256 do PDF e nome/versao do schema clinico, sem PII nem conteudo bruto.
+  assert.match(source, /const PROMPT_VERSION = "2026-07-18\.1"/)
+  assert.match(source, /prompt_version: PROMPT_VERSION/)
+  assert.match(source, /pdf_sha256: input\.pdfSha256/)
+  assert.match(source, /schema_name: HEMOGRAMA_SCHEMA\.name/)
+  assert.match(source, /schema_version: HEMOGRAMA_SCHEMA\.version/)
+  assert.match(source, /sha256Hex/)
+  assert.doesNotMatch(source, /pdf_base64|fileName:\s*fileName|nome_arquivo/)
+
   assert.match(contracts, /Object\.keys\(value\)\.length !== 1/)
   assert.match(contracts, /schema\.additionalProperties === false/)
   assert.match(contracts, /readBoundedText\(response\.body, maxBytes\)/)
@@ -957,17 +1027,19 @@ test('parse-laudo keeps bounded attempts, ownership-scoped claim and sanitized f
   const containmentIndex = source.indexOf(
     'containClinicalInference(parsedOutput, HEMOGRAMA_SCHEMA.schema)',
   )
-  const persistenceIndex = source.indexOf('status: "concluido"')
+  const finalizeIndex = source.indexOf('.rpc("finalize_laudo_ia",')
   assert.ok(containmentIndex >= 0)
-  assert.ok(persistenceIndex > containmentIndex)
+  assert.ok(finalizeIndex > containmentIndex)
   assert.match(source, /Nao diagnostique DRC/)
   assert.match(source, /nao sugira estadiamento IRIS/)
   assert.doesNotMatch(source, /Sugira estadiamento IRIS apenas se creatinina/)
 
   const authorizationIndex = source.indexOf('!["vet", "admin"].includes(profile.role)')
-  const claimIndex = source.indexOf('.from("laudos_pdf")')
+  const claimTableIndex = source.indexOf('.from("laudos_pdf")')
+  const claimRpcIndex = source.indexOf('.rpc("claim_laudo_ia",')
   assert.ok(authorizationIndex >= 0)
-  assert.ok(claimIndex > authorizationIndex)
+  assert.ok(claimTableIndex > authorizationIndex)
+  assert.ok(claimRpcIndex > claimTableIndex)
 })
 
 test('git publication hook rejects command-scoped agent spoofing', () => {

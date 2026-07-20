@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "next-env.d.ts",
+    "src/app/api/laudos/reserve/route.ts",
+    "src/app/api/laudos/[id]/abandon/route.ts",
+    "src/components/lab/LaudoUploader.tsx",
+    "src/lib/lab/laudo-reservation.ts",
+    "src/lib/supabase/service.ts",
+    "src/types/database.ts",
+    "tests/unit/laudo-reservation-contracts.test.ts",
+    "tests/unit/frontend-safety.test.ts"
+  ]
+}

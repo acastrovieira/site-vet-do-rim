@@ -1,0 +1,959 @@
+-- STAGED — ADR-001 / tenancy negative tests (Vet A x Vet B)
+--
+-- Adaptado de docs/architecture/drafts/tenancy/90-negative-tests.sql. Este
+-- arquivo é o par de teste do candidato de promoção
+-- supabase/migrations_staged/20260718100200_tenancy_enforce.sql.staged e por
+-- isso vive fora de supabase/tests/: a extensão .sql.staged garante que nem
+-- `supabase test db --local` nem qualquer outro glob de *.sql o descubra
+-- automaticamente (mesmo mecanismo usado por migrations_staged/README.md).
+--
+-- POR QUE NÃO RODA NO CI HOJE: as assertivas abaixo pressupõem que o
+-- `enforce` já trocou as policies legadas por policies de membership
+-- (private.enforce_tenant_row, private.prepare_laudo_insert,
+-- private.enforce_laudo_immutable_fields, private.assert_active_clinic_has_admin
+-- e as duas policies de Storage por reserva exata). O `enforce` ainda está em
+-- migrations_staged/ (não populou nem os 4 usuários Auth), e o job Database
+-- Contract também não semeia auth.users. Rodar isto hoje falharia garantido,
+-- não porque o isolamento está quebrado, mas porque o enforcement que o torna
+-- verdadeiro ainda não foi promovido — ver README.md deste diretório e
+-- docs/architecture/fase1-tenancy-implementation-spec.md §5.3.
+--
+-- DO NOT run against production, staging, a linked project, or a database
+-- with valuable data. Este script cria fixtures determinísticos e sempre
+-- faz ROLLBACK. Só deve ser executado, manualmente, num projeto Supabase
+-- efêmero e descartável, DEPOIS que expand+backfill+enforce estiverem
+-- aplicados nele (ver protocolo de promoção no README.md).
+--
+-- Required session settings (four existing auth.users UUIDs, provisionados
+-- manualmente no efêmero antes de rodar este arquivo):
+--   SET test.allow_tenancy_destructive_fixture = 'yes';
+--   SET test.vet_a   = '<uuid>';
+--   SET test.admin_a = '<uuid>';
+--   SET test.vet_b   = '<uuid>';
+--   SET test.admin_b = '<uuid>';
+--
+-- Storage note: direct writes to storage.objects are intentionally absent.
+-- Supabase documenta o schema de Storage como read-only. Este script valida
+-- o catálogo de policies; a autorização real de upload/download precisa ser
+-- exercitada também pela Storage API (ver gate 10 do draft original e o
+-- README.md deste diretório).
+
+BEGIN;
+
+DO $preflight$
+DECLARE
+  supplied_ids uuid[];
+  missing_users integer;
+BEGIN
+  IF current_user <> 'postgres' THEN
+    RAISE EXCEPTION
+      'Refusing tenancy fixture: run only as the postgres owner of a disposable local database (current_user=%)',
+      current_user;
+  END IF;
+
+  IF current_setting('test.allow_tenancy_destructive_fixture', true) IS DISTINCT FROM 'yes' THEN
+    RAISE EXCEPTION
+      'Refusing tenancy fixture: SET test.allow_tenancy_destructive_fixture = ''yes'' explicitly';
+  END IF;
+
+  BEGIN
+    supplied_ids := ARRAY[
+      current_setting('test.vet_a')::uuid,
+      current_setting('test.admin_a')::uuid,
+      current_setting('test.vet_b')::uuid,
+      current_setting('test.admin_b')::uuid
+    ];
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE EXCEPTION
+        'Define test.vet_a, test.admin_a, test.vet_b and test.admin_b as valid UUIDs';
+  END;
+
+  IF cardinality(ARRAY(SELECT DISTINCT unnest(supplied_ids))) <> 4 THEN
+    RAISE EXCEPTION 'The four tenancy test users must be distinct';
+  END IF;
+
+  SELECT count(*)
+    INTO missing_users
+    FROM unnest(supplied_ids) AS expected(user_id)
+   WHERE NOT EXISTS (
+     SELECT 1
+       FROM auth.users AS u
+      WHERE u.id = expected.user_id
+   );
+
+  IF missing_users <> 0 THEN
+    RAISE EXCEPTION '% tenancy test user(s) do not exist in auth.users', missing_users;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+      FROM public.clinics
+     WHERE id IN (
+       'a0000000-0000-4000-8000-000000000001'::uuid,
+       'b0000000-0000-4000-8000-000000000002'::uuid
+     )
+  ) OR EXISTS (
+    SELECT 1
+      FROM public.tutores
+     WHERE id IN (
+       'a1000000-0000-4000-8000-000000000001'::uuid,
+       'b1000000-0000-4000-8000-000000000002'::uuid
+     )
+  ) OR EXISTS (
+    SELECT 1
+      FROM public.pets
+     WHERE id IN (
+       'a2000000-0000-4000-8000-000000000001'::uuid,
+       'b2000000-0000-4000-8000-000000000002'::uuid
+     )
+  ) OR EXISTS (
+    SELECT 1
+      FROM public.triagens
+     WHERE id IN (
+       'a3000000-0000-4000-8000-000000000001'::uuid,
+       'b3000000-0000-4000-8000-000000000002'::uuid
+     )
+  ) OR EXISTS (
+    SELECT 1
+      FROM public.follow_ups
+     WHERE id IN (
+       'a4000000-0000-4000-8000-000000000001'::uuid,
+       'b4000000-0000-4000-8000-000000000002'::uuid
+     )
+  ) OR EXISTS (
+    SELECT 1
+      FROM public.colaboradores
+     WHERE id IN (
+       'a5000000-0000-4000-8000-000000000001'::uuid,
+       'b5000000-0000-4000-8000-000000000002'::uuid
+     )
+  ) OR EXISTS (
+    SELECT 1
+      FROM public.laudos_pdf
+     WHERE id IN (
+       'a6000000-0000-4000-8000-000000000001'::uuid,
+       'b6000000-0000-4000-8000-000000000002'::uuid
+     )
+  ) THEN
+    RAISE EXCEPTION
+      'Deterministic tenancy fixture IDs already exist; use a clean disposable database';
+  END IF;
+END
+$preflight$;
+
+CREATE FUNCTION pg_temp.assert_true(actual boolean, message text)
+RETURNS void
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF actual IS DISTINCT FROM true THEN
+    RAISE EXCEPTION 'ASSERTION FAILED: %', message;
+  END IF;
+END
+$function$;
+
+CREATE FUNCTION pg_temp.assert_eq(actual bigint, expected bigint, message text)
+RETURNS void
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF actual IS DISTINCT FROM expected THEN
+    RAISE EXCEPTION
+      'ASSERTION FAILED: % (actual=%, expected=%)',
+      message,
+      actual,
+      expected;
+  END IF;
+END
+$function$;
+
+CREATE FUNCTION pg_temp.expect_error(statement text, message text)
+RETURNS void
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+  failed_as_expected boolean := false;
+BEGIN
+  BEGIN
+    EXECUTE statement;
+  EXCEPTION
+    WHEN OTHERS THEN
+      failed_as_expected := true;
+  END;
+
+  IF NOT failed_as_expected THEN
+    RAISE EXCEPTION 'ASSERTION FAILED: expected an error: %', message;
+  END IF;
+END
+$function$;
+
+GRANT USAGE ON SCHEMA pg_temp TO authenticated;
+GRANT EXECUTE ON FUNCTION pg_temp.assert_true(boolean, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION pg_temp.assert_eq(bigint, bigint, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION pg_temp.expect_error(text, text) TO authenticated;
+
+-- Catalogue assertions: grants, RLS completeness and the exact-record Storage
+-- join. These catch dangerous policy regressions before behavioral fixtures.
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_class AS c
+      JOIN pg_namespace AS n
+        ON n.oid = c.relnamespace
+     WHERE n.nspname = 'public'
+       AND c.relkind IN ('r', 'p')
+       AND c.relname = ANY (ARRAY[
+         'profiles',
+         'clinics',
+         'clinic_memberships',
+         'tutores',
+         'pets',
+         'triagens',
+         'follow_ups',
+         'colaboradores',
+         'laudos_pdf'
+       ])
+  ),
+  9,
+  'all nine application tables must exist'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_class AS c
+      JOIN pg_namespace AS n
+        ON n.oid = c.relnamespace
+     WHERE n.nspname = 'public'
+       AND c.relname = ANY (ARRAY[
+         'profiles',
+         'clinics',
+         'clinic_memberships',
+         'tutores',
+         'pets',
+         'triagens',
+         'follow_ups',
+         'colaboradores',
+         'laudos_pdf'
+       ])
+       AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity)
+  ),
+  0,
+  'every exposed application table must have RLS and FORCE RLS'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_policies
+     WHERE schemaname = 'public'
+       AND tablename = ANY (ARRAY[
+         'tutores',
+         'pets',
+         'triagens',
+         'follow_ups',
+         'colaboradores'
+       ])
+       AND cmd = 'UPDATE'
+  ),
+  5,
+  'each mutable application table must have one UPDATE policy'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_policies
+     WHERE schemaname = 'public'
+       AND tablename = ANY (ARRAY[
+         'profiles',
+         'clinics',
+         'clinic_memberships',
+         'tutores',
+         'pets',
+         'triagens',
+         'follow_ups',
+         'colaboradores',
+         'laudos_pdf'
+       ])
+       AND (
+         regexp_replace(coalesce(qual, ''), '[[:space:]]', '', 'g') ~ '^\(*true\)*$'
+         OR regexp_replace(coalesce(with_check, ''), '[[:space:]]', '', 'g') ~ '^\(*true\)*$'
+       )
+  ),
+  0,
+  'no application-table policy may reduce to global true'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_policies
+     WHERE schemaname = 'public'
+       AND tablename = ANY (ARRAY[
+         'tutores',
+         'pets',
+         'triagens',
+         'follow_ups',
+         'colaboradores',
+         'laudos_pdf'
+       ])
+       AND cmd = 'INSERT'
+  ),
+  6,
+  'each insertable application table must have one INSERT policy'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_policies
+     WHERE schemaname = 'public'
+       AND tablename = ANY (ARRAY[
+         'tutores',
+         'pets',
+         'triagens',
+         'follow_ups',
+         'colaboradores'
+       ])
+       AND cmd = 'UPDATE'
+       AND (qual IS NULL OR with_check IS NULL)
+  ),
+  0,
+  'each mutable-table UPDATE policy must define USING and WITH CHECK'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_policies
+     WHERE schemaname = 'public'
+       AND tablename = ANY (ARRAY[
+         'tutores',
+         'pets',
+         'triagens',
+         'follow_ups',
+         'colaboradores',
+         'laudos_pdf'
+       ])
+       AND cmd = 'INSERT'
+       AND with_check IS NULL
+  ),
+  0,
+  'each application-table INSERT policy must define WITH CHECK'
+);
+
+SELECT pg_temp.assert_true(
+  NOT EXISTS (
+    SELECT 1
+      FROM unnest(ARRAY[
+        'public.profiles',
+        'public.clinics',
+        'public.clinic_memberships',
+        'public.tutores',
+        'public.pets',
+        'public.triagens',
+        'public.follow_ups',
+        'public.colaboradores',
+        'public.laudos_pdf'
+      ]) AS target(relation_name)
+     WHERE has_table_privilege('anon', target.relation_name, 'SELECT')
+        OR has_table_privilege('anon', target.relation_name, 'INSERT')
+        OR has_table_privilege('anon', target.relation_name, 'UPDATE')
+        OR has_table_privilege('anon', target.relation_name, 'DELETE')
+  ),
+  'anon must have no application-table CRUD privileges'
+);
+SELECT pg_temp.assert_true(
+  NOT has_table_privilege('authenticated', 'public.tutores', 'DELETE'),
+  'authenticated must not delete tutores directly'
+);
+SELECT pg_temp.assert_true(
+  NOT has_table_privilege('authenticated', 'public.laudos_pdf', 'UPDATE'),
+  'authenticated must not update laudos_pdf directly'
+);
+SELECT pg_temp.assert_true(
+  NOT has_table_privilege('authenticated', 'public.clinic_memberships', 'INSERT'),
+  'authenticated must not create memberships directly'
+);
+SELECT pg_temp.assert_true(
+  NOT has_column_privilege('authenticated', 'public.tutores', 'clinic_id', 'UPDATE'),
+  'authenticated must not update tenant identity'
+);
+SELECT pg_temp.assert_true(
+  has_column_privilege('authenticated', 'public.tutores', 'nome', 'UPDATE'),
+  'authenticated requires the intended tutor update grant'
+);
+SELECT pg_temp.assert_true(
+  NOT has_column_privilege('authenticated', 'public.colaboradores', 'supabase_uid', 'INSERT')
+  AND NOT has_column_privilege('authenticated', 'public.colaboradores', 'supabase_uid', 'UPDATE'),
+  'browser clients must not bind or rebind collaborator identities'
+);
+SELECT pg_temp.assert_true(
+  NOT has_function_privilege('anon', 'private.has_clinic_role(uuid,text[])', 'EXECUTE'),
+  'anon must not execute the membership helper'
+);
+SELECT pg_temp.assert_true(
+  has_function_privilege('authenticated', 'private.has_clinic_role(uuid,text[])', 'EXECUTE'),
+  'authenticated requires the membership helper'
+);
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_proc AS p
+      JOIN pg_namespace AS n
+        ON n.oid = p.pronamespace
+     WHERE n.nspname = 'private'
+       AND p.proname = 'has_clinic_role'
+       AND pg_get_userbyid(p.proowner) = 'postgres'
+       AND p.prosecdef
+       AND coalesce(array_to_string(p.proconfig, ','), '') IN (
+         'search_path=',
+         'search_path=""',
+         'search_path=''''
+       )
+  ),
+  1,
+  'membership helper must be postgres-owned SECURITY DEFINER with an empty search_path'
+);
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_proc AS p
+      JOIN pg_namespace AS n
+        ON n.oid = p.pronamespace
+     WHERE n.nspname = 'private'
+       AND p.proname = ANY (ARRAY[
+         'enforce_tenant_row',
+         'prepare_laudo_insert',
+         'enforce_laudo_immutable_fields',
+         'assert_active_clinic_has_admin'
+       ])
+       AND pg_get_userbyid(p.proowner) = 'postgres'
+       AND NOT p.prosecdef
+       AND coalesce(array_to_string(p.proconfig, ','), '') IN (
+         'search_path=',
+         'search_path=""',
+         'search_path=''''
+       )
+  ),
+  4,
+  'all trigger helpers must be postgres-owned SECURITY INVOKER with an empty search_path'
+);
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM unnest(ARRAY[
+        'private.enforce_tenant_row()'::regprocedure,
+        'private.prepare_laudo_insert()'::regprocedure,
+        'private.enforce_laudo_immutable_fields()'::regprocedure,
+        'private.assert_active_clinic_has_admin()'::regprocedure
+      ]) AS protected(function_oid)
+     WHERE has_function_privilege('anon', protected.function_oid, 'EXECUTE')
+        OR has_function_privilege('authenticated', protected.function_oid, 'EXECUTE')
+  ),
+  0,
+  'trigger helpers must not be directly executable by client roles'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM storage.buckets AS b
+     WHERE b.id = 'laudos'
+       AND b.public = false
+       AND b.file_size_limit IS NOT NULL
+       AND b.file_size_limit <= 10485760
+       AND b.allowed_mime_types = ARRAY['application/pdf']::text[]
+  ),
+  1,
+  'laudos bucket must remain private, PDF-only and limited to 10 MiB'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_class AS c
+      JOIN pg_namespace AS n
+        ON n.oid = c.relnamespace
+     WHERE n.nspname = 'storage'
+       AND c.relname = 'objects'
+       AND c.relrowsecurity
+  ),
+  1,
+  'storage.objects must have RLS enabled'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_policies
+     WHERE schemaname = 'storage'
+       AND tablename = 'objects'
+  ),
+  2,
+  'no unreviewed policy may remain on storage.objects'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_policies
+     WHERE schemaname = 'storage'
+       AND tablename = 'objects'
+       AND policyname IN (
+         'storage_laudos_insert_exact_record',
+         'storage_laudos_select_exact_record'
+       )
+  ),
+  2,
+  'the two exact-record Storage policies must exist'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_policies
+     WHERE schemaname = 'storage'
+       AND tablename = 'objects'
+       AND policyname LIKE 'storage_laudos_%'
+       AND cmd IN ('UPDATE', 'DELETE')
+  ),
+  0,
+  'client Storage UPDATE and DELETE policies must remain absent'
+);
+
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM pg_policies
+     WHERE schemaname = 'storage'
+       AND tablename = 'objects'
+       AND policyname IN (
+         'storage_laudos_insert_exact_record',
+         'storage_laudos_select_exact_record'
+       )
+       AND (
+         lower(coalesce(qual, '') || ' ' || coalesce(with_check, '')) NOT LIKE '%laudos_pdf%'
+         OR lower(coalesce(qual, '') || ' ' || coalesce(with_check, '')) NOT LIKE '%storage_path%'
+         OR lower(coalesce(qual, '') || ' ' || coalesce(with_check, '')) LIKE '%foldername%'
+         OR lower(coalesce(qual, '') || ' ' || coalesce(with_check, '')) LIKE '%owner_id%'
+       )
+  ),
+  0,
+  'Storage authorization must join the exact laudos_pdf.storage_path record and trust neither prefix nor owner metadata'
+);
+
+-- Owner-only deterministic fixtures. Every table uses a tenant and immutable
+-- creator. The laudo trigger derives the canonical storage_path.
+INSERT INTO public.profiles (id, full_name, role)
+VALUES
+  (current_setting('test.vet_a')::uuid, 'ADR-001 Vet A', 'vet'),
+  (current_setting('test.admin_a')::uuid, 'ADR-001 Admin A', 'admin'),
+  (current_setting('test.vet_b')::uuid, 'ADR-001 Vet B', 'vet'),
+  (current_setting('test.admin_b')::uuid, 'ADR-001 Admin B', 'admin')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.clinics (id, nome, status, created_by)
+VALUES
+  (
+    'a0000000-0000-4000-8000-000000000001',
+    'ADR-001 Clínica A',
+    'active',
+    current_setting('test.admin_a')::uuid
+  ),
+  (
+    'b0000000-0000-4000-8000-000000000002',
+    'ADR-001 Clínica B',
+    'active',
+    current_setting('test.admin_b')::uuid
+  );
+
+INSERT INTO public.clinic_memberships (clinic_id, user_id, role, status, created_by)
+VALUES
+  (
+    'a0000000-0000-4000-8000-000000000001',
+    current_setting('test.admin_a')::uuid,
+    'clinic_admin',
+    'active',
+    current_setting('test.admin_a')::uuid
+  ),
+  (
+    'a0000000-0000-4000-8000-000000000001',
+    current_setting('test.vet_a')::uuid,
+    'vet',
+    'active',
+    current_setting('test.admin_a')::uuid
+  ),
+  (
+    'b0000000-0000-4000-8000-000000000002',
+    current_setting('test.admin_b')::uuid,
+    'clinic_admin',
+    'active',
+    current_setting('test.admin_b')::uuid
+  ),
+  (
+    'b0000000-0000-4000-8000-000000000002',
+    current_setting('test.vet_b')::uuid,
+    'vet',
+    'active',
+    current_setting('test.admin_b')::uuid
+  );
+
+INSERT INTO public.tutores (id, clinic_id, created_by, nome, email, telefone)
+VALUES
+  (
+    'a1000000-0000-4000-8000-000000000001',
+    'a0000000-0000-4000-8000-000000000001',
+    current_setting('test.admin_a')::uuid,
+    'Tutor A',
+    'tutor-a@adr001.example.test',
+    '11000000001'
+  ),
+  (
+    'b1000000-0000-4000-8000-000000000002',
+    'b0000000-0000-4000-8000-000000000002',
+    current_setting('test.admin_b')::uuid,
+    'Tutor B',
+    'tutor-b@adr001.example.test',
+    '11000000002'
+  );
+
+INSERT INTO public.pets (
+  id,
+  clinic_id,
+  created_by,
+  tutor_id,
+  nome,
+  especie,
+  status_paciente
+)
+VALUES
+  (
+    'a2000000-0000-4000-8000-000000000001',
+    'a0000000-0000-4000-8000-000000000001',
+    current_setting('test.admin_a')::uuid,
+    'a1000000-0000-4000-8000-000000000001',
+    'Pet A',
+    'canino',
+    'ativo'
+  ),
+  (
+    'b2000000-0000-4000-8000-000000000002',
+    'b0000000-0000-4000-8000-000000000002',
+    current_setting('test.admin_b')::uuid,
+    'b1000000-0000-4000-8000-000000000002',
+    'Pet B',
+    'felino',
+    'ativo'
+  );
+
+INSERT INTO public.triagens (
+  id,
+  clinic_id,
+  created_by,
+  pet_id,
+  tutor_id,
+  status,
+  observacoes
+)
+VALUES
+  (
+    'a3000000-0000-4000-8000-000000000001',
+    'a0000000-0000-4000-8000-000000000001',
+    current_setting('test.admin_a')::uuid,
+    'a2000000-0000-4000-8000-000000000001',
+    'a1000000-0000-4000-8000-000000000001',
+    'ativa',
+    'Fixture A'
+  ),
+  (
+    'b3000000-0000-4000-8000-000000000002',
+    'b0000000-0000-4000-8000-000000000002',
+    current_setting('test.admin_b')::uuid,
+    'b2000000-0000-4000-8000-000000000002',
+    'b1000000-0000-4000-8000-000000000002',
+    'ativa',
+    'Fixture B'
+  );
+
+INSERT INTO public.follow_ups (
+  id,
+  clinic_id,
+  created_by,
+  triagem_id,
+  opt_out,
+  canal
+)
+VALUES
+  (
+    'a4000000-0000-4000-8000-000000000001',
+    'a0000000-0000-4000-8000-000000000001',
+    current_setting('test.admin_a')::uuid,
+    'a3000000-0000-4000-8000-000000000001',
+    false,
+    'email'
+  ),
+  (
+    'b4000000-0000-4000-8000-000000000002',
+    'b0000000-0000-4000-8000-000000000002',
+    current_setting('test.admin_b')::uuid,
+    'b3000000-0000-4000-8000-000000000002',
+    false,
+    'email'
+  );
+
+INSERT INTO public.colaboradores (
+  id,
+  clinic_id,
+  created_by,
+  supabase_uid,
+  nome,
+  email,
+  cargo,
+  nivel_acesso,
+  ativo
+)
+VALUES
+  (
+    'a5000000-0000-4000-8000-000000000001',
+    'a0000000-0000-4000-8000-000000000001',
+    current_setting('test.admin_a')::uuid,
+    current_setting('test.vet_a')::uuid,
+    'Colaborador A',
+    'colaborador-a@adr001.example.test',
+    'Veterinário',
+    'vet',
+    true
+  ),
+  (
+    'b5000000-0000-4000-8000-000000000002',
+    'b0000000-0000-4000-8000-000000000002',
+    current_setting('test.admin_b')::uuid,
+    current_setting('test.vet_b')::uuid,
+    'Colaborador B',
+    'colaborador-b@adr001.example.test',
+    'Veterinário',
+    'vet',
+    true
+  );
+
+INSERT INTO public.laudos_pdf (
+  id,
+  clinic_id,
+  created_by,
+  pet_id,
+  vet_id,
+  nome_arquivo,
+  tamanho_bytes,
+  storage_path
+)
+VALUES
+  (
+    'a6000000-0000-4000-8000-000000000001',
+    'a0000000-0000-4000-8000-000000000001',
+    current_setting('test.admin_a')::uuid,
+    'a2000000-0000-4000-8000-000000000001',
+    current_setting('test.vet_a')::uuid,
+    'fixture-a.pdf',
+    10,
+    'ignored-by-trigger'
+  ),
+  (
+    'b6000000-0000-4000-8000-000000000002',
+    'b0000000-0000-4000-8000-000000000002',
+    current_setting('test.admin_b')::uuid,
+    'b2000000-0000-4000-8000-000000000002',
+    current_setting('test.vet_b')::uuid,
+    'fixture-b.pdf',
+    10,
+    'ignored-by-trigger'
+  );
+
+SET CONSTRAINTS ALL IMMEDIATE;
+
+-- Vet A: positive access within Clinic A and negative access to Clinic B.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', current_setting('test.vet_a'), true);
+SELECT set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub', current_setting('test.vet_a'), 'role', 'authenticated')::text,
+  true
+);
+SELECT pg_temp.assert_true(
+  auth.uid() = current_setting('test.vet_a')::uuid,
+  'Vet A JWT emulation must be active'
+);
+
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.profiles), 1, 'Vet A sees only own profile');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.clinics), 1, 'Vet A sees only Clinic A');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.clinics WHERE id = 'b0000000-0000-4000-8000-000000000002'), 0, 'Vet A cannot see Clinic B');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.clinic_memberships), 1, 'Vet A sees only own membership');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.tutores), 1, 'Vet A sees only Clinic A tutores');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.pets), 1, 'Vet A sees only Clinic A pets');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.triagens), 1, 'Vet A sees only Clinic A triagens');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.follow_ups), 1, 'Vet A sees only Clinic A follow-ups');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.colaboradores), 1, 'Vet A sees only Clinic A collaborators');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.laudos_pdf), 1, 'Vet A sees only Clinic A laudos');
+
+WITH inserted AS (
+  INSERT INTO public.tutores (clinic_id, nome, email, telefone)
+  VALUES (
+    'a0000000-0000-4000-8000-000000000001',
+    'Tutor A permitido',
+    'tutor-a-ok@adr001.example.test',
+    '11000000003'
+  )
+  RETURNING 1
+)
+SELECT pg_temp.assert_eq((SELECT count(*) FROM inserted), 1, 'Vet A may insert a Clinic A tutor');
+
+SELECT pg_temp.expect_error(
+  $sql$INSERT INTO public.tutores (clinic_id, nome, email, telefone)
+       VALUES ('b0000000-0000-4000-8000-000000000002', 'Ataque B',
+               'attack-b@adr001.example.test', '11000000004')$sql$,
+  'Vet A cannot insert a Clinic B tutor'
+);
+SELECT pg_temp.expect_error(
+  $sql$INSERT INTO public.pets (clinic_id, tutor_id, nome, especie)
+       VALUES ('a0000000-0000-4000-8000-000000000001',
+               'b1000000-0000-4000-8000-000000000002',
+               'Relação cruzada', 'canino')$sql$,
+  'a Clinic A pet cannot reference a Clinic B tutor'
+);
+SELECT pg_temp.expect_error(
+  $sql$INSERT INTO public.laudos_pdf
+         (clinic_id, pet_id, nome_arquivo, tamanho_bytes)
+       VALUES ('b0000000-0000-4000-8000-000000000002',
+               'b2000000-0000-4000-8000-000000000002', 'attack.pdf', 10)$sql$,
+  'Vet A cannot reserve a Clinic B laudo'
+);
+SELECT pg_temp.expect_error(
+  $sql$UPDATE public.tutores
+          SET clinic_id = 'b0000000-0000-4000-8000-000000000002'
+        WHERE id = 'a1000000-0000-4000-8000-000000000001'$sql$,
+  'Vet A cannot mutate tenant identity'
+);
+SELECT pg_temp.expect_error(
+  $sql$DELETE FROM public.tutores
+        WHERE id = 'a1000000-0000-4000-8000-000000000001'$sql$,
+  'Vet A has no direct delete privilege'
+);
+SELECT pg_temp.expect_error(
+  format(
+    'INSERT INTO public.clinic_memberships (clinic_id, user_id, role, status, created_by) VALUES (%L, %L, %L, %L, %L)',
+    'a0000000-0000-4000-8000-000000000001',
+    current_setting('test.admin_b'),
+    'vet',
+    'active',
+    current_setting('test.vet_a')
+  ),
+  'Vet A cannot create memberships directly'
+);
+
+UPDATE public.tutores
+   SET nome = 'Tentativa invisível'
+ WHERE id = 'b1000000-0000-4000-8000-000000000002';
+SELECT pg_temp.assert_eq(
+  (SELECT count(*) FROM public.tutores WHERE nome = 'Tentativa invisível'),
+  0,
+  'Vet A cannot update an invisible Clinic B row'
+);
+
+RESET ROLE;
+SELECT pg_temp.assert_eq(
+  (SELECT count(*) FROM public.tutores WHERE id = 'b1000000-0000-4000-8000-000000000002' AND nome = 'Tutor B'),
+  1,
+  'Clinic B data remains unchanged after Vet A attempts'
+);
+
+-- Revocation is driven by the database membership, not mutable JWT metadata.
+UPDATE public.clinic_memberships
+   SET status = 'inactive'
+ WHERE clinic_id = 'a0000000-0000-4000-8000-000000000001'
+   AND user_id = current_setting('test.vet_a')::uuid;
+
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', current_setting('test.vet_a'), true);
+SELECT set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub', current_setting('test.vet_a'), 'role', 'authenticated')::text,
+  true
+);
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.clinics), 0, 'inactive Vet A sees no clinic');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.tutores), 0, 'inactive Vet A sees no tutores');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.pets), 0, 'inactive Vet A sees no pets');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.triagens), 0, 'inactive Vet A sees no triagens');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.follow_ups), 0, 'inactive Vet A sees no follow-ups');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.colaboradores), 0, 'inactive Vet A sees no collaborators');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.laudos_pdf), 0, 'inactive Vet A sees no laudos');
+RESET ROLE;
+
+UPDATE public.clinic_memberships
+   SET status = 'active'
+ WHERE clinic_id = 'a0000000-0000-4000-8000-000000000001'
+   AND user_id = current_setting('test.vet_a')::uuid;
+
+-- Admin A sees the Clinic A roster but remains isolated from Clinic B.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', current_setting('test.admin_a'), true);
+SELECT set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub', current_setting('test.admin_a'), 'role', 'authenticated')::text,
+  true
+);
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.clinics), 1, 'Admin A sees only Clinic A');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.clinic_memberships), 2, 'Admin A sees Clinic A roster');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.clinic_memberships WHERE clinic_id = 'b0000000-0000-4000-8000-000000000002'), 0, 'Admin A cannot see Clinic B roster');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.tutores WHERE clinic_id = 'b0000000-0000-4000-8000-000000000002'), 0, 'Admin A cannot see Clinic B tutores');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.laudos_pdf WHERE clinic_id = 'b0000000-0000-4000-8000-000000000002'), 0, 'Admin A cannot see Clinic B laudos');
+RESET ROLE;
+
+-- Vet B independently proves the inverse tenant boundary.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', current_setting('test.vet_b'), true);
+SELECT set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub', current_setting('test.vet_b'), 'role', 'authenticated')::text,
+  true
+);
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.clinics), 1, 'Vet B sees only Clinic B');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.clinics WHERE id = 'a0000000-0000-4000-8000-000000000001'), 0, 'Vet B cannot see Clinic A');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.tutores), 1, 'Vet B sees only Clinic B tutores');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.pets), 1, 'Vet B sees only Clinic B pets');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.triagens), 1, 'Vet B sees only Clinic B triagens');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.follow_ups), 1, 'Vet B sees only Clinic B follow-ups');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.colaboradores), 1, 'Vet B sees only Clinic B collaborators');
+SELECT pg_temp.assert_eq((SELECT count(*) FROM public.laudos_pdf), 1, 'Vet B sees only Clinic B laudos');
+RESET ROLE;
+
+-- Referential anonymization must not be defeated by the immutability trigger.
+DELETE FROM public.clinic_memberships
+ WHERE clinic_id = 'a0000000-0000-4000-8000-000000000001'
+   AND user_id = current_setting('test.vet_a')::uuid;
+SET CONSTRAINTS ALL IMMEDIATE;
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM public.laudos_pdf
+     WHERE id = 'a6000000-0000-4000-8000-000000000001'
+       AND vet_id IS NULL
+  ),
+  1,
+  'membership deletion must apply the reviewed laudo vet_id SET NULL action'
+);
+SELECT pg_temp.assert_eq(
+  (
+    SELECT count(*)
+      FROM public.colaboradores
+     WHERE id = 'a5000000-0000-4000-8000-000000000001'
+       AND supabase_uid IS NULL
+  ),
+  1,
+  'membership deletion must apply the collaborator supabase_uid SET NULL action'
+);
+
+SELECT 'ADR-001 Vet A x Vet B negative tests passed; fixtures will be rolled back' AS result;
+
+ROLLBACK;

@@ -2,6 +2,8 @@
 
 > **QUARENTENA — NÃO APLICAR.** Estes arquivos são material de projeto da story `AUDIT-001`. Eles não pertencem a `supabase/migrations`, não autorizam alteração local/remota e não foram executados contra banco algum.
 
+> **NOTA DE PROMOÇÃO (2026-07-19, AUDIT-001 Fase 2 / Tarefa 2.1).** O contrato deste draft foi promovido para a migration ativa `supabase/migrations/20260718110000_laudo_claim_finalize_refund.sql` (com pgTAP estrutural em `supabase/tests/laudo_transaction_test.sql`), agora que os pré-requisitos de tenancy da Fase 1 existem na cadeia ativa (`clinics`, `clinic_memberships`, `laudos_pdf.clinic_id`, `pets.clinic_id`). A cópia promovida remove a sentinela de quarentena, estende `finalize_laudo_ia` com um parâmetro `p_provenance jsonb` e adiciona a coluna dedicada `public.laudos_pdf.ia_provenance` (proveniência separada do resultado clínico). Estes arquivos de draft permanecem **quarentenados e intactos** como registro de projeto; a fonte de verdade operacional passa a ser a migration promovida. Continua fora da promoção (pertence ao `enforce` de tenancy, §7): revogar o `UPDATE` amplo de `laudos_pdf` de `authenticated` e a reserva server-side de upload/path canônico.
+
 ## Objetivo e conclusão da auditoria
 
 O fluxo atual não oferece uma unidade transacional para reservar processamento, controlar concorrência, consumir ou compensar cota e persistir o resultado. O desenho desta pasta propõe três operações estreitas — `claim`, `finalize` e `refund` — que mantêm as chamadas externas à IA fora da transação e tornam as alterações de banco curtas, atômicas e idempotentes.

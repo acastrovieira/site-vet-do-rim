@@ -9,7 +9,7 @@ import {
   requiredText,
   safeErrorSummary,
 } from '@/lib/api-validation'
-import { authorizeServerRoles } from '@/lib/server-authorization'
+import { authorizeClinicAccess } from '@/lib/server-authorization'
 import {
   authorizationFailureJson,
   privateApiJson,
@@ -25,7 +25,7 @@ function badRequest(error: string) {
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
-    const authorization = await authorizeServerRoles(supabase, ['vet', 'admin'])
+    const authorization = await authorizeClinicAccess(supabase, ['vet', 'admin'])
     if (!authorization.ok) return authorizationFailureJson(authorization)
 
     const body = await readJsonObject(request)
@@ -63,6 +63,12 @@ export async function POST(request: Request) {
         endereco,
         cidade,
         estado,
+        // clinic_id/created_by nunca vem do body (assertAllowedKeys ja
+        // bloqueia campos extras); so gravamos quando ha contexto de clinica
+        // resolvido no servidor (ver server-clinic-context.ts).
+        ...(authorization.clinicId
+          ? { clinic_id: authorization.clinicId, created_by: authorization.userId }
+          : {}),
       })
       .select('id')
       .single()

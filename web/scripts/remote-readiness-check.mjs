@@ -46,7 +46,7 @@ function runCommand(command, args = []) {
 function commandVersion(command, args = ['--version']) {
   const result = runCommand(command, args)
   const firstLine = (result.stdout || '').trim().split('\n')[0] || ''
-  const safeVersion = /^[A-Za-z0-9][A-Za-z0-9 ._+-]{0,79}$/.test(firstLine)
+  const safeVersion = /^[A-Za-z0-9][A-Za-z0-9 ._+(),-]{0,79}$/.test(firstLine)
     ? firstLine
     : null
   return {

@@ -204,60 +204,86 @@ export function LaudoUploader({ petId }: { petId: string }) {
     if (file) handleFile(file)
   }, [handleFile])
 
-  /** Etapa 1: Upload PDF → Storage + salvar no banco. Não requer IA. */
+  /**
+   * Desistencia deterministica de uma reserva (falha de upload ou fechamento
+   * do fluxo antes da conclusao). Substitui o antigo rollback manual
+   * (storage.remove + checagem de contagem) por uma unica chamada de API que
+   * aciona private.abandon_laudo_upload (marca o laudo como 'abandonado' com
+   * trilha auditavel) e a remocao do objeto de Storage com um cliente
+   * service_role no servidor. Se a propria chamada de abandono falhar/for
+   * ambigua, bloqueamos novo envio (fail-closed) em vez de arriscar reservas
+   * orfas acumuladas sem conseguirmos confirmar o estado.
+   */
+  async function abandonReservation(reservedLaudoId: string) {
+    try {
+      const res = await fetch(`/api/laudos/${reservedLaudoId}/abandon`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+      })
+      const body = await res.json().catch(() => null) as { ok?: boolean; storageCleanup?: string } | null
+      if (!res.ok || !body?.ok || body.storageCleanup === 'unconfirmed') {
+        setCleanupBlocked(true)
+      }
+    } catch {
+      setCleanupBlocked(true)
+    }
+  }
+
+  /** Etapa 1: reserva server-side do path canonico + upload do PDF ao Storage. */
   async function handleUpload() {
     if (!pdfFile || laudoId || cleanupBlocked || operationInFlightRef.current) return
     operationInFlightRef.current = true
     setErrorMsg(null)
 
     startTransition(async () => {
+      let reservedLaudoId: string | null = null
+
       try {
         setStatus('uploading')
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-        if (userError || !user) throw new LaudoUserError('Sessão expirada. Faça login novamente.')
 
-        const safeName = pdfFile.name
-          .normalize('NFKD')
-          .replace(/[^\w.-]+/g, '_')
-          .replace(/^_+|_+$/g, '') || 'laudo.pdf'
-        const fileName = `${user.id}/${Date.now()}_${safeName}`
+        // Etapa 1a: reserva server-side (contrato de Storage — ver
+        // docs/architecture/drafts/laudos-ia/claim-finalize-contract.md,
+        // secao 8). O browser NUNCA escolhe/gera o storage_path nem insere
+        // diretamente em laudos_pdf.
+        const reserveRes = await fetch('/api/laudos/reserve', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ pet_id: petId }),
+        })
+        const reserveBody = await reserveRes.json().catch(() => null) as {
+          ok?: boolean
+          laudoId?: string
+          storagePath?: string
+          bucket?: string
+        } | null
 
-        const { error: uploadError } = await supabase.storage
-          .from('laudos')
-          .upload(fileName, pdfFile, { contentType: 'application/pdf', upsert: false })
-        if (uploadError) throw new LaudoUserError(GENERIC_UPLOAD_ERROR)
-
-        setStatus('saving')
-        const { data: laudo, error: insertError } = await supabase
-          .from('laudos_pdf')
-          .insert({
-            pet_id: petId,
-            vet_id: user.id,
-            storage_path: fileName,
-            nome_arquivo: pdfFile.name,
-            tipo_exame: 'hemograma',
-            tamanho_bytes: pdfFile.size,
-          })
-          .select('id')
-          .single() as { data: { id: string } | null; error: Error | null }
-
-        if (insertError || !laudo) {
-          const { data: removedFiles, error: cleanupError } = await supabase.storage
-            .from('laudos')
-            .remove([fileName])
-
-          // Sem DELETE + SELECT no Storage, `remove` não confirma a limpeza.
-          // Bloqueamos novo envio para não multiplicar objetos órfãos.
-          if (cleanupError || removedFiles?.length !== 1) {
-            setCleanupBlocked(true)
-            throw new LaudoUserError(
-              'O envio não foi concluído e a limpeza automática não pôde ser confirmada. Não repita o envio; acione o suporte.'
-            )
-          }
-          throw new LaudoUserError('O PDF foi enviado, mas não pôde ser registrado. Tente novamente.')
+        if (reserveRes.status === 401) {
+          throw new LaudoUserError('Sessão expirada. Faça login novamente.')
+        }
+        if (!reserveRes.ok || !reserveBody?.ok || !reserveBody.laudoId || !reserveBody.storagePath) {
+          throw new LaudoUserError(GENERIC_UPLOAD_ERROR)
         }
 
-        setLaudoId(laudo.id)
+        reservedLaudoId = reserveBody.laudoId
+        const storagePath = reserveBody.storagePath
+        const bucket = reserveBody.bucket ?? 'laudos'
+
+        // Etapa 1b: upload direto ao Storage no path ja reservado. As policies
+        // aditivas (migration 20260718120000) autorizam este INSERT apenas
+        // porque existe uma reserva 'pendente' correspondente do proprio ator.
+        setStatus('saving')
+        const { error: uploadError } = await supabase.storage
+          .from(bucket)
+          .upload(storagePath, pdfFile, { contentType: 'application/pdf', upsert: false })
+
+        if (uploadError) {
+          await abandonReservation(reservedLaudoId)
+          throw new LaudoUserError(GENERIC_UPLOAD_ERROR)
+        }
+
+        setLaudoId(reservedLaudoId)
         setStatus('done')
       } catch (err) {
         if (process.env.NODE_ENV !== 'production') {

@@ -125,7 +125,7 @@ function PotassioCalc() {
         </Field>
         <div className="sm:col-span-2">
           <button type="submit" className="w-full py-3 rounded-xl bg-brand-600 text-white font-semibold text-sm hover:bg-brand-700 transition-colors">
-            Calcular suplementão de K⁺
+            Calcular suplementação de K⁺
           </button>
         </div>
       </form>
@@ -173,7 +173,7 @@ function PotassioCalc() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <Metric label="KCl a adicionar" value={res.kclMlToAdd.toFixed(2)} unit={`mL de KCl ${res.kclConc === 1.34 ? '10%' : '19,1%'}`} accent />
               <Metric label="mEq KCl/frasco" value={res.kclMeqPerBag.toFixed(1)} unit="mEq" />
-              <Metric label="Conc. no frasco" value={(res.kclConcInBag * 1000).toFixed(2)} unit="mEq/100mL" />
+              <Metric label="Conc. no frasco" value={(res.kclConcInBag * 1000).toFixed(2)} unit="mEq/L" />
               <Metric label="Taxa K⁺ entregue" value={res.deliveryRateMeqH.toFixed(3)} unit="mEq/h" />
             </div>
             <p className="mt-3 text-xs text-slate-500 flex items-start gap-1.5">
@@ -194,6 +194,7 @@ function PotassioCalc() {
 
 function BicarbonatoCalc() {
   const [res, setRes] = useState<{ deficit: number; dose25: number; dose50: number; volume84: number } | null>(null)
+  const [blocked, setBlocked] = useState<string | null>(null)
 
   function calc(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -202,6 +203,15 @@ function BicarbonatoCalc() {
     const w = parseFloat(fd.get('weight') as string)
     const target = parseFloat(fd.get('target') as string) || 14
     if (!hco3m || !w) return
+    // Fail-closed: sem alvo acima do medido não existe déficit positivo (nunca exibir dose negativa).
+    if (target <= hco3m) {
+      setRes(null)
+      setBlocked(
+        `HCO₃⁻ medido (${hco3m} mEq/L) já está no alvo ou acima dele (${target} mEq/L). Não há déficit a repor — reavalie a indicação com o veterinário responsável.`,
+      )
+      return
+    }
+    setBlocked(null)
     const deficit = (target - hco3m) * 0.3 * w
     setRes({
       deficit: Math.round(deficit * 10) / 10,
@@ -229,6 +239,12 @@ function BicarbonatoCalc() {
           </button>
         </div>
       </form>
+
+      {blocked && (
+        <div aria-live="polite">
+          <Alert type="warning">{blocked}</Alert>
+        </div>
+      )}
 
       {res && (
         <div className="space-y-4" aria-live="polite">
@@ -347,7 +363,7 @@ function FosforoCalc() {
       {res && (
         <div className="space-y-4" aria-live="polite">
           <div className="grid grid-cols-3 gap-3">
-            <Metric label="Taxa" value={res.mmolH.toString()} unit="mmol/kg/h" accent />
+            <Metric label="Taxa" value={res.mmolH.toString()} unit="mmol/h" accent />
             <Metric label="Duração" value={res.duration.toString()} unit="horas" />
             <Metric label="Total (dose)" value={res.totalMmol.toString()} unit="mmol" />
           </div>

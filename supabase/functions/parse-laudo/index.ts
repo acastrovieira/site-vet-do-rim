@@ -832,6 +832,67 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // ── Extract & Discard: etapas best-effort após finalize bem-sucedido ──
+    // Falhas aqui são logadas mas NÃO abortar o sucesso para o cliente;
+    // o cron /api/cron/cleanup-storage reconcilia qualquer PDF que sobrar.
+
+    // 1) Normaliza resultado_ia → exam_result_items (tabela estruturada)
+    try {
+      const { error: populateError } = await supabase.rpc(
+        "populate_exam_result_items",
+        { p_laudo_id: activeClaim.laudoId },
+      );
+      if (populateError) {
+        console.error("[parse-laudo] populate_exam_result_items falhou (nao critico).", {
+          message: populateError.message,
+          laudoId: activeClaim.laudoId,
+        });
+      }
+    } catch (populateErr) {
+      console.error("[parse-laudo] populate_exam_result_items excecao (nao critico).", {
+        message: populateErr instanceof Error ? populateErr.message : "erro desconhecido",
+        laudoId: activeClaim.laudoId,
+      });
+    }
+
+    // 2) Persiste o hash SHA-256 do PDF em laudos_pdf para trilha de auditoria
+    //    (mesmo que o arquivo seja deletado imediatamente em seguida).
+    try {
+      await supabase
+        .from("laudos_pdf")
+        .update({ pdf_sha256: pdfSha256 })
+        .eq("id", activeClaim.laudoId);
+    } catch (_hashErr) {
+      // Silencioso: o hash é auditoria, não é bloqueante.
+    }
+
+    // 3) Deleta o PDF do Storage imediatamente ("discard" da estratégia).
+    //    storage_path vem do claim, nunca do body — já validado pela RPC.
+    try {
+      const { error: storageError } = await supabase.storage
+        .from(claimResult.storage_bucket)
+        .remove([claimResult.storage_path]);
+
+      if (storageError) {
+        console.error("[parse-laudo] deleção do PDF falhou (sera recuperada pelo cron).", {
+          message: storageError.message,
+          laudoId: activeClaim.laudoId,
+          path: claimResult.storage_path,
+        });
+      } else {
+        // Marca no banco que o PDF foi deletado com sucesso
+        await supabase
+          .from("laudos_pdf")
+          .update({ storage_deleted_at: new Date().toISOString() })
+          .eq("id", activeClaim.laudoId);
+      }
+    } catch (storageErr) {
+      console.error("[parse-laudo] excecao ao deletar PDF do Storage (sera recuperada pelo cron).", {
+        message: storageErr instanceof Error ? storageErr.message : "erro desconhecido",
+        laudoId: activeClaim.laudoId,
+      });
+    }
+
     return ok({ success: true, data: resultadoIa, provider: providerUsed }, corsHeaders);
 
   } catch (error) {

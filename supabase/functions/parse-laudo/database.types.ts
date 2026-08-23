@@ -1,5 +1,5 @@
 export type ProfileRole = "vet" | "tutor" | "admin";
-export type LaudoStatus = "pendente" | "processando" | "concluido" | "erro";
+export type LaudoStatus = "pendente" | "processando" | "concluido" | "erro" | "abandonado";
 export type JsonObject = Record<string, unknown>;
 
 // AUDIT-001 Fase 2 (Tarefas 2.2/2.3): allowlist fechada de error_code aceita por
@@ -84,6 +84,8 @@ export type Database = {
           resultado_ia?: JsonObject | null;
           erro_ia?: string | null;
           ia_provenance?: JsonObject | null;
+          storage_deleted_at?: string | null;  // FEAT-001: timestamp de deleção do PDF
+          pdf_sha256?: string | null;           // FEAT-001: hash SHA-256 do PDF original
         };
         Relationships: [];
       };
@@ -130,6 +132,11 @@ export type Database = {
           p_error_code: LaudoIaErrorCode;
         };
         Returns: FinalizeRefundLaudoIaRow[];
+      };
+      // FEAT-001: normaliza resultado_ia → exam_result_items
+      populate_exam_result_items: {
+        Args: { p_laudo_id: string };
+        Returns: number;  // linhas inseridas/atualizadas
       };
     };
     Enums: Record<string, never>;

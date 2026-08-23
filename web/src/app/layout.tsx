@@ -1,5 +1,6 @@
 import { Inter, Playfair_Display } from 'next/font/google'
 import type { Metadata } from 'next'
+import { Analytics } from '@vercel/analytics/next'
 import { PostHogProvider } from '@/components/providers/PostHogProvider'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { MotionPreferencesProvider } from '@/components/providers/MotionPreferencesProvider'
@@ -97,6 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <CookieBanner />
           </MotionPreferencesProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   )

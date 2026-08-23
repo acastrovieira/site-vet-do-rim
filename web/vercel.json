@@ -69,6 +69,10 @@
     {
       "path": "/api/cron/keep-alive",
       "schedule": "0 22 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-storage",
+      "schedule": "0 3 * * *"
     }
   ]
 }

@@ -64,6 +64,22 @@
     {
       "file": "20260718120000_laudo_upload_reservation.sql",
       "sha256": "131a842042a34974e8ba22a49e6262bace50a6e5b86f79584981ece3107d2bcf"
+    },
+    {
+      "file": "20260823000000_perf_001_missing_indexes.sql",
+      "sha256": "1dadfd7feea87ec167ac39ca56e3321e6bd77011696783e118f818370b57edcd"
+    },
+    {
+      "file": "20260823000100_perf_002_rls_policy_optimization.sql",
+      "sha256": "46e57788c762122b7724ab3c31229e02ee58b90eb13fd5b32e3e110ff6225895"
+    },
+    {
+      "file": "20260823000200_exam_result_items.sql",
+      "sha256": "8b3eb789892add957554a3788d63faa3eaab268a5bd5ac71aa70826e8578965f"
+    },
+    {
+      "file": "20260823000300_pdf_lifecycle_and_populate.sql",
+      "sha256": "2bc5654be56098fdae5a45363dc157fa9b2a2f4394233fb08a78a0b06aed97f6"
     }
   ],
   "approvedHistoricalTransitions": [

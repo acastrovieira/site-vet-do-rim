@@ -67,11 +67,11 @@
     },
     {
       "file": "20260823000000_perf_001_missing_indexes.sql",
-      "sha256": "1dadfd7feea87ec167ac39ca56e3321e6bd77011696783e118f818370b57edcd"
+      "sha256": "8b4039266c29d00b5e74f173a15abd1fc6ba87cf099894b49fe4e0cfd4421311"
     },
     {
       "file": "20260823000100_perf_002_rls_policy_optimization.sql",
-      "sha256": "46e57788c762122b7724ab3c31229e02ee58b90eb13fd5b32e3e110ff6225895"
+      "sha256": "73ddbc13b5d090f2be36ba33d1b31be851317268040753e66b85c92f670f1860"
     },
     {
       "file": "20260823000200_exam_result_items.sql",
@@ -79,7 +79,15 @@
     },
     {
       "file": "20260823000300_pdf_lifecycle_and_populate.sql",
-      "sha256": "2bc5654be56098fdae5a45363dc157fa9b2a2f4394233fb08a78a0b06aed97f6"
+      "sha256": "1036ce73fc41397a852dfd4156c919b53c978b543714471ccdd63e2fe86941e9"
+    },
+    {
+      "file": "20260823234842_sprint0_security_forward_hardening.sql",
+      "sha256": "7f22061d317b282d55557411166313a7ff67f9902e16f6c13d0c7a53d5feb57e"
+    },
+    {
+      "file": "20260824004343_distributed_rate_limit.sql",
+      "sha256": "4c242dc7a89f7ed027e61a6e709274c33d027571f77aab939e8e8b23743b7f8b"
     }
   ],
   "approvedHistoricalTransitions": [
@@ -91,6 +99,33 @@
       "remoteReconciliationRequired": true,
       "ticket": "AUDIT-001",
       "reason": "The active baseline never creates public.subscriptions, so a guarded policy statement is required for deterministic fresh replay; the remote artifact remains unknown and must be reconciled read-only before release."
+    },
+    {
+      "file": "20260823000000_perf_001_missing_indexes.sql",
+      "baseSha256": "1dadfd7feea87ec167ac39ca56e3321e6bd77011696783e118f818370b57edcd",
+      "currentSha256": "8b4039266c29d00b5e74f173a15abd1fc6ba87cf099894b49fe4e0cfd4421311",
+      "remoteArtifactSha256": null,
+      "remoteReconciliationRequired": true,
+      "ticket": "AUDIT-001",
+      "reason": "The verification query referenced nonexistent pg_stat_user_indexes columns; only the catalog column aliases were corrected so a clean local replay can finish without changing any index definition."
+    },
+    {
+      "file": "20260823000100_perf_002_rls_policy_optimization.sql",
+      "baseSha256": "46e57788c762122b7724ab3c31229e02ee58b90eb13fd5b32e3e110ff6225895",
+      "currentSha256": "73ddbc13b5d090f2be36ba33d1b31be851317268040753e66b85c92f670f1860",
+      "remoteArtifactSha256": null,
+      "remoteReconciliationRequired": true,
+      "ticket": "AUDIT-001",
+      "reason": "The migration called public.current_user_is_admin after that helper had been moved to private; only those schema-qualified references and the matching comment were corrected for deterministic replay."
+    },
+    {
+      "file": "20260823000300_pdf_lifecycle_and_populate.sql",
+      "baseSha256": "2bc5654be56098fdae5a45363dc157fa9b2a2f4394233fb08a78a0b06aed97f6",
+      "currentSha256": "1036ce73fc41397a852dfd4156c919b53c978b543714471ccdd63e2fe86941e9",
+      "remoteArtifactSha256": null,
+      "remoteReconciliationRequired": true,
+      "ticket": "AUDIT-001",
+      "reason": "PostgreSQL rejects CREATE INDEX CONCURRENTLY inside this migration's explicit transaction; the single index build was made non-concurrent without changing its columns or predicate."
     }
   ]
 }

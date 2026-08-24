@@ -1,45 +1,17 @@
 'use client'
 
 import { useState, useCallback, useTransition, useEffect, useId, useRef } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { resolveLaudoFunctionFailure } from '@/lib/lab/function-error'
+import type { ResultadoIA } from '@/lib/lab/transform-laudo-data'
+import type { HemogramaKey } from '@/lib/lab/reference-values'
+import { LocalExtractionReview } from './LocalExtractionReview'
 import {
   Upload, FileText, Loader2, CheckCircle2, AlertTriangle,
-  ChevronDown, ChevronUp, Zap, FlaskConical, MessageCircle
+  ChevronDown, ChevronUp, Zap, FlaskConical, MessageCircle, ExternalLink
 } from 'lucide-react'
-
-interface HemogramaResult {
-  paciente: {
-    nome: string; especie: string; raca: string; idade: string
-    peso_kg: number | null; tutor: string
-  }
-  serie_vermelha: {
-    hemacias: number | null; hemoglobina: number | null
-    hematocrito: number | null; vcm: number | null
-    hcm: number | null; chcm: number | null; rdw: number | null
-  }
-  serie_branca: {
-    leucocitos_totais: number | null; neutrofilos_segmentados: number | null
-    neutrofilos_bastoes: number | null; linfocitos: number | null
-    monocitos: number | null; eosinofilos: number | null; basofilos: number | null
-  }
-  plaquetas: { contagem: number | null; vpm: number | null }
-  bioquimica: {
-    ureia: number | null; creatinina: number | null
-    alt_tgp: number | null; ast_tgo: number | null
-    fosforo: number | null; potassio: number | null
-    sodio: number | null; albumina: number | null; proteina_total: number | null
-  }
-  interpretacao_ia: {
-    resumo: string
-    achados_relevantes: string[]
-    alertas: string[]
-    estadiamento_iris_sugerido: string | null
-  }
-  laboratorio: string | null
-  data_coleta: string | null
-  data_resultado: string | null
-}
 
 const SUPPORT_HREF = `https://wa.me/5527997987058?text=${encodeURIComponent(
   'Ola! Tive uma falha ao processar um laudo no Lab Evolution e preciso de suporte. Nao enviarei dados do paciente por aqui.',
@@ -82,6 +54,11 @@ function ValueRow({ label, value, unit }: { label: string; value: number | null;
   )
 }
 
+function reviewedUnit(result: ResultadoIA, key: HemogramaKey, legacyUnit: string) {
+  if (!result.extracao_local?.reviewed) return legacyUnit
+  return result.extracao_local.items.find((item) => item.parametro === key)?.unidade ?? ''
+}
+
 function Section({ title, children, defaultOpen = true }: {
   title: string; children: React.ReactNode; defaultOpen?: boolean
 }) {
@@ -105,17 +82,18 @@ function Section({ title, children, defaultOpen = true }: {
 }
 
 /**
- * Upload de laudo PDF com análise por IA e visualização side-by-side.
+ * Upload de laudo PDF com extração local gratuita e análise por IA opcional.
  * STORY-403: UI Lab Evolution para laudos.
  */
 export function LaudoUploader({ petId }: { petId: string }) {
   const [supabase] = useState(() => createClient())
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [dragActive, setDragActive] = useState(false)
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [status, setStatus] = useState<'idle' | 'uploading' | 'saving' | 'analyzing' | 'done' | 'error'>('idle')
-  const [result, setResult] = useState<HemogramaResult | null>(null)
+  const [result, setResult] = useState<ResultadoIA | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [aiQuota, setAiQuota] = useState<{ used: number; limit: number } | null>(null)
   const [aiQuotaStatus, setAiQuotaStatus] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -224,10 +202,33 @@ export function LaudoUploader({ petId }: { petId: string }) {
       const body = await res.json().catch(() => null) as { ok?: boolean; storageCleanup?: string } | null
       if (!res.ok || !body?.ok || body.storageCleanup === 'unconfirmed') {
         setCleanupBlocked(true)
+        return false
       }
+      return true
     } catch {
       setCleanupBlocked(true)
+      return false
     }
+  }
+
+  async function handleClearPdf() {
+    if (isPending || operationInFlightRef.current) return
+    if (laudoId && !result) {
+      const confirmed = window.confirm(
+        'Este PDF já foi enviado. Ao trocar o arquivo, a reserva pendente será descartada e o PDF removido. Deseja continuar?',
+      )
+      if (!confirmed) return
+      operationInFlightRef.current = true
+      setStatus('saving')
+      const abandoned = await abandonReservation(laudoId)
+      operationInFlightRef.current = false
+      if (!abandoned) {
+        setStatus('error')
+        setErrorMsg('Não foi possível descartar o PDF com segurança. Recarregue a página antes de tentar novamente.')
+        return
+      }
+    }
+    clearPdf()
   }
 
   /** Etapa 1: reserva server-side do path canonico + upload do PDF ao Storage. */
@@ -257,13 +258,16 @@ export function LaudoUploader({ petId }: { petId: string }) {
           laudoId?: string
           storagePath?: string
           bucket?: string
+          error?: string
         } | null
 
         if (reserveRes.status === 401) {
           throw new LaudoUserError('Sessão expirada. Faça login novamente.')
         }
         if (!reserveRes.ok || !reserveBody?.ok || !reserveBody.laudoId || !reserveBody.storagePath) {
-          throw new LaudoUserError(GENERIC_UPLOAD_ERROR)
+          throw new LaudoUserError(
+            typeof reserveBody?.error === 'string' ? reserveBody.error : GENERIC_UPLOAD_ERROR,
+          )
         }
 
         reservedLaudoId = reserveBody.laudoId
@@ -332,9 +336,10 @@ export function LaudoUploader({ petId }: { petId: string }) {
         }
         if (!fnRes.data?.data) throw new LaudoUserError(GENERIC_AI_ERROR)
 
-        setResult(fnRes.data.data as HemogramaResult)
+        setResult(fnRes.data.data as ResultadoIA)
         setAiQuota((quota) => quota ? { ...quota, used: quota.used + 1 } : quota)
         setStatus('done')
+        router.refresh()
       } catch (err) {
         if (process.env.NODE_ENV !== 'production') {
           console.error('[LaudoUploader] analysis failed', {
@@ -348,6 +353,8 @@ export function LaudoUploader({ petId }: { petId: string }) {
       }
     })
   }
+
+  const isLocalResult = Boolean(result?.extracao_local?.reviewed)
 
   return (
     <div className="space-y-5">
@@ -390,9 +397,20 @@ export function LaudoUploader({ petId }: { petId: string }) {
             <div className="flex items-center gap-2 px-4 py-3 bg-white dark:bg-[#0F2244] border-b border-slate-100 dark:border-white/10">
               <FileText className="h-4 w-4 text-slate-400" aria-hidden />
               <span className="text-sm font-medium text-slate-700 dark:text-science-100 truncate flex-1">{pdfFile.name}</span>
+              {pdfUrl ? (
+                <a
+                  href={pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center gap-1 px-2 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-300"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                  Abrir PDF
+                </a>
+              ) : null}
               <button
                 type="button"
-                onClick={clearPdf}
+                onClick={() => void handleClearPdf()}
                 disabled={isPending || cleanupBlocked}
                 className="text-xs text-slate-400 hover:text-red-500 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -420,12 +438,29 @@ export function LaudoUploader({ petId }: { petId: string }) {
                   className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-bold text-sm hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg shadow-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Zap className="h-4 w-4" aria-hidden />
-                  {status === 'error' ? 'Tentar novamente' : 'Salvar laudo no sistema'}
+                  {status === 'error' ? 'Tentar envio novamente' : '1. Enviar PDF ao histórico'}
                 </button>
                 <p className="text-center text-xs text-slate-400 dark:text-science-400">
-                  O arquivo será salvo com segurança no seu histórico clínico.
+                  Você também pode extrair e revisar os valores gratuitamente neste dispositivo.
                 </p>
               </div>
+            )}
+
+            {/* Mantém o rascunho montado durante upload/reserva. Desmontar este
+                componente apagava a revisão local antes de o laudoId existir. */}
+            {!result && status !== 'analyzing' && (
+              <LocalExtractionReview
+                key={`${pdfFile.name}-${pdfFile.size}-${pdfFile.lastModified}`}
+                file={pdfFile}
+                laudoId={laudoId}
+                disabled={isPending || cleanupBlocked}
+                onSaved={(localResult) => {
+                  setResult(localResult)
+                  setStatus('done')
+                  setErrorMsg(null)
+                  router.refresh()
+                }}
+              />
             )}
 
             {/* Progresso: upload */}
@@ -463,7 +498,7 @@ export function LaudoUploader({ petId }: { petId: string }) {
                   <div>
                     <p className="text-sm font-semibold text-green-800 dark:text-green-300">PDF salvo com sucesso!</p>
                     <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-                      O laudo está seguro no histórico do paciente.
+                      Confira abaixo os valores extraídos gratuitamente ou, se preferir, use a análise de IA opcional.
                     </p>
                   </div>
                 </div>
@@ -485,7 +520,7 @@ export function LaudoUploader({ petId }: { petId: string }) {
                         ? 'Limite de análises atingido'
                         : status === 'error'
                           ? 'Tentar análise novamente'
-                          : 'Analisar com IA (opcional)'}
+                          : '2. Analisar com IA e gerar tabela'}
                 </button>
                 {aiQuotaStatus === 'error' && (
                   <p role="alert" className="text-center text-xs text-amber-700 dark:text-amber-300">
@@ -529,14 +564,22 @@ export function LaudoUploader({ petId }: { petId: string }) {
               </div>
             )}
 
-            {/* Resultado da IA */}
+            {/* Resultado estruturado: IA opcional ou extração local revisada */}
             {result && status === 'done' && (
               <div className="space-y-3" aria-live="polite">
+                <Link
+                  href={`/lab/pacientes/${petId}#evolucao-laboratorial`}
+                  className="flex min-h-11 items-center justify-center rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
+                >
+                  Ver tabela evolutiva do paciente
+                </Link>
                 {/* Interpretação */}
                 <div className="bg-gradient-to-br from-brand-50 to-blue-50 dark:from-brand-500/10 dark:to-blue-500/10 rounded-xl border border-brand-100 dark:border-brand-400/20 p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <CheckCircle2 className="h-5 w-5 text-brand-500" aria-hidden />
-                    <span className="font-semibold text-brand-800 dark:text-science-100 text-sm">Análise concluída</span>
+                    <span className="font-semibold text-brand-800 dark:text-science-100 text-sm">
+                      {isLocalResult ? 'Resultados conferidos' : 'Análise concluída'}
+                    </span>
                     {result.interpretacao_ia.estadiamento_iris_sugerido && (
                       <span className="ml-auto px-2.5 py-0.5 rounded-full bg-brand-500 text-white text-xs font-bold">
                         {result.interpretacao_ia.estadiamento_iris_sugerido}
@@ -559,34 +602,34 @@ export function LaudoUploader({ petId }: { petId: string }) {
 
                 {/* Séries hematológicas */}
                 <Section title="🔴 Série Vermelha">
-                  <ValueRow label="Hemácias" value={result.serie_vermelha.hemacias} unit="×10⁶/µL" />
-                  <ValueRow label="Hemoglobina" value={result.serie_vermelha.hemoglobina} unit="g/dL" />
-                  <ValueRow label="Hematócrito" value={result.serie_vermelha.hematocrito} unit="%" />
-                  <ValueRow label="VCM" value={result.serie_vermelha.vcm} unit="fL" />
-                  <ValueRow label="HCM" value={result.serie_vermelha.hcm} unit="pg" />
-                  <ValueRow label="CHCM" value={result.serie_vermelha.chcm} unit="g/dL" />
+                  <ValueRow label="Hemácias" value={result.serie_vermelha.hemacias} unit={reviewedUnit(result, 'hemacias', '×10⁶/µL')} />
+                  <ValueRow label="Hemoglobina" value={result.serie_vermelha.hemoglobina} unit={reviewedUnit(result, 'hemoglobina', 'g/dL')} />
+                  <ValueRow label="Hematócrito" value={result.serie_vermelha.hematocrito} unit={reviewedUnit(result, 'hematocrito', '%')} />
+                  <ValueRow label="VCM" value={result.serie_vermelha.vcm} unit={reviewedUnit(result, 'vcm', 'fL')} />
+                  <ValueRow label="HCM" value={result.serie_vermelha.hcm} unit={reviewedUnit(result, 'hcm', 'pg')} />
+                  <ValueRow label="CHCM" value={result.serie_vermelha.chcm} unit={reviewedUnit(result, 'chcm', 'g/dL')} />
                 </Section>
 
                 <Section title="⚪ Série Branca" defaultOpen={false}>
-                  <ValueRow label="Leucócitos totais" value={result.serie_branca.leucocitos_totais} unit="/µL" />
-                  <ValueRow label="Neutrófilos segm." value={result.serie_branca.neutrofilos_segmentados} unit="/µL" />
-                  <ValueRow label="Linfócitos" value={result.serie_branca.linfocitos} unit="/µL" />
-                  <ValueRow label="Monócitos" value={result.serie_branca.monocitos} unit="/µL" />
-                  <ValueRow label="Eosinófilos" value={result.serie_branca.eosinofilos} unit="/µL" />
+                  <ValueRow label="Leucócitos totais" value={result.serie_branca.leucocitos_totais} unit={reviewedUnit(result, 'leucocitos_totais', '/µL')} />
+                  <ValueRow label="Neutrófilos segm." value={result.serie_branca.neutrofilos_segmentados} unit={reviewedUnit(result, 'neutrofilos_segmentados', '/µL')} />
+                  <ValueRow label="Linfócitos" value={result.serie_branca.linfocitos} unit={reviewedUnit(result, 'linfocitos', '/µL')} />
+                  <ValueRow label="Monócitos" value={result.serie_branca.monocitos} unit={reviewedUnit(result, 'monocitos', '/µL')} />
+                  <ValueRow label="Eosinófilos" value={result.serie_branca.eosinofilos} unit={reviewedUnit(result, 'eosinofilos', '/µL')} />
                 </Section>
 
                 <Section title="🧪 Bioquímica Renal" defaultOpen={true}>
-                  <ValueRow label="Ureia" value={result.bioquimica.ureia} unit="mg/dL" />
-                  <ValueRow label="Creatinina" value={result.bioquimica.creatinina} unit="mg/dL" />
-                  <ValueRow label="Fósforo" value={result.bioquimica.fosforo} unit="mg/dL" />
-                  <ValueRow label="Potássio" value={result.bioquimica.potassio} unit="mEq/L" />
-                  <ValueRow label="Sódio" value={result.bioquimica.sodio} unit="mEq/L" />
-                  <ValueRow label="Albumina" value={result.bioquimica.albumina} unit="g/dL" />
+                  <ValueRow label="Ureia" value={result.bioquimica.ureia} unit={reviewedUnit(result, 'ureia', 'mg/dL')} />
+                  <ValueRow label="Creatinina" value={result.bioquimica.creatinina} unit={reviewedUnit(result, 'creatinina', 'mg/dL')} />
+                  <ValueRow label="Fósforo" value={result.bioquimica.fosforo} unit={reviewedUnit(result, 'fosforo', 'mg/dL')} />
+                  <ValueRow label="Potássio" value={result.bioquimica.potassio} unit={reviewedUnit(result, 'potassio', 'mEq/L')} />
+                  <ValueRow label="Sódio" value={result.bioquimica.sodio} unit={reviewedUnit(result, 'sodio', 'mEq/L')} />
+                  <ValueRow label="Albumina" value={result.bioquimica.albumina} unit={reviewedUnit(result, 'albumina', 'g/dL')} />
                 </Section>
 
                 <Section title="💊 Plaquetas" defaultOpen={false}>
-                  <ValueRow label="Contagem" value={result.plaquetas.contagem} unit="×10³/µL" />
-                  <ValueRow label="VPM" value={result.plaquetas.vpm} unit="fL" />
+                  <ValueRow label="Contagem" value={result.plaquetas.contagem} unit={reviewedUnit(result, 'plaquetas_contagem', '×10³/µL')} />
+                  <ValueRow label="VPM" value={result.plaquetas.vpm} unit={reviewedUnit(result, 'plaquetas_vpm', 'fL')} />
                 </Section>
 
                 {/* Achados relevantes */}

@@ -20,6 +20,9 @@ try {
 }
 
 const repoRoot = resolve(process.cwd(), '..')
+const localSupabaseCli = join(process.cwd(), 'node_modules', 'supabase', 'dist', 'supabase.js')
+const supabaseCommand = existsSync(localSupabaseCli) ? process.execPath : 'supabase'
+const supabaseArgsPrefix = existsSync(localSupabaseCli) ? [localSupabaseCli] : []
 const checks = []
 const localEnv = loadLocalEnv()
 const remoteTimeoutMs = getRemoteReadinessTimeoutMs(
@@ -31,16 +34,12 @@ function addCheck(name, ok, detail, status = ok ? 'passed' : 'failed') {
 }
 
 function runCommand(command, args = []) {
-  return spawnSync(
-    process.platform === 'win32' ? [command, ...args].join(' ') : command,
-    process.platform === 'win32' ? [] : args,
-    {
-      cwd: process.cwd(),
-      encoding: 'utf8',
-      shell: process.platform === 'win32',
-      timeout: remoteTimeoutMs,
-    },
-  )
+  return spawnSync(command, args, {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    shell: false,
+    timeout: remoteTimeoutMs,
+  })
 }
 
 function commandVersion(command, args = ['--version']) {
@@ -56,7 +55,13 @@ function commandVersion(command, args = ['--version']) {
 }
 
 function listSecretNames(projectRef) {
-  const result = runCommand('supabase', ['secrets', 'list', '--project-ref', projectRef])
+  const result = runCommand(supabaseCommand, [
+    ...supabaseArgsPrefix,
+    'secrets',
+    'list',
+    '--project-ref',
+    projectRef,
+  ])
   if (result.status !== 0) {
     return {
       ok: false,
@@ -124,8 +129,8 @@ async function apiKeyCheck(url, key) {
   }
 }
 
-const supabase = commandVersion('supabase')
-addCheck('Supabase CLI no PATH', supabase.ok, supabase.output ?? 'nao encontrado')
+const supabase = commandVersion(supabaseCommand, [...supabaseArgsPrefix, '--version'])
+addCheck('Supabase CLI disponivel', supabase.ok, supabase.output ?? 'nao encontrado')
 
 const deno = commandVersion('deno')
 addCheck('Deno no PATH para Edge Function check', deno.ok, deno.output ?? 'nao encontrado')
@@ -206,18 +211,32 @@ addCheck('Chave publica aceita pelo Supabase', publicGateway.ok, publicGateway.d
 addCheck('Chave administrativa aceita pelo Supabase', serviceGateway.ok, serviceGateway.detail, remoteStatus)
 addCheck('Secrets da Edge Function consultaveis', secrets.ok, secrets.detail, remoteStatus)
 
+const defaultHostedEdgeSecrets = new Set([
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY',
+])
+
 for (const name of [
   'SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
   'OPENAI_API_KEY',
+  'GEMINI_API_KEY',
   'OPENAI_MODEL',
+  'GEMINI_MODEL',
 ]) {
-  const present = secrets.names.has(name)
+  const providedByPlatform = defaultHostedEdgeSecrets.has(name)
+  const present = providedByPlatform || secrets.names.has(name)
   addCheck(
     `Secret ${name} configurado`,
     present,
-    present ? 'presente' : allowRemote ? 'ausente' : 'nao consultado',
-    remoteStatus,
+    providedByPlatform
+      ? 'fornecido automaticamente pela plataforma hospedada'
+      : present
+        ? 'presente'
+        : allowRemote
+          ? 'ausente'
+          : 'nao consultado',
+    providedByPlatform ? undefined : remoteStatus,
   )
 }
 
@@ -238,9 +257,7 @@ const localUploadPrerequisites = localLabPrerequisites &&
   configExists
 const remoteUploadVerified = remoteLabVerified &&
   secrets.ok &&
-  secrets.names.has('SUPABASE_URL') &&
-  secrets.names.has('SUPABASE_SERVICE_ROLE_KEY') &&
-  secrets.names.has('OPENAI_API_KEY')
+  (secrets.names.has('OPENAI_API_KEY') || secrets.names.has('GEMINI_API_KEY'))
 const uploadIaReady = localUploadPrerequisites && remoteUploadVerified
 const overallOk = allowRemote ? uploadIaReady : localUploadPrerequisites
 

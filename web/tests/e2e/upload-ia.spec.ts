@@ -78,15 +78,16 @@ test.describe('Upload/IA de laudos', () => {
     })
 
     await expect(page.getByText(`laudo-upload-ia-${runId}.pdf`)).toBeVisible()
-    await page.getByRole('button', { name: /Salvar laudo no sistema/i }).click()
+    await page.getByRole('button', { name: /Enviar PDF ao histórico/i }).click()
     await expect(page.getByText(/PDF salvo com sucesso/i)).toBeVisible({ timeout: 30_000 })
 
-    const analyzeButton = page.getByRole('button', { name: /Analisar com IA/i })
+    const analyzeButton = page.getByRole('button', { name: /Analisar com IA e gerar tabela/i })
     await expect(analyzeButton).toBeEnabled()
     await analyzeButton.click()
 
     await expect(page.getByText(/IA analisando|Análise concluída|AnÃ¡lise concluÃ­da/i)).toBeVisible()
     await expect(page.getByText(/Análise concluída|AnÃ¡lise concluÃ­da/i)).toBeVisible({ timeout: 150_000 })
     await expect(page.getByText(/Creatinina|Ureia|Achados relevantes|Bioqu/i).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: /Ver tabela evolutiva do paciente/i })).toBeVisible()
   })
 })

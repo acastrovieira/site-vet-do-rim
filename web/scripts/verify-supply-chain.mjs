@@ -13,7 +13,7 @@ const targets = [
   {
     manifest: 'web/package.json',
     lockfile: 'web/package-lock.json',
-    lifecycleAllowlist: ['core-js', 'fsevents', 'sharp', 'unrs-resolver'],
+    lifecycleAllowlist: ['core-js', 'fsevents', 'tesseract.js', 'unrs-resolver'],
   },
   {
     manifest: '.aiox-core/package.json',

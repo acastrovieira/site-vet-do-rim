@@ -667,17 +667,18 @@ test('authenticated UI prevents duplicate mutations and false clinical reference
     resolve(webRoot, 'src/components/lab/LabEvolutionTable.tsx'),
     'utf8',
   )
-  assert.match(evolutionTable, /resolveReferenceSpecies\(especie\)/)
-  assert.match(evolutionTable, /referenceSpecies \? getRefForSpecies\(especie\) : \{\}/)
-  assert.match(evolutionTable, /Referência indisponível para esta espécie/)
+  assert.doesNotMatch(evolutionTable, /getRefForSpecies|resolveReferenceSpecies/)
+  assert.match(evolutionTable, /observationsHaveComparableUnits\(row\.values\)/)
+  assert.match(evolutionTable, /Faixa impressa no laudo quando completa/)
   assert.match(evolutionTable, /aria-expanded=\{!isCollapsed\}/)
 
   const patientPage = readFileSync(
     resolve(webRoot, 'src/app/lab/pacientes/[petId]/page.tsx'),
     'utf8',
   )
-  assert.match(patientPage, /pendente: \{ label: 'Aguardando análise'/)
+  assert.match(patientPage, /pendente: \{ label: 'Aguardando extração'/)
   assert.match(patientPage, /processando: \{ label: 'Processando'/)
+  assert.match(patientPage, /abandonado: \{ label: 'Descartado'/)
 })
 
 test('registration and theme controls remain visible in light and dark modes', () => {

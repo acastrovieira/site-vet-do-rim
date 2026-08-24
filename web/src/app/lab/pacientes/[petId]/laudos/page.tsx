@@ -20,16 +20,17 @@ interface Props {
 const PAGE_SIZE = 25
 
 const LAUDO_STATUS: Record<string, { label: string; color: string }> = {
-  pendente: { label: 'Aguardando análise', color: 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-science-100' },
+  pendente: { label: 'Aguardando extração', color: 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-science-100' },
   processando: { label: 'Processando', color: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300' },
   concluido: { label: 'Concluído', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' },
   erro: { label: 'Falha', color: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300' },
+  abandonado: { label: 'Descartado', color: 'bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-science-500' },
 }
 
 export function generateMetadata(): Metadata {
   return {
     title: `Laudos do Paciente — Lab Evolution`,
-    description: 'Envio e análise de laudos veterinários no Lab Evolution.',
+    description: 'Envio, extração local e acompanhamento de laudos veterinários no Lab Evolution.',
     robots: { index: false, follow: false },
   }
 }

@@ -1,7 +1,9 @@
 /**
- * Valores de referência para exames laboratoriais veterinários.
- * Agrupados por espécie (canino/felino).
- * Fonte: referências clínicas padrão de patologia veterinária.
+ * Catálogo legado, sem proveniência laboratorial/versionamento homologados.
+ *
+ * @deprecated Não usar os intervalos para classificar novos resultados nem
+ * preencher unidade/faixa ausente. Mantido temporariamente para metadados de
+ * rótulo/categoria e compatibilidade até decisão do patologista responsável.
  */
 
 export interface RefRange {
@@ -59,7 +61,7 @@ export const CANINE_REF: Record<HemogramaKey, RefRange> = {
   basofilos:                { min: 0,     max: 100,   unit: '/µL', label: 'Basófilos', category: 'Série Branca' },
 
   // Plaquetas
-  plaquetas_contagem: { min: 175000, max: 500000, unit: '×10³/µL', label: 'Plaquetas', category: 'Plaquetas' },
+  plaquetas_contagem: { min: 175000, max: 500000, unit: '/µL', label: 'Plaquetas', category: 'Plaquetas' },
   plaquetas_vpm:      { min: 6.1,    max: 10.1,   unit: 'fL',      label: 'VPM', category: 'Plaquetas' },
 
   // Bioquímica Renal
@@ -99,7 +101,7 @@ export const FELINE_REF: Record<HemogramaKey, RefRange> = {
   basofilos:                { min: 0,     max: 100,   unit: '/µL', label: 'Basófilos', category: 'Série Branca' },
 
   // Plaquetas
-  plaquetas_contagem: { min: 175000, max: 500000, unit: '×10³/µL', label: 'Plaquetas', category: 'Plaquetas' },
+  plaquetas_contagem: { min: 175000, max: 500000, unit: '/µL', label: 'Plaquetas', category: 'Plaquetas' },
   plaquetas_vpm:      { min: 5.0,    max: 12.0,   unit: 'fL',      label: 'VPM', category: 'Plaquetas' },
 
   // Bioquímica Renal

@@ -199,22 +199,56 @@ export function validateManifestAppendOnly(baseManifest, currentManifest) {
     currentManifest.migrations.map(({ file, sha256: digest }) => ({ file, sha256: digest })),
   )
 
+  if (current.transitions.length < base.transitions.length) {
+    throw new Error('approved historical transition ledger must preserve its immutable prefix')
+  }
+
+  const currentPrefix = current.transitions.slice(0, base.transitions.length)
+  if (JSON.stringify(base.transitions) !== JSON.stringify(currentPrefix)) {
+    throw new Error('approved historical transition ledger must preserve its immutable prefix')
+  }
+
+  const appendedTransitions = current.transitions.slice(base.transitions.length)
+  const appendedByFile = new Map(appendedTransitions.map((event) => [event.file, event]))
+  const baseByFile = new Map(base.migrations.map((row) => [row.file, row]))
   const currentByFile = new Map(current.migrations.map((row) => [row.file, row]))
+
   for (const baseRow of base.migrations) {
     const currentRow = currentByFile.get(baseRow.file)
-    if (!currentRow || currentRow.sha256 !== baseRow.sha256) {
-      throw new Error(`published manifest entry changed or disappeared: ${baseRow.file}`)
+    if (!currentRow) {
+      throw new Error(`historical migration removed or renamed: ${baseRow.file}`)
+    }
+    if (currentRow.sha256 === baseRow.sha256) continue
+
+    const event = appendedByFile.get(baseRow.file)
+    if (
+      !event ||
+      event.baseSha256 !== baseRow.sha256 ||
+      event.currentSha256 !== currentRow.sha256
+    ) {
+      throw new Error(`historical manifest row changed without an exact appended transition: ${baseRow.file}`)
+    }
+  }
+
+  for (const event of appendedTransitions) {
+    const baseRow = baseByFile.get(event.file)
+    const currentRow = currentByFile.get(event.file)
+    if (
+      !baseRow ||
+      !currentRow ||
+      baseRow.sha256 === currentRow.sha256 ||
+      event.baseSha256 !== baseRow.sha256 ||
+      event.currentSha256 !== currentRow.sha256
+    ) {
+      throw new Error(`appended transition does not match a changed historical manifest row: ${event.file}`)
     }
   }
 
   validateAppendOnlyMigrations(
     base.migrations.map(({ file, sha256: digest }) => ({ file, sha256: digest })),
     current.migrations.map(({ file, sha256: digest }) => ({ file, sha256: digest })),
+    appendedTransitions,
   )
-
-  if (JSON.stringify(base.transitions) !== JSON.stringify(current.transitions)) {
-    throw new Error('approved historical transition ledger is immutable after bootstrap')
-  }
 
   return true
 }

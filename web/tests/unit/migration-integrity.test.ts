@@ -26,6 +26,18 @@ function manifest(
   }
 }
 
+function transition(file: string, baseSha256: string, currentSha256: string) {
+  return {
+    file,
+    baseSha256,
+    currentSha256,
+    remoteArtifactSha256: null,
+    remoteReconciliationRequired: true,
+    ticket: 'AUDIT-999',
+    reason: 'Audited repository transition with remote artifact equality explicitly unresolved.',
+  }
+}
+
 test('migration manifest matches every active SQL byte hash and rejects drift', () => {
   const rows = [migration('20260101000000_initial.sql', digest('a'))]
   assert.doesNotThrow(() => validateMigrationManifest(manifest(rows), rows))
@@ -63,7 +75,7 @@ test('historical migrations are append-only except for one exact disclosed trans
   )
 })
 
-test('new migrations must be newer and published manifest history cannot be rewritten', () => {
+test('new migrations must use a version greater than the published maximum', () => {
   const baseRows = [migration('20260102000000_initial.sql', digest('a'))]
   const invalidCurrent = [
     migration('20260101000000_backdated.sql', digest('b')),
@@ -74,30 +86,78 @@ test('new migrations must be newer and published manifest history cannot be rewr
     /must have a version greater/u,
   )
 
-  const baseManifest = manifest(baseRows)
-  const currentManifest = manifest([
-    ...baseRows,
-    migration('20260103000000_forward.sql', digest('c')),
-  ])
+})
+
+test('manifest ledger preserves its immutable prefix and permits exact appended transitions', () => {
+  const baseRows = [
+    migration('20260101000000_initial.sql', digest('b')),
+    migration('20260102000000_feature.sql', digest('c')),
+  ]
+  const publishedTransition = transition(baseRows[0].file, digest('a'), digest('b'))
+  const baseManifest = manifest(baseRows, [publishedTransition])
+  const currentRows = [
+    baseRows[0],
+    migration(baseRows[1].file, digest('d')),
+    migration('20260103000000_forward.sql', digest('e')),
+  ]
+  const appendedTransition = transition(baseRows[1].file, digest('c'), digest('d'))
+  const currentManifest = manifest(currentRows, [publishedTransition, appendedTransition])
+
   assert.equal(validateManifestAppendOnly(baseManifest, currentManifest), true)
 
-  const inventedTransition = manifest(currentManifest.migrations, [{
-    file: baseRows[0].file,
-    baseSha256: digest('e'),
-    currentSha256: baseRows[0].sha256,
-    remoteArtifactSha256: null,
-    remoteReconciliationRequired: true,
-    ticket: 'AUDIT-999',
-    reason: 'This transition was never observed in the published base manifest or migration bytes.',
-  }])
+  const reordered = manifest(currentRows, [appendedTransition, publishedTransition])
   assert.throws(
-    () => validateManifestAppendOnly(baseManifest, inventedTransition),
-    /transition ledger is immutable/u,
+    () => validateManifestAppendOnly(baseManifest, reordered),
+    /immutable prefix/u,
   )
 
-  const rewritten = manifest([migration(baseRows[0].file, digest('d'))])
+  const rewrittenPublished = {
+    ...publishedTransition,
+    reason: 'A rewritten explanation must not replace the already published ledger event.',
+  }
   assert.throws(
-    () => validateManifestAppendOnly(baseManifest, rewritten),
-    /published manifest entry changed/u,
+    () => validateManifestAppendOnly(
+      baseManifest,
+      manifest(currentRows, [rewrittenPublished, appendedTransition]),
+    ),
+    /immutable prefix/u,
+  )
+})
+
+test('every changed historical manifest row requires one exact appended event', () => {
+  const baseRows = [migration('20260102000000_initial.sql', digest('a'))]
+  const changedRows = [migration(baseRows[0].file, digest('b'))]
+
+  assert.throws(
+    () => validateManifestAppendOnly(manifest(baseRows), manifest(changedRows)),
+    /changed without an exact appended transition/u,
+  )
+
+  const wrongBase = transition(baseRows[0].file, digest('c'), digest('b'))
+  assert.throws(
+    () => validateManifestAppendOnly(manifest(baseRows), manifest(changedRows, [wrongBase])),
+    /changed without an exact appended transition/u,
+  )
+})
+
+test('appended events cannot invent drift for unchanged or unpublished rows', () => {
+  const baseRows = [migration('20260102000000_initial.sql', digest('a'))]
+
+  const inventedTransition = manifest(baseRows, [
+    transition(baseRows[0].file, digest('e'), baseRows[0].sha256),
+  ])
+  assert.throws(
+    () => validateManifestAppendOnly(manifest(baseRows), inventedTransition),
+    /does not match a changed historical manifest row/u,
+  )
+
+  const newRows = [
+    ...baseRows,
+    migration('20260103000000_forward.sql', digest('c')),
+  ]
+  const transitionForNewRow = transition(newRows[1].file, digest('b'), digest('c'))
+  assert.throws(
+    () => validateManifestAppendOnly(manifest(baseRows), manifest(newRows, [transitionForNewRow])),
+    /does not match a changed historical manifest row/u,
   )
 })

@@ -343,6 +343,10 @@ export interface Database {
         Args: { p_laudo_id: string }
         Returns: { disposition: string; storage_bucket: string | null; storage_path: string | null }[]
       }
+      consume_clinical_rate_limit: {
+        Args: { p_scope: 'laudo_reserve' | 'laudo_local_extraction' | 'lab_export' }
+        Returns: { allowed: boolean; retry_after_seconds: number }[]
+      }
     }
     Enums: Record<string, never>
   }

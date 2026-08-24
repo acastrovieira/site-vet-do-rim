@@ -160,8 +160,7 @@ SELECT is(
       AND p.prosecdef
       AND coalesce(array_to_string(p.proconfig, ','), '') IN (
         'search_path=',
-        'search_path=""',
-        'search_path=''''
+        'search_path=""'
       )
   ),
   1::bigint,

@@ -136,7 +136,7 @@ export function LabShell({ children, profile }: LabShellProps) {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen flex">
+      <div className="flex min-h-screen w-full min-w-0 overflow-x-hidden">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only fixed left-4 top-4 z-[60] rounded-lg bg-white px-4 py-2 text-sm font-semibold text-brand-800 shadow-lg outline-none ring-2 ring-gold-400"
@@ -234,7 +234,7 @@ export function LabShell({ children, profile }: LabShellProps) {
       )}
 
       {/* ── Main ──────────────────────────────── */}
-      <div className="flex-1 md:ml-64 flex flex-col">
+      <div className="flex min-w-0 flex-1 flex-col md:ml-64">
         {/* Topbar mobile */}
         <header className="h-16 glass-card border-b flex items-center gap-3 px-4 md:hidden sticky top-0 z-30">
           <button
@@ -253,7 +253,7 @@ export function LabShell({ children, profile }: LabShellProps) {
         </header>
 
         {/* Content */}
-        <main id="main-content" tabIndex={-1} className="flex-1 p-6 lg:p-8 max-w-6xl w-full mx-auto">
+        <main id="main-content" tabIndex={-1} className="mx-auto w-full min-w-0 max-w-6xl flex-1 p-6 lg:p-8">
           {children}
         </main>
       </div>

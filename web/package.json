@@ -6,23 +6,28 @@
     "node": ">=22.18.0"
   },
   "scripts": {
+    "predev": "npm run prepare:ocr-assets",
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next dev",
+    "prebuild": "npm run prepare:ocr-assets",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "typecheck": "tsc --noEmit",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/unit/production-safety.test.ts tests/unit/frontend-safety.test.ts tests/unit/staging-audit-safety.test.ts tests/unit/parse-laudo-contracts.test.ts tests/unit/migration-integrity.test.ts tests/unit/tenancy-context.test.ts tests/unit/laudo-reservation-contracts.test.ts",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/unit/production-safety.test.ts tests/unit/frontend-safety.test.ts tests/unit/staging-audit-safety.test.ts tests/unit/parse-laudo-contracts.test.ts tests/unit/migration-integrity.test.ts tests/unit/tenancy-context.test.ts tests/unit/laudo-reservation-contracts.test.ts tests/unit/local-extraction.test.ts tests/unit/clinical-data-contract.test.ts tests/unit/server-rate-limit.test.ts tests/unit/sprint0-security-contracts.test.ts",
     "check:migrations": "node scripts/verify-migration-integrity.mjs --check",
     "check:edge": "node scripts/verify-edge-functions.mjs",
+    "check:sprint-3-safety": "node scripts/verify-sprint-3-safety.mjs",
     "check:predeploy": "node scripts/predeploy-check.mjs",
     "check:remote-readiness": "node scripts/remote-readiness-check.mjs",
+    "prepare:ocr-assets": "node scripts/prepare-ocr-assets.mjs",
     "audit:staging": "node scripts/staging-audit.mjs",
     "test:e2e": "cross-env PORT=3310 PLAYWRIGHT_HOST=127.0.0.1 PLAYWRIGHT_REUSE_EXISTING_SERVER=0 playwright test --project=chromium --workers=1",
     "test:e2e:cross-browser": "cross-env PORT=3312 PLAYWRIGHT_HOST=127.0.0.1 PLAYWRIGHT_REUSE_EXISTING_SERVER=0 playwright test tests/e2e/cross-browser-smoke.spec.ts --project=chromium-tablet-smoke --project=firefox-smoke --project=webkit-smoke --workers=3",
     "test:e2e:auth-rls": "node scripts/e2e-auth-rls-cycle.mjs",
     "test:e2e:lab-crud": "node scripts/e2e-lab-crud-cycle.mjs",
     "test:e2e:upload-ia": "node scripts/e2e-upload-ia-cycle.mjs",
+    "test:e2e:local-extraction": "node scripts/e2e-upload-ia-cycle.mjs --local --local-extraction",
     "cleanup:e2e:lab-crud": "node scripts/cleanup-e2e-lab-crud.mjs",
     "cleanup:e2e:upload-ia": "node scripts/cleanup-e2e-upload-ia.mjs",
     "test:e2e:ui": "playwright test --ui"
@@ -31,6 +36,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@supabase/ssr": "0.10.3",
     "@supabase/supabase-js": "2.105.4",
+    "@tesseract.js-data/por": "1.0.0",
     "@types/adm-zip": "^0.5.8",
     "adm-zip": "^0.6.0",
     "class-variance-authority": "^0.7.1",
@@ -40,15 +46,17 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^1.16.0",
-    "next": "16.2.6",
+    "next": "16.2.11",
     "next-mdx-remote": "^6.0.0",
     "next-themes": "^0.4.6",
+    "pdfjs-dist": "6.2.108",
     "posthog-js": "^1.373.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.8.1",
-    "sharp": "^0.34.5",
+    "sharp": "0.35.3",
     "tailwind-merge": "^3.6.0",
+    "tesseract.js": "7.0.0",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
@@ -59,11 +67,22 @@
     "@types/react-dom": "^19",
     "cross-env": "^10.1.0",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "16.2.11",
+    "supabase": "2.115.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
   "overrides": {
-    "postcss": "^8.5.10"
+    "postcss": "8.5.26",
+    "sharp": "$sharp",
+    "dompurify": "3.4.14",
+    "nanoid": "3.3.18",
+    "js-yaml": "4.3.1",
+    "minimatch@3.1.5": {
+      "brace-expansion": "1.1.18"
+    },
+    "minimatch@10.2.5": {
+      "brace-expansion": "5.0.9"
+    }
   }
 }

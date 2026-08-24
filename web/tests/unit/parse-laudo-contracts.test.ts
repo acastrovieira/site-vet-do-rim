@@ -229,3 +229,17 @@ test('parse-laudo edge function calls claim/finalize/refund RPCs and never the o
     assert.ok(allowlist.includes(code), `error_code fora da allowlist: ${code}`)
   }
 })
+
+test('parse-laudo accepts only the current clinic-scoped storage contract', () => {
+  const source = readFileSync(
+    resolve(import.meta.dirname, '../../../supabase/functions/parse-laudo/index.ts'),
+    'utf8',
+  )
+
+  assert.match(
+    source,
+    /const expectedStoragePath = `clinics\/\$\{laudo\.clinic_id\}\/laudos\/\$\{laudo\.id\}\/original\.pdf`/,
+  )
+  assert.match(source, /laudo\.storage_path !== expectedStoragePath/)
+  assert.doesNotMatch(source, /storage_path\.startsWith\(`\$\{user\.id\}\//)
+})

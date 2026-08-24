@@ -15,6 +15,7 @@ import {
 } from '@/lib/server-api-response'
 import { isUuid } from '@/lib/identifiers'
 import { mapReserveLaudoUploadError } from '@/lib/lab/laudo-reservation'
+import { CLINICAL_RATE_LIMIT_SCOPES, consumeClinicalRateLimit } from '@/lib/server-rate-limit'
 
 function badRequest(error: string) {
   return privateApiJson({ ok: false, error, code: 'VALIDATION' }, { status: 400 })
@@ -33,6 +34,20 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const authorization = await authorizeClinicAccess(supabase, ['vet', 'admin'])
     if (!authorization.ok) return authorizationFailureJson(authorization)
+
+    const rateLimit = await consumeClinicalRateLimit(supabase, CLINICAL_RATE_LIMIT_SCOPES.reserve)
+    if (rateLimit.state === 'limited') {
+      return privateApiJson(
+        { ok: false, error: 'Muitas tentativas de upload. Aguarde e tente novamente.', code: 'RATE_LIMITED' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } },
+      )
+    }
+    if (rateLimit.state === 'unavailable') {
+      return privateApiJson(
+        { ok: false, error: 'Não foi possível validar o limite de upload.', code: 'RATE_LIMIT_UNAVAILABLE' },
+        { status: 503 },
+      )
+    }
 
     const body = await readJsonObject(request)
     assertAllowedKeys(body, ['pet_id'])

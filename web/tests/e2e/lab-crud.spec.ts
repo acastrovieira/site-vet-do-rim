@@ -109,7 +109,7 @@ test.describe('Lab Evolution real CRUD', () => {
       buffer: Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF'),
     })
     await expect(page.getByText(`laudo-${runId}.pdf`)).toBeVisible()
-    await expect(page.getByRole('button', { name: /Analisar com IA/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Enviar PDF ao histórico/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /Trocar/i })).toBeVisible()
   })
 })

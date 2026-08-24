@@ -31,8 +31,10 @@ COMMENT ON COLUMN public.laudos_pdf.storage_deleted_at IS
 COMMENT ON COLUMN public.laudos_pdf.pdf_sha256 IS
   'FEAT-001: hash SHA-256 do PDF original para trilha de auditoria e integridade. Gravado pela Edge Function no momento do processamento.';
 
--- Índice para o cron de cleanup (laudos concluídos que ainda não foram deletados)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_laudos_pending_deletion
+-- Índice para o cron de cleanup (laudos concluídos que ainda não foram deletados).
+-- Esta migration usa uma transação explícita; PostgreSQL não permite
+-- CREATE INDEX CONCURRENTLY dentro de BEGIN/COMMIT.
+CREATE INDEX IF NOT EXISTS idx_laudos_pending_deletion
   ON public.laudos_pdf (created_at ASC)
   WHERE status = 'concluido' AND storage_deleted_at IS NULL;
 

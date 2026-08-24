@@ -64,8 +64,8 @@ for (const functionName of functionDirectories) {
   const denoLock = readJson(join(directory, 'deno.lock'))
   const imports = denoConfig.imports
 
-  if (denoLock.version !== '4' || !denoLock.specifiers || typeof denoLock.specifiers !== 'object') {
-    throw new Error(`${functionName}/deno.lock must be a Deno v4 dependency lock`)
+  if (!['4', '5'].includes(String(denoLock.version)) || !denoLock.specifiers || typeof denoLock.specifiers !== 'object') {
+    throw new Error(`${functionName}/deno.lock must be a Deno v4/v5 dependency lock`)
   }
 
   if (!imports || typeof imports !== 'object' || Array.isArray(imports)) {

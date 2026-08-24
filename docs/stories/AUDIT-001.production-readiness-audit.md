@@ -124,9 +124,9 @@ Referências de origem:
 - [x] 4. Auditar backend, integrações e segurança (AC: 4, 6, 7)
   - [x] Rastrear contratos, autenticação, validação, respostas e falhas.
   - [x] Revisar limites, timeouts, retries, idempotência e observabilidade.
-- [ ] 5. Auditar banco, migrations e RLS (AC: 1, 4, 6, 7)
+- [x] 5. Auditar banco, migrations e RLS (AC: 1, 4, 6, 7)
   - [x] Verificar ordem, atomicidade, compatibilidade, índices, constraints e rollback.
-  - [ ] Validar isolamento entre usuários e menor privilégio com testes seguros.
+  - [x] Validar isolamento entre usuários e menor privilégio com testes seguros locais; staging permanece pendente.
 - [x] 6. Corrigir e verificar (AC: 2, 3, 6)
   - [x] Corrigir apenas defeitos confirmados em mudanças pequenas e reversíveis.
   - [x] Conter fail-closed os três motores clínicos com P0, sem reescrever fórmulas sem homologação.
@@ -195,6 +195,7 @@ Referências de origem:
 | 2026-07-17 | 2.0 | Cronologia clínica foi normalizada sem inferência, o recovery passou a consumir o marcador no servidor e a home ganhou política compartilhada de movimento/visibilidade com quatro E2E de runtime. Gate final: 104/104 contratos, predeploy de produção 74/78, Chromium completo 74/81, cross-browser 9/9 e build de 38 superfícies. | @qa / @security / @frontend / @backend / @edge / @privacy / @ux / @clinical-safety / @architect |
 | 2026-07-17 | 2.1 | Métricas e depoimentos clínicos sem dossiê verificável foram removidos da home, substituídos por princípios e política pública de evidências; a demo foi marcada como fictícia, alvos `aria-labelledby` foram corrigidos e duas ilhas cliente com timers/autoplay viraram conteúdo estático. Gate final: 105/105 contratos, último predeploy monolítico 74/78, Chromium completo atual 75/82, cross-browser 9/9 e build de 38 superfícies. | @qa / @security / @frontend / @privacy / @ux / @clinical-safety / @architect |
 | 2026-07-18 | 2.2 | Deno 2.9.3 foi instalado localmente com hash verificado e o preflight deixou de descartar a versão oficial por conter parênteses. O bloqueio restante é somente a ausência de project ref e senha no arquivo de ambiente que o projeto lê; nenhuma rede remota foi acessada. | @platform / @qa / @security |
+| 2026-08-24 | 2.3 | Hardening forward de RLS/RPC/grants, três transições históricas mínimas e ledger append-only corrigido; replay PG17 de 21 migrations, pgTAP 99/99 e base-ref aprovados em stack isolada. | @security / @db-sage / @backend / @architect |
 
 ## Dev Agent Record
 
@@ -209,8 +210,8 @@ Codex, com frentes especializadas de Frontend/UX, Frontend Data/concorrência, B
 - Playwright completo atual: 75/82 no Chromium; 7 fluxos remotos foram ignorados por falta intencional de credenciais. Cross-browser público/multiaba: 9/9, sendo 3/3 em Chromium tablet, Firefox e WebKit.
 - Inspeção visual final: 1440×900, 1280×720, 1275 px, 768×1024 e 390×844, somada às matrizes anteriores; sem overflow/error/warning de aplicação; modal móvel contido em 366 px, foco inicial correto e botões visíveis com pelo menos 44 px. A política pública de evidências foi conferida em desktop, tablet e celular.
 - Quatro audits npm: PASS — 0 vulnerabilidades conhecidas; SBOM CycloneDX 1.5 validado com 216 componentes.
-- Banco local isolado: PostgreSQL 17.6.1, reset 11/11 migrations, pgTAP 17/17, lint `public,private` e advisors de segurança/desempenho sem finding de projeto; a stack descartável foi removida ao final sem interromper `app_incise`.
-- Integridade de migrations: PASS — 11 hashes em bytes brutos e uma transição histórica conhecida; verificação append-only local/contra Git passou, com `remoteAttestation=false` explícito.
+- Banco local isolado: PostgreSQL 17.6.1, reset 21/21 migrations e pgTAP 99/99 em 6 arquivos; a stack descartável usou portas próprias e foi removida ao final sem interromper `app_incise`.
+- Integridade de migrations: PASS — 21 hashes em bytes brutos e quatro transições históricas divulgadas; verificação local e append-only contra Git passaram, com prefixo imutável do ledger e `remoteAttestation=false` explícito.
 - Edge/Deno: PASS local — dependências exatas, lock v4, `deno check --frozen`, lint e bundle limpo no Edge Runtime fixado por digest. O formatter histórico e a execução hospedada permanecem pendentes.
 - Novos jobs CI `Database Contract` e `Edge Runtime Contract`: YAML validado e sequência reproduzida localmente; primeira execução no GitHub ainda pendente.
 - Auditoria de staging: plano offline 4/4 sem rede; os quatro SQLs também compilaram/rodaram read-only em PG17 local e o contrato final marcou corretamente NO-GO. Nenhuma consulta remota.
@@ -240,7 +241,7 @@ Codex, com frentes especializadas de Frontend/UX, Frontend Data/concorrência, B
 - Duas abas não perdem mais escrita silenciosamente: conflitos, aba legada, lock indisponível e resultado incerto falham fechados, o backup original permanece intacto e rascunhos são preservados. Criações remotas ainda exigem tenancy+ledger+RPC idempotente; óbito/follow-up permanece contido até a transação definitiva.
 - A política local de Auth exige no mínimo 8 caracteres, mas a equivalência com a configuração remota ainda precisa ser comprovada no staging.
 - A matriz canônica de autoridade resolve as 12 referências PM/PO/SM sem ampliar permissão de publicação, deploy ou migration.
-- Drafts S1/S2 permanecem fora de migrations, com sentinelas incondicionais. Apenas as 11 migrations **ativas** foram executadas em PostgreSQL local descartável; nenhuma conexão, migration ou mutação remota ocorreu.
+- As 21 migrations **ativas** foram executadas em PostgreSQL local descartável, incluindo o hardening forward e o limiter distribuído; nenhuma conexão, migration ou mutação remota ocorreu.
 - Plano clínico definiu 49 casos golden/fronteira, mas doses e assinaturas veterinárias continuam pendentes.
 - Métricas “500+”/“98%” e depoimentos clínicos nominais sem fonte, metodologia, data e consentimento foram removidos da home; qualquer reintrodução depende de dossiê e aprovação Product/Legal/DPO.
 - Veredito final: NO-GO enquanto tenancy/RLS, transação de laudos, onboarding profissional auditável, correção/homologação clínica e readiness remoto não forem concluídos.
@@ -251,7 +252,8 @@ Codex, com frentes especializadas de Frontend/UX, Frontend Data/concorrência, B
 - `docs/auditoria-production-readiness-2026-07-16.md` — relatório integral, findings, correções, gates e sprints.
 - `docs/aiox-root-config-audit-2026-07-16.md` — drift, recursos ausentes e decisão de não homologação do AIOX vendorizado.
 - `docs/architecture/ADR-001-tenancy-clinica-rls.md` — desenho fail-closed de tenancy, rollout e matriz negativa; sem SQL aplicado.
-- `docs/architecture/ADR-002-migration-integrity-and-drift.md` — baseline SHA-256 append-only, transição histórica conhecida e proibição de alegar igualdade remota sem artefato confiável.
+- `docs/architecture/ADR-002-migration-integrity-and-drift.md` — baseline SHA-256, ledger por prefixo imutável e proibição de alegar igualdade remota sem artefato confiável.
+- `docs/auditoria-laboratorio-release-2026-08-23.md` — evidências locais atualizadas e riscos remotos residuais.
 - `docs/architecture/command-authority-matrix.md` — autoridade canônica de comandos e ações críticas.
 - `docs/architecture/drafts/tenancy/*` — drafts `expand/enforce`, testes Vet A × Vet B e README; todos quarentenados.
 - `docs/architecture/drafts/laudos-ia/*` — contrato, SQL claim/finalize/refund e matriz de falhas; todos quarentenados.
@@ -259,6 +261,8 @@ Codex, com frentes especializadas de Frontend/UX, Frontend Data/concorrência, B
 - `docs/README.md` e banners em runbooks legados — governança da decisão NO-GO.
 - `.github/workflows/*.yml`, `web/scripts/*`, `web/tests/*` — gates, E2E, cleanup e contratos DB/Edge endurecidos.
 - `supabase/migration-integrity.json`, `web/scripts/lib/migration-integrity.mjs`, `web/scripts/verify-migration-integrity.mjs` e `web/tests/unit/migration-integrity.test.ts` — hashes em bytes brutos, política append-only e regressões de drift.
+- `supabase/migrations/20260823000000_perf_001_missing_indexes.sql`, `20260823000100_perf_002_rls_policy_optimization.sql` e `20260823000300_pdf_lifecycle_and_populate.sql` — três correções históricas mínimas cobertas por eventos exatos no ledger.
+- `supabase/migrations/20260823234842_sprint0_security_forward_hardening.sql`, `supabase/tests/sprint0_security_forward_test.sql` e `web/tests/unit/sprint0-security-contracts.test.ts` — RLS por membership/clínica, grants, revogação de update direto, wrapper RPC e contratos de regressão.
 - `web/scripts/staging-audit.mjs`, `web/scripts/staging-audit/*` e `web/scripts/lib/staging-audit-safety.mjs` — auditoria de staging offline/read-only e contratos de segurança.
 - `.antigravity/rules.md`, `.claude/rules/mcp-usage.md`, `.claude/hooks/enforce-git-push-authority.cjs` e `.codex/skills/aiox-vibe-framework/SKILL.md` — portabilidade, segredo e autoridade de push endurecidos.
 - `supabase/migrations_archive/README.md` — quarentena explícita de migrations históricas, sem alterar o histórico executável.
@@ -293,7 +297,7 @@ Codex, com frentes especializadas de Frontend/UX, Frontend Data/concorrência, B
 | Frontend/Lab | Corrigido localmente | Timeouts/erros/diálogos/foco, mutexes, trava conservadora após resultado ambíguo, inativação via API/CAS, óbito inseguro contido, temas, strings longas, busca/contagem/paginação e papéis server-side; sessão autenticada densa, tenancy/RLS, idempotência/RPC transacional e staging pendentes. |
 | Ferramentas clínicas | Contido | Fluidoterapia, eletrólitos e dieta sem resultados, `noindex`, fora do sitemap; motores precisam ser reescritos/homologados. |
 | Histórico de peso | Corrigido localmente | Separação por nome+espécie, tendência neutra e storage seguro; ID clínico estável continua recomendado. |
-| Tenancy/RLS | P0 pendente | Baseline ativa reaplica 11/11 e passa 17/17 pgTAP; ADR + drafts tenant permanecem quarentenados e não há isolamento Vet A × Vet B/staging. |
+| Tenancy/RLS | Corrigido localmente; P0 remoto | Baseline ativa reaplica 21/21 e passa 99/99 pgTAP, incluindo Vet A × Vet B, recepção, service role, grants, RPC e RLS por membership; staging e artefatos remotos não foram atestados. |
 | Laudos/IA | P0/P1 pendente | CAS, streaming, CORS, schema local, logs, lock Deno e runtime local mitigados; draft transacional pronto, mas claim/finalize/refund/lease e contrato hospedado com Auth/Storage/provedores ainda ausentes. |
 | Onboarding profissional | P1 pendente | Autocadastro tutor-only e opção vet contida; verificação/aprovação/provisionamento/revogação auditáveis ainda ausentes. |
 | Release/LGPD/backup | P1 pendente | Staging, restore, rollback, subprocessadores e operação real sem evidência. |
@@ -325,11 +329,11 @@ O quadro abaixo preserva os findings do baseline para rastreabilidade histórica
 | QA-017 | P2 | `/api/health` misturava liveness/configuração; remote-readiness aceitava status não-401 e project ref padrão. | Corrigido localmente: endpoints separados e rede opt-in/read-only; disponibilidade real continua pendente de staging. |
 | QA-018 | P2 | Não havia automação suficiente de segurança/qualidade nos workflows. | Audits, E2E público/cross-browser, Actions por SHA, Dependabot, verificação de locks, SBOM, replay de migrations/pgTAP e check/lint/bundle Edge foram adicionados; primeira execução remota, required checks, CodeQL, Secret Scanning/Push Protection, Dependency Review, cobertura e Lighthouse continuam pendentes. |
 | QA-019 | P3 | Há drift de versões AIOX, caminhos absolutos pessoais nos runbooks, ausência de `packageManager` no app e patches disponíveis em dependências. | Paths pessoais foram removidos, `engines` e gates raiz foram adicionados e AIOX virou privado; drift/recursos ausentes e `packageManager` seguem documentados. |
-| QA-020 | P1 | A bateria chamada `auth-rls` testa redirecionamento por papel, mas não cria dois tenants/vets nem prova que usuário A não lê/altera dados do usuário B. O documento declara “Auth/RLS validado”, embora a própria matriz só contenha navegação. `auth.spec.ts:27-61`; `e2e-auth-rls-cycle.mjs:114-151`; `auth-rls-functional-validation.md:1-12,34-59`. | Confirmado; requisito de lançamento sem evidência. |
+| QA-020 | P1 | A bateria histórica `auth-rls` testava redirecionamento por papel, mas não provava isolamento de dados. | Corrigido localmente por pgTAP multi-tenant Vet A × Vet B e matriz de papéis; execução equivalente em staging continua obrigatória. |
 | QA-021 | P2 | O contrato de ambiente estava fragmentado e scripts remotos usavam fallback de project ref; o Root Directory efetivo da Vercel não está comprovado. | Variáveis e alvo explícito foram alinhados nos exemplos/scripts; configuração real da Vercel ainda precisa ser verificada. |
 | QA-022 | P1 | O cadastro sugeria papel veterinário/aprovação sem workflow profissional seguro; `requested_role` não constitui autoridade. | Contido: autocadastro tutor-only, metadata removida e CTAs corrigidos; onboarding auditável continua bloqueador. |
 | QA-023 | P1 | `parse-laudo` autenticava o JWT, mas usava `service_role` sem exigir papel persistido vet/admin. | Corrigido localmente com 403/503 antes do claim; execução real e tenancy continuam pendentes. |
-| QA-024 | P1 | O projeto não detectava alteração/remoção retroativa de migrations e o drift histórico conhecido não tinha ledger verificável. | Corrigido no baseline do repositório com manifesto SHA-256, exceção única auditável e comparação append-only contra Git; reconciliação/atestação remota continua pendente. |
+| QA-024 | P1 | O projeto não detectava alteração/remoção retroativa de migrations e o drift histórico conhecido não tinha ledger verificável. | Corrigido no baseline com 21 hashes, quatro eventos auditáveis, prefixo imutável e cobertura exata de toda linha histórica alterada; reconciliação/atestação remota continua pendente. |
 | QA-025 | P1 | A Edge Function usava imports flutuantes e não tinha `deno.json`, lock, tipos nem gate no runtime. | Corrigido localmente com versões exatas, lock v4, tipos, config explícita, check/lint/bundle e job CI; `deno fmt`, execução hospedada e contrato real com provedores continuam pendentes. |
 
 ### Evolução da correção fail-closed de QA-001

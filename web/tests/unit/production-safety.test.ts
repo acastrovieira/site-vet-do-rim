@@ -24,7 +24,7 @@ import {
   runCleanupSteps,
   verifyAuthUsersAbsent,
 } from '../../scripts/lib/e2e-cleanup-match.mjs'
-import { assertSupabaseTarget } from '../../scripts/lib/supabase-target.mjs'
+import { assertLocalSupabaseTarget, assertSupabaseTarget } from '../../scripts/lib/supabase-target.mjs'
 import {
   isRoleAuthorized,
   isRoleAuthorizedForRedirect,
@@ -320,6 +320,23 @@ test('Auth/RLS cycle wires fail-closed Auth cleanup into primary error handling'
   }
 })
 
+test('authenticated E2E cycles isolate their server and never rewrite local secrets', () => {
+  const webRoot = resolve(import.meta.dirname, '../..')
+  const cycles = [
+    ['e2e-auth-rls-cycle.mjs', '3315'],
+    ['e2e-lab-crud-cycle.mjs', '3316'],
+    ['e2e-upload-ia-cycle.mjs', '3314'],
+  ] as const
+
+  for (const [file, port] of cycles) {
+    const source = readFileSync(resolve(webRoot, 'scripts', file), 'utf8')
+    assert.doesNotMatch(source, /\.env\.local|writeTemporaryPublicEnv|restoreEnvLocal/)
+    assert.match(source, new RegExp(`PORT: process\\.env\\.PORT \\?\\? '${port}'`))
+    assert.match(source, /PLAYWRIGHT_HOST: process\.env\.PLAYWRIGHT_HOST \?\? '127\.0\.0\.1'/)
+    assert.match(source, /PLAYWRIGHT_REUSE_EXISTING_SERVER: '0'/)
+  }
+})
+
 test('E2E apply cleanup uses exact run identities instead of name prefixes', () => {
   const webRoot = resolve(import.meta.dirname, '../..')
   const labCycle = readFileSync(resolve(webRoot, 'scripts/e2e-lab-crud-cycle.mjs'), 'utf8')
@@ -419,6 +436,18 @@ test('remote mutation scripts require an explicit matching staging target', () =
     environment: 'staging',
     requireMutationConfirmation: true,
   }))
+})
+
+test('local Supabase E2E target accepts only an explicit loopback HTTP port', () => {
+  assert.deepEqual(assertLocalSupabaseTarget('http://127.0.0.1:55321/'), {
+    supabaseUrl: 'http://127.0.0.1:55321',
+  })
+  assert.deepEqual(assertLocalSupabaseTarget('http://localhost:55321/'), {
+    supabaseUrl: 'http://localhost:55321',
+  })
+  assert.throws(() => assertLocalSupabaseTarget('https://abcdefghijklmnopqrst.supabase.co'))
+  assert.throws(() => assertLocalSupabaseTarget('http://192.168.1.10:55321'))
+  assert.throws(() => assertLocalSupabaseTarget('http://localhost'))
 })
 
 test('protected route authorization is exact and fails closed by role', () => {
@@ -878,6 +907,10 @@ test('remote readiness is local-only unless the explicit flag is present', () =>
   assert.match(source, /networkConsulted: allowRemote && targetValidated/)
   assert.match(source, /overallOk = allowRemote \? uploadIaReady : localUploadPrerequisites/)
   assert.match(source, /process\.exit\(overallOk \? 0 : 1\)/)
+  assert.match(source, /defaultHostedEdgeSecrets = new Set/)
+  assert.match(source, /fornecido automaticamente pela plataforma hospedada/)
+  assert.doesNotMatch(source, /secrets\.names\.has\('SUPABASE_URL'\) &&/)
+  assert.doesNotMatch(source, /secrets\.names\.has\('SUPABASE_SERVICE_ROLE_KEY'\) &&/)
 })
 
 test('predeploy E2E owns an isolated server instead of reusing an unrelated preview', () => {
@@ -1040,6 +1073,36 @@ test('parse-laudo keeps bounded attempts, transactional claim and sanitized fail
   assert.ok(authorizationIndex >= 0)
   assert.ok(claimTableIndex > authorizationIndex)
   assert.ok(claimRpcIndex > claimTableIndex)
+})
+
+test('Sprint 3 applies rate limits and blocks sensitive Edge log fields', () => {
+  const webRoot = resolve(import.meta.dirname, '../..')
+  const routes = [
+    'src/app/api/laudos/reserve/route.ts',
+    'src/app/api/laudos/[id]/results-local/route.ts',
+    'src/app/api/lab/export/route.ts',
+  ]
+  for (const route of routes) {
+    const source = readFileSync(resolve(webRoot, route), 'utf8')
+    assert.match(source, /consumeClinicalRateLimit/)
+    assert.match(source, /Retry-After/)
+    assert.match(source, /RATE_LIMITED/)
+  }
+
+  const edge = readFileSync(resolve(webRoot, '../supabase/functions/parse-laudo/index.ts'), 'utf8')
+  assert.match(edge, /isExtractionRateLimited\(user\.id\)/)
+  assert.match(edge, /status: 429/)
+  const edgeLogLines = edge.split('\n').filter((line) => line.includes('console.'))
+  assert.ok(edgeLogLines.every((line) => /event=[a-z_]+/.test(line)))
+  assert.equal(existsSync(resolve(webRoot, '../docs/runbooks/sprint-3-release-privacy-backup.md')), true)
+  const migration = readFileSync(
+    resolve(webRoot, '../supabase/migrations/20260824004343_distributed_rate_limit.sql'),
+    'utf8',
+  )
+  assert.match(migration, /CREATE TABLE private\.clinical_rate_limit_windows/)
+  assert.match(migration, /CREATE OR REPLACE FUNCTION public\.consume_clinical_rate_limit/)
+  assert.match(migration, /SECURITY DEFINER/)
+  assert.match(migration, /SET search_path = pg_catalog, private, auth/)
 })
 
 test('git publication hook rejects command-scoped agent spoofing', () => {

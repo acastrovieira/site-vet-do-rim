@@ -17,6 +17,7 @@ import {
   FlaskConical,
   Plus,
   FileText,
+  Download,
 } from 'lucide-react'
 
 interface Props {
@@ -57,10 +58,11 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 }
 
 const LAUDO_STATUS_INFO: Record<string, { label: string; color: string }> = {
-  pendente: { label: 'Aguardando análise', color: 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-science-100' },
+  pendente: { label: 'Aguardando extração', color: 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-science-100' },
   processando: { label: 'Processando', color: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' },
-  concluido: { label: 'Analisado', color: 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-300' },
+  concluido: { label: 'Estruturado', color: 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-300' },
   erro: { label: 'Erro na análise', color: 'bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-300' },
+  abandonado: { label: 'Descartado', color: 'bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-science-500' },
 }
 
 export default async function PacienteDetailPage({ params }: Props) {
@@ -208,16 +210,16 @@ export default async function PacienteDetailPage({ params }: Props) {
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
-            Analisar laudo
+            Enviar e estruturar laudo
           </Link>
         </div>
 
         {!laudos || laudos.length === 0 ? (
           <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 p-10 text-center">
             <FlaskConical className="h-10 w-10 mx-auto mb-3 text-slate-200" strokeWidth={1.5} />
-            <p className="font-medium text-slate-500 dark:text-science-200">Nenhum laudo analisado ainda</p>
+            <p className="font-medium text-slate-500 dark:text-science-200">Nenhum laudo estruturado ainda</p>
             <p className="text-sm text-slate-400 dark:text-science-400 mt-1">
-              Faça o upload de um hemograma ou bioquímica para análise por IA.
+              Envie um hemograma ou bioquímica e extraia os parâmetros gratuitamente no dispositivo.
             </p>
             <Link
               href={`/lab/pacientes/${petId}/laudos`}
@@ -257,10 +259,28 @@ export default async function PacienteDetailPage({ params }: Props) {
 
       {/* Tabela Evolutiva — Acompanhamento de Valores Laboratoriais */}
       {laudos && laudos.some((l) => l.status === 'concluido' && l.resultado_ia) && (
-        <div>
-          <p className="mb-2 text-xs text-slate-500 dark:text-science-200">
-            Janela evolutiva: até os 50 laudos mais recentes.
-          </p>
+        <div id="evolucao-laboratorial" className="scroll-mt-6">
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-slate-500 dark:text-science-200">
+              Janela evolutiva: até os 50 laudos mais recentes.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={`/api/lab/export?petId=${petId}&format=csv`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-science-100"
+              >
+                <Download className="h-4 w-4" aria-hidden />
+                Baixar CSV
+              </a>
+              <a
+                href={`/api/lab/export?petId=${petId}&format=xlsx`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white hover:bg-emerald-800"
+              >
+                <Download className="h-4 w-4" aria-hidden />
+                Baixar Excel
+              </a>
+            </div>
+          </div>
           <LabEvolutionTable
             laudos={laudos.map((l) => ({
               id: l.id,

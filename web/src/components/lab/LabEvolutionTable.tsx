@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import type { LaudoRow } from '@/lib/lab/transform-laudo-data'
+import type { EvolutionDataPoint, LaudoRow } from '@/lib/lab/transform-laudo-data'
 import {
   transformLaudosToEvolution,
   detectTrend,
@@ -9,8 +9,8 @@ import {
   resolveLaudoChronology,
   sortLaudosChronologically,
 } from '@/lib/lab/transform-laudo-data'
-import { getRefForSpecies, resolveReferenceSpecies } from '@/lib/lab/reference-values'
-import type { HemogramaKey } from '@/lib/lab/reference-values'
+import { observationsHaveComparableUnits } from '@/lib/lab/canonical-observation'
+import { LOCAL_PARAMETER_CATALOG } from '@/lib/lab/local-extraction/parameter-catalog'
 import {
   TrendingUp,
   TrendingDown,
@@ -48,22 +48,18 @@ function TrendIcon({ trend }: { trend: string }) {
 
 /**
  * Tabela evolutiva de parâmetros laboratoriais para a área logada (Lab Evolution).
- * Exibe dados extraídos dos laudos processados por IA ao longo do tempo.
- * Valores fora da referência são destacados em vermelho.
+ * Exibe dados extraídos por IA opcional ou pelo fluxo local revisado.
+ * No fluxo local, a faixa impressa no próprio laudo prevalece; ausências não
+ * recebem classificação clínica automática.
  * Inclui indicadores de tendência (subindo/descendo/estável).
  */
 export function LabEvolutionTable({ laudos, especie }: Props) {
+  void especie
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
 
   const groups = useMemo(
     () => transformLaudosToEvolution(laudos, especie),
     [laudos, especie],
-  )
-
-  const referenceSpecies = resolveReferenceSpecies(especie)
-  const ref = useMemo<Partial<ReturnType<typeof getRefForSpecies>>>(
-    () => referenceSpecies ? getRefForSpecies(especie) : {},
-    [especie, referenceSpecies],
   )
 
   // Datas (colunas) — laudos concluídos ordenados cronologicamente
@@ -90,9 +86,9 @@ export function LabEvolutionTable({ laudos, especie }: Props) {
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-50 to-emerald-50">
           <Activity className="h-6 w-6 text-brand-300" />
         </div>
-        <p className="font-bold text-slate-600 dark:text-science-100">Nenhum exame analisado por IA ainda</p>
+        <p className="font-bold text-slate-600 dark:text-science-100">Nenhum exame estruturado ainda</p>
         <p className="mt-1.5 text-sm text-slate-400 dark:text-science-400">
-          Faça o upload de um laudo e clique em &ldquo;Analisar com IA&rdquo; para gerar a tabela evolutiva.
+          Envie um laudo e extraia os valores gratuitamente no dispositivo para gerar a tabela evolutiva.
         </p>
       </div>
     )
@@ -108,11 +104,9 @@ export function LabEvolutionTable({ laudos, especie }: Props) {
             Evolução Laboratorial
           </h3>
           <p className="mt-0.5 text-xs text-slate-400 dark:text-science-400">
-            {validLaudos.length} exame{validLaudos.length !== 1 ? 's' : ''} analisado{validLaudos.length !== 1 ? 's' : ''}
+            {validLaudos.length} exame{validLaudos.length !== 1 ? 's' : ''} estruturado{validLaudos.length !== 1 ? 's' : ''}
             {' · '}
-            {referenceSpecies
-              ? `Ref. ${referenceSpecies === 'felino' ? 'felina' : 'canina'}`
-              : 'Referência indisponível para esta espécie'}
+            Faixa impressa no laudo quando completa; registros sem evidência permanecem sem classificação
           </p>
         </div>
       </div>
@@ -179,7 +173,6 @@ export function LabEvolutionTable({ laudos, especie }: Props) {
                     rows={rows}
                     isCollapsed={isCollapsed}
                     onToggle={() => toggleCategory(category)}
-                    refMap={ref}
                     totalColumns={validLaudos.length}
                   />
                 )
@@ -220,15 +213,14 @@ export function LabEvolutionTable({ laudos, especie }: Props) {
 
 interface CategorySectionProps {
   category: string
-  rows: Array<{ key: HemogramaKey; values: Array<{ laudoId: string; date: string; value: number | null }> }>
+  rows: EvolutionDataPoint[]
   isCollapsed: boolean
   onToggle: () => void
-  refMap: Partial<Record<HemogramaKey, { min: number; max: number; unit: string; label: string }>>
   totalColumns: number
 }
 
 function CategorySection({
-  category, rows, isCollapsed, onToggle, refMap, totalColumns,
+  category, rows, isCollapsed, onToggle, totalColumns,
 }: CategorySectionProps) {
   return (
     <>
@@ -263,8 +255,27 @@ function CategorySection({
       {/* Parameter rows */}
       {!isCollapsed &&
         rows.map((row, i) => {
-          const refInfo = refMap[row.key]
-          const trend = detectTrend(row.values)
+          const parameterLabel = LOCAL_PARAMETER_CATALOG.find(
+            (parameter) => parameter.key === row.key,
+          )?.label ?? row.key
+          const laboratoryUnits = new Set(
+            row.values
+              .filter((value) => value.unit)
+              .map((value) => value.unit),
+          )
+          const hasLaboratoryReference = row.values.some(
+            (value) => value.referenceSource === 'laboratory'
+              && value.referenceMin !== null
+              && value.referenceMax !== null,
+          )
+          const unitLabel = laboratoryUnits.size === 1
+            ? [...laboratoryUnits][0]
+            : laboratoryUnits.size > 1
+              ? 'varia'
+              : '—'
+          const trend = observationsHaveComparableUnits(row.values)
+            ? detectTrend(row.values)
+            : 'insuficiente'
           const rowBackground = i % 2 === 0
             ? 'bg-white dark:bg-transparent'
             : 'bg-slate-50 dark:bg-white/[0.03]'
@@ -278,23 +289,23 @@ function CategorySection({
               <td
                 className={`sticky left-0 z-10 whitespace-nowrap border-r border-slate-100/80 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:border-white/10 dark:text-science-100 ${rowBackground}`}
               >
-                {refInfo?.label ?? row.key}
+                {parameterLabel}
               </td>
 
               {/* Unidade */}
               <td className="px-3 py-2.5 text-xs font-medium text-slate-400 dark:text-science-400">
-                {refInfo?.unit ?? ''}
+                {unitLabel}
               </td>
 
               {/* Referência */}
               <td className="px-3 py-2.5 text-center text-[11px] text-slate-300 dark:text-science-500">
-                {refInfo ? `${refInfo.min}–${refInfo.max}` : '—'}
+                {hasLaboratoryReference ? 'por laudo' : '—'}
               </td>
 
               {/* Valores por data */}
               {row.values.map((v) => {
-                const isAbove = v.value !== null && refInfo && v.value > refInfo.max
-                const isBelow = v.value !== null && refInfo && v.value < refInfo.min
+                const isAbove = v.referenceStatus === 'above'
+                const isBelow = v.referenceStatus === 'below'
                 const isAbnormal = isAbove || isBelow
 
                 return (

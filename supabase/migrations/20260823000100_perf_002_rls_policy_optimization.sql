@@ -8,7 +8,7 @@
 -- O(n) lookups em profiles para cada query — inaceitável em escala.
 --
 -- SOLUÇÃO: substituir pela função STABLE SECURITY DEFINER
---   public.current_user_is_admin() — já existe (20260623000100)
+--   private.current_user_is_admin() — movida em 20260624000100
 --   private.has_clinic_role()       — já existe (20260718100000)
 --
 -- Para a fase pré-tenancy completa (clinic_id ainda nullable):
@@ -79,7 +79,7 @@ CREATE POLICY "tutores_delete_admin"
   ON public.tutores
   FOR DELETE
   TO authenticated
-  USING (public.current_user_is_admin());
+  USING (private.current_user_is_admin());
 
 -- ──────────────────────────────────────────────────────────────
 -- PETS — reescrita das policies
@@ -112,7 +112,7 @@ CREATE POLICY "pets_delete_admin"
   ON public.pets
   FOR DELETE
   TO authenticated
-  USING (public.current_user_is_admin());
+  USING (private.current_user_is_admin());
 
 -- ──────────────────────────────────────────────────────────────
 -- TRIAGENS — reescrita das policies
@@ -145,7 +145,7 @@ CREATE POLICY "triagens_delete_admin"
   ON public.triagens
   FOR DELETE
   TO authenticated
-  USING (public.current_user_is_admin());
+  USING (private.current_user_is_admin());
 
 -- ──────────────────────────────────────────────────────────────
 -- FOLLOW_UPS — reescrita das policies
@@ -178,7 +178,7 @@ CREATE POLICY "follow_ups_delete_admin"
   ON public.follow_ups
   FOR DELETE
   TO authenticated
-  USING (public.current_user_is_admin());
+  USING (private.current_user_is_admin());
 
 -- ──────────────────────────────────────────────────────────────
 -- LAUDOS_PDF — reescrita para eliminar subqueries duplicadas
@@ -200,7 +200,7 @@ CREATE POLICY "laudos_select_vet_own_or_admin"
   TO authenticated
   USING (
     vet_id = (SELECT auth.uid())
-    OR public.current_user_is_admin()
+    OR private.current_user_is_admin()
   );
 
 CREATE POLICY "laudos_insert_vet_own"
@@ -218,18 +218,18 @@ CREATE POLICY "laudos_update_vet_own_or_admin"
   TO authenticated
   USING (
     vet_id = (SELECT auth.uid())
-    OR public.current_user_is_admin()
+    OR private.current_user_is_admin()
   )
   WITH CHECK (
     vet_id = (SELECT auth.uid())
-    OR public.current_user_is_admin()
+    OR private.current_user_is_admin()
   );
 
 CREATE POLICY "laudos_delete_admin"
   ON public.laudos_pdf
   FOR DELETE
   TO authenticated
-  USING (public.current_user_is_admin());
+  USING (private.current_user_is_admin());
 
 -- ──────────────────────────────────────────────────────────────
 -- VERIFICAÇÃO FINAL — lista policies ativas nas tabelas alteradas

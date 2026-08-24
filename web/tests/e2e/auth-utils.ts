@@ -36,7 +36,7 @@ export async function loginWithSupabaseCredentials(
 
   await page.getByLabel(/email/i).fill(credentials.email)
   await page.getByLabel(/^Senha$/i).fill(credentials.password)
-  await page.getByRole('button', { name: /^Entrar$/i }).click()
+  await page.getByRole('button', { name: /^Entrar(?: com e-mail)?$/i }).click()
 }
 
 export async function expectProtectedArea(page: Page) {
@@ -53,7 +53,9 @@ export async function expectProtectedArea(page: Page) {
 
 export async function expectLabArea(page: Page) {
   await expect(page).toHaveURL(/\/lab(?:[/?#]|$)/)
-  await expect(page.getByRole('navigation', { name: /menu principal/i })).toBeVisible()
+  const desktopNavigation = page.getByRole('navigation', { name: /menu principal/i })
+  if (await desktopNavigation.isVisible()) return
+  await expect(page.getByRole('button', { name: /Abrir menu/i })).toBeVisible()
 }
 
 export async function expectTutorPortal(page: Page) {

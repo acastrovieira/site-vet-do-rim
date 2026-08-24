@@ -4,6 +4,7 @@
  */
 
 import type { HemogramaKey, LabCategory } from './reference-values.ts'
+import type { CanonicalLaboratoryObservation } from './canonical-observation.ts'
 import { CATEGORY_ORDER, getCategoryForLabKey } from './reference-values.ts'
 import {
   formatCivilDate,
@@ -72,6 +73,28 @@ export interface ResultadoIA {
   laboratorio: string | null
   data_coleta: string | null
   data_resultado: string | null
+  /**
+   * Evidência estruturada do fluxo gratuito, sem interpretação clínica.
+   * O nome legado `resultado_ia` da coluna é preservado por compatibilidade,
+   * mas estes itens são extraídos no dispositivo e revisados por uma pessoa.
+   */
+  extracao_local?: {
+    schema_version: 1 | 2
+    parser_version: string
+    source: 'pdf-text' | 'ocr'
+    reviewed: true
+    items: Array<{
+      parametro: HemogramaKey
+      valor: number
+      valor_texto?: string
+      unidade: string | null
+      ref_min: number | null
+      ref_max: number | null
+      referencia_texto?: string | null
+      pagina?: number
+      observation?: CanonicalLaboratoryObservation
+    }>
+  }
 }
 
 export type LaudoDateSource = 'collection' | 'upload' | 'unavailable'
@@ -134,7 +157,16 @@ export function sortLaudosChronologically<T extends LaudoRow>(laudos: readonly T
 /** Ponto de dados na tabela evolutiva */
 export interface EvolutionDataPoint {
   key: HemogramaKey
-  values: Array<{ laudoId: string; date: string; value: number | null }>
+  values: Array<{
+    laudoId: string
+    date: string
+    value: number | null
+    unit?: string | null
+    referenceMin?: number | null
+    referenceMax?: number | null
+    referenceSource?: 'laboratory'
+    referenceStatus?: 'below' | 'within' | 'above' | 'not_classified'
+  }>
 }
 
 /** Linha da tabela evolutiva agrupada por categoria */
@@ -151,7 +183,7 @@ function finiteLabNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
-function extractValue(result: ResultadoIA, key: HemogramaKey): number | null {
+export function extractResultValue(result: ResultadoIA, key: HemogramaKey): number | null {
   switch (key) {
     // Série Vermelha
     case 'hemacias':     return finiteLabNumber(result.serie_vermelha?.hemacias)
@@ -186,8 +218,12 @@ function extractValue(result: ResultadoIA, key: HemogramaKey): number | null {
   }
 }
 
+function extractLocalEvidence(result: ResultadoIA, key: HemogramaKey) {
+  return result.extracao_local?.items.find((item) => item.parametro === key)
+}
+
 /** Todas as chaves extraíveis na ordem natural */
-const ALL_KEYS: HemogramaKey[] = [
+export const ALL_LAB_KEYS: HemogramaKey[] = [
   'ureia', 'creatinina', 'fosforo', 'potassio', 'sodio', 'albumina', 'proteina_total',
   'hemacias', 'hemoglobina', 'hematocrito', 'vcm', 'hcm', 'chcm', 'rdw',
   'leucocitos_totais', 'neutrofilos_segmentados', 'neutrofilos_bastoes',
@@ -218,11 +254,28 @@ export function transformLaudosToEvolution(
   // Monta dados por key
   const dataByKey: Map<HemogramaKey, EvolutionDataPoint> = new Map()
 
-  for (const key of ALL_KEYS) {
+  for (const key of ALL_LAB_KEYS) {
     const values = validLaudos.map((laudo) => ({
       laudoId: laudo.id,
       date: resolveLaudoChronology(laudo).displayDate,
-      value: laudo.resultado_ia ? extractValue(laudo.resultado_ia, key) : null,
+      value: laudo.resultado_ia ? extractResultValue(laudo.resultado_ia, key) : null,
+      ...(laudo.resultado_ia
+        ? (() => {
+            const evidence = extractLocalEvidence(laudo.resultado_ia, key)
+            const observation = evidence?.observation
+            return evidence
+              ? {
+                  unit: observation?.measurement.printedUnit ?? evidence.unidade,
+                  referenceMin: observation?.reference.min ?? null,
+                  referenceMax: observation?.reference.max ?? null,
+                  ...(observation?.reference.source === 'laboratory_report'
+                    ? { referenceSource: 'laboratory' as const }
+                    : {}),
+                  referenceStatus: observation?.assessment.status ?? 'not_classified' as const,
+                }
+              : {}
+          })()
+        : {}),
     }))
 
     // Só inclui a key se pelo menos 1 laudo tem valor não-null
@@ -237,7 +290,7 @@ export function transformLaudosToEvolution(
   for (const category of CATEGORY_ORDER) {
     const rows: EvolutionDataPoint[] = []
 
-    for (const key of ALL_KEYS) {
+    for (const key of ALL_LAB_KEYS) {
       if (getCategoryForLabKey(key) !== category) continue
       const dp = dataByKey.get(key)
       if (dp) rows.push(dp)

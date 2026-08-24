@@ -52,3 +52,26 @@ export function explicitSupabaseTarget(localEnv, { mutation = false } = {}) {
     requireMutationConfirmation: mutation,
   })
 }
+
+/**
+ * Alvo mutável exclusivamente local para E2E descartável. Mantido separado do
+ * contrato de staging para que nenhum flag consiga relaxar a proteção remota.
+ */
+export function assertLocalSupabaseTarget(supabaseUrl) {
+  let parsedUrl
+  try {
+    parsedUrl = new URL(supabaseUrl)
+  } catch {
+    throw new Error('LOCAL_SUPABASE_URL must be a valid absolute URL.')
+  }
+
+  const loopbackHosts = new Set(['127.0.0.1', 'localhost', '[::1]'])
+  if (parsedUrl.protocol !== 'http:' || !loopbackHosts.has(parsedUrl.hostname) || parsedUrl.pathname !== '/') {
+    throw new Error('Local E2E mutations are restricted to an explicit HTTP loopback URL.')
+  }
+  if (!parsedUrl.port) {
+    throw new Error('LOCAL_SUPABASE_URL must include the isolated local API port.')
+  }
+
+  return { supabaseUrl: parsedUrl.origin }
+}

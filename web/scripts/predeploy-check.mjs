@@ -122,6 +122,7 @@ const commands = [
       'tests/e2e/accessibility-navigation.spec.ts',
       'tests/e2e/motion-runtime.spec.ts',
       'tests/e2e/weight-history-safety.spec.ts',
+      'tests/e2e/local-ocr-assets.spec.ts',
       '--workers=1',
     ],
     env: {

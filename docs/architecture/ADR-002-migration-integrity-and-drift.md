@@ -9,16 +9,30 @@
 
 A lista de versões do Supabase compara timestamps, não o conteúdo byte a byte. O repositório também contém uma alteração histórica confirmada em `20260625051920_rls_performance_advisor_cleanup.sql`: o SQL original pressupunha a existência de `public.subscriptions`, embora nenhuma migration ativa crie essa tabela. O guard atual preserva a policy quando a tabela existe e permite replay limpo quando ela não existe.
 
-O SHA-256 do artefato efetivamente aplicado em staging/produção não foi recuperado. Portanto, nem o conteúdo original do Git nem o conteúdo local atual podem ser apresentados como prova do estado remoto.
+Três migrations de 2026-08-23 também continham bloqueadores objetivos de replay
+local: nomes de coluna inválidos no catálogo, referência a helper no schema antigo
+e `CREATE INDEX CONCURRENTLY` dentro de transação explícita. As correções
+mínimas estão registradas como novas transições no mesmo ledger.
+
+O SHA-256 dos artefatos efetivamente aplicados em staging/produção não foi
+recuperado. Portanto, nem o conteúdo original do Git nem o conteúdo local atual
+podem ser apresentados como prova do estado remoto.
 
 ## Decisão
 
 1. `supabase/migration-integrity.json` passa a ser a baseline canônica **do repositório**, usando SHA-256 dos bytes brutos e entradas ordenadas.
 2. O manifesto declara obrigatoriamente `remoteAttestation: false`; sua aprovação não significa igualdade com staging ou produção.
-3. Migrations presentes na base Git são append-only: não podem ser modificadas, removidas ou renomeadas.
+3. Migrations presentes na base Git são append-only: não podem ser modificadas,
+   removidas ou renomeadas, exceto por uma transição histórica que satisfaça
+   integralmente os itens 5 e 6.
 4. Novas migrations devem usar versão superior à maior versão da base.
-5. A transição histórica conhecida é permitida somente para o par exato de hashes registrado no ledger. Qualquer outra mudança falha.
-6. O ledger de transições também é append-only. Nunca se substitui um evento antigo para fazer um gate passar.
+5. Cada transição histórica é permitida somente para o par exato
+   `hash-da-base → hash-atual` registrado no ledger. Toda linha histórica
+   alterada deve ter exatamente um novo evento correspondente; eventos sem
+   mudança real falham.
+6. O ledger de transições também é append-only: os eventos publicados formam
+   prefixo imutável e novos eventos só podem ser anexados. Nunca se reordena ou
+   substitui um evento antigo para fazer um gate passar.
 7. Não se usa `migration repair`, `db push` ou reescrita remota para mascarar divergência. A reconciliação começa por consulta read-only, inventário e diff autorizado em staging isolado.
 8. O diretório `supabase/migrations_archive` permanece fora da cadeia executável e do manifesto ativo.
 

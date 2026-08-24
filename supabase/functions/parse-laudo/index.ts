@@ -17,6 +17,9 @@ const ALLOWED_ORIGINS = [...DEFAULT_ALLOWED_ORIGINS, ...extraOrigins];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_AI_OUTPUT_BYTES = 256 * 1024;
 const PROVENANCE_MAX_BYTES = 8 * 1024;
+const EXTRACTION_RATE_LIMIT = 3;
+const EXTRACTION_RATE_WINDOW_MS = 60_000;
+const extractionRateBuckets = new Map<string, { count: number; resetAt: number }>();
 
 // AUDIT-001 Fase 2 (Tarefa 2.3): versao do SYSTEM_PROMPT/estrategia de extracao,
 // gravada em ia_provenance a cada laudo finalizado para permitir reproduzir
@@ -64,6 +67,33 @@ function methodNotAllowed(corsHeaders: Record<string, string>) {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
       "Allow": "POST, OPTIONS",
+    },
+  });
+}
+
+/** Defesa por instância; o limite distribuído do gateway continua obrigatório em produção. */
+function isExtractionRateLimited(userId: string) {
+  const now = Date.now();
+  const current = extractionRateBuckets.get(userId);
+  if (!current || now >= current.resetAt) {
+    extractionRateBuckets.set(userId, { count: 1, resetAt: now + EXTRACTION_RATE_WINDOW_MS });
+    return null;
+  }
+  if (current.count >= EXTRACTION_RATE_LIMIT) {
+    return Math.max(1, Math.ceil((current.resetAt - now) / 1000));
+  }
+  current.count += 1;
+  return null;
+}
+
+function rateLimited(corsHeaders: Record<string, string>, retryAfterSeconds: number) {
+  return new Response(JSON.stringify({ success: false, error: "Muitas solicitações de análise. Aguarde e tente novamente." }), {
+    status: 429,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "Retry-After": String(retryAfterSeconds),
     },
   });
 }
@@ -169,11 +199,15 @@ function buildProvenance(input: {
 
   const bytes = new TextEncoder().encode(JSON.stringify(provenance)).byteLength;
   if (bytes > PROVENANCE_MAX_BYTES) {
-    console.error("[parse-laudo] proveniencia excedeu o limite; gravando versao minima.", { bytes });
+    console.error("[parse-laudo] event=provenance_size_limit");
     return {
       provider: input.provider,
       prompt_version: PROMPT_VERSION,
       processed_at: provenance.processed_at,
+      pdf_sha256: input.pdfSha256,
+      pdf_bytes: input.pdfBytes,
+      schema_name: HEMOGRAMA_SCHEMA.name,
+      schema_version: HEMOGRAMA_SCHEMA.version,
     };
   }
 
@@ -378,7 +412,7 @@ async function callGemini(
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     if (attempt > 0) {
       const delayMs = Math.min(2000 * Math.pow(2, attempt - 1), 16000);
-      console.log(`[parse-laudo] Gemini rate limit (429). Tentativa ${attempt + 1}/${MAX_ATTEMPTS} em ${delayMs}ms.`);
+      console.warn("[parse-laudo] event=provider_rate_limit_retry");
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
 
@@ -570,7 +604,7 @@ function handleClaimRpcError(
   if (message.includes("service_role_required") || message.includes("quota_not_configured")) {
     return authorizationUnavailable(corsHeaders);
   }
-  console.error("[parse-laudo] claim_laudo_ia falhou de forma inesperada.", { message });
+  console.error("[parse-laudo] event=claim_unexpected_failure");
   return ok({ success: false, error: "Não foi possível processar o laudo agora. Tente novamente." }, corsHeaders);
 }
 
@@ -604,7 +638,7 @@ Deno.serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!supabaseUrl || !serviceRoleKey) {
-      console.error("[parse-laudo] Configuracao obrigatoria do backend ausente.");
+      console.error("[parse-laudo] event=missing_backend_configuration");
       return ok({ success: false, error: "Servico temporariamente indisponivel." }, corsHeaders);
     }
 
@@ -640,6 +674,9 @@ Deno.serve(async (req: Request) => {
       return forbidden(corsHeaders);
     }
 
+    const retryAfterSeconds = isExtractionRateLimited(user.id);
+    if (retryAfterSeconds !== null) return rateLimited(corsHeaders, retryAfterSeconds);
+
     // ── Validação do body ──────────────────────────────────────────────
     const body = await readRequestBody(req);
     const laudoId = body?.laudoId;
@@ -657,10 +694,6 @@ Deno.serve(async (req: Request) => {
     if (laudoError || !laudo || laudo.vet_id !== user.id) {
       return ok({ success: false, error: "Laudo não encontrado. Tente fazer o upload novamente." }, corsHeaders);
     }
-    if (!laudo.storage_path.startsWith(`${user.id}/`)) {
-      return ok({ success: false, error: "Caminho do laudo inválido para este usuário." }, corsHeaders);
-    }
-
     // Dependencia de ordem de deploy: as migrations de tenancy
     // (20260718100000_tenancy_expand e 20260718100100_tenancy_backfill_default_clinic)
     // precisam ja estar aplicadas ANTES do deploy desta funcao. Se clinic_id vier
@@ -668,8 +701,18 @@ Deno.serve(async (req: Request) => {
     // proprio claim_laudo_ia rejeitaria com invalid_request de qualquer forma,
     // mas checar aqui evita depender da mensagem crua da RPC para esse caso.
     if (!laudo.clinic_id) {
-      console.error("[parse-laudo] laudo sem clinic_id (backfill de tenancy pendente).", { laudoId });
+      console.error("[parse-laudo] event=missing_clinic_context");
       return ok({ success: false, error: "Servico temporariamente indisponivel." }, corsHeaders);
+    }
+
+    // O upload e reservado pelo servidor no caminho canonico da clinica.
+    // A verificacao antiga por prefixo de usuario rejeitava todos os laudos
+    // criados pelo fluxo atual (clinics/{clinic}/laudos/{laudo}/original.pdf)
+    // antes mesmo de a IA ser chamada.
+    const expectedStoragePath = `clinics/${laudo.clinic_id}/laudos/${laudo.id}/original.pdf`;
+    if (laudo.storage_path !== expectedStoragePath) {
+      console.error("[parse-laudo] event=storage_path_contract_violation");
+      return ok({ success: false, error: "O arquivo salvo não está pronto para análise. Faça o upload novamente." }, corsHeaders);
     }
 
     // ── claim_laudo_ia: reserva atomica de cota + estado ANTES de qualquer
@@ -709,12 +752,12 @@ Deno.serve(async (req: Request) => {
       case "reclaimed":
         break;
       default:
-        console.error("[parse-laudo] disposition inesperada do claim.", { disposition: claimResult.disposition });
+        console.error("[parse-laudo] event=claim_unexpected_disposition");
         return ok({ success: false, error: "Não foi possível processar o laudo agora. Tente novamente." }, corsHeaders);
     }
 
     if (!claimResult.claim_id || !claimResult.claim_token || !claimResult.storage_bucket || !claimResult.storage_path) {
-      console.error("[parse-laudo] claim sem token/path utilizavel.", { disposition: claimResult.disposition });
+      console.error("[parse-laudo] event=claim_missing_required_fields");
       return ok({ success: false, error: "Não foi possível processar o laudo agora. Tente novamente." }, corsHeaders);
     }
 
@@ -832,9 +875,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ── Extract & Discard: etapas best-effort após finalize bem-sucedido ──
-    // Falhas aqui são logadas mas NÃO abortar o sucesso para o cliente;
-    // o cron /api/cron/cleanup-storage reconcilia qualquer PDF que sobrar.
+    // ── Preservação de evidência após finalize bem-sucedido ──
+    // O objeto original permanece no Storage privado. Nenhuma exclusão é
+    // permitida sem política de retenção/purge aprovada e workflow auditado
+    // (ADR-003). O hash já integra a proveniência transacional gravada acima.
 
     // 1) Normaliza resultado_ia → exam_result_items (tabela estruturada)
     try {
@@ -843,61 +887,31 @@ Deno.serve(async (req: Request) => {
         { p_laudo_id: activeClaim.laudoId },
       );
       if (populateError) {
-        console.error("[parse-laudo] populate_exam_result_items falhou (nao critico).", {
-          message: populateError.message,
-          laudoId: activeClaim.laudoId,
-        });
+        console.error("[parse-laudo] event=exam_items_population_failed");
       }
-    } catch (populateErr) {
-      console.error("[parse-laudo] populate_exam_result_items excecao (nao critico).", {
-        message: populateErr instanceof Error ? populateErr.message : "erro desconhecido",
-        laudoId: activeClaim.laudoId,
-      });
+    } catch {
+      console.error("[parse-laudo] event=exam_items_population_exception");
     }
 
-    // 2) Persiste o hash SHA-256 do PDF em laudos_pdf para trilha de auditoria
-    //    (mesmo que o arquivo seja deletado imediatamente em seguida).
+    // 2) Replica o hash SHA-256 na coluna legada para consultas operacionais.
+    //    A proveniência transacional continua sendo a evidência autoritativa.
     try {
-      await supabase
+      const { error: hashUpdateError } = await supabase
         .from("laudos_pdf")
         .update({ pdf_sha256: pdfSha256 })
         .eq("id", activeClaim.laudoId);
-    } catch (_hashErr) {
-      // Silencioso: o hash é auditoria, não é bloqueante.
-    }
-
-    // 3) Deleta o PDF do Storage imediatamente ("discard" da estratégia).
-    //    storage_path vem do claim, nunca do body — já validado pela RPC.
-    try {
-      const { error: storageError } = await supabase.storage
-        .from(claimResult.storage_bucket)
-        .remove([claimResult.storage_path]);
-
-      if (storageError) {
-        console.error("[parse-laudo] deleção do PDF falhou (sera recuperada pelo cron).", {
-          message: storageError.message,
-          laudoId: activeClaim.laudoId,
-          path: claimResult.storage_path,
-        });
-      } else {
-        // Marca no banco que o PDF foi deletado com sucesso
-        await supabase
-          .from("laudos_pdf")
-          .update({ storage_deleted_at: new Date().toISOString() })
-          .eq("id", activeClaim.laudoId);
+      if (hashUpdateError) {
+        console.error("[parse-laudo] event=pdf_hash_column_update_failed");
       }
-    } catch (storageErr) {
-      console.error("[parse-laudo] excecao ao deletar PDF do Storage (sera recuperada pelo cron).", {
-        message: storageErr instanceof Error ? storageErr.message : "erro desconhecido",
-        laudoId: activeClaim.laudoId,
-      });
+    } catch {
+      console.error("[parse-laudo] event=pdf_hash_column_update_exception");
     }
 
     return ok({ success: true, data: resultadoIa, provider: providerUsed }, corsHeaders);
 
   } catch (error) {
     const classified = classifyUnknown(error);
-    console.error("[parse-laudo] processamento falhou:", { errorCode: classified.code, retryable: classified.retryable });
+    console.error("[parse-laudo] event=processing_failed", { errorCode: classified.code, retryable: classified.retryable });
 
     // ── Compensação via refund_laudo_ia (nunca update direto de status) ──
     // So chamamos refund se um claim realmente existir; falhas antes do claim
@@ -916,12 +930,10 @@ Deno.serve(async (req: Request) => {
           p_retryable: classified.retryable,
           p_error_code: classified.code,
         });
-      } catch (refundError) {
+      } catch {
         // Nao propaga: o reaper/proxima tentativa reconcilia via expiracao de
         // lease. Propagar aqui so trocaria uma mensagem generica por outra.
-        console.error("[parse-laudo] refund_laudo_ia falhou apos falha de processamento.", {
-          message: refundError instanceof Error ? refundError.message : "erro desconhecido",
-        });
+        console.error("[parse-laudo] event=refund_failed");
       }
     }
 

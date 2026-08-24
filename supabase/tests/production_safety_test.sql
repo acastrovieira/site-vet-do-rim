@@ -162,10 +162,15 @@ SELECT is(
     WHERE n.nspname IN ('public', 'private')
       AND p.prosecdef
       AND has_function_privilege('authenticated', p.oid, 'EXECUTE')
-      AND NOT (
-        (n.nspname = 'private' AND p.proname = 'current_user_is_admin')
-        OR (n.nspname = 'public' AND p.proname = 'increment_ai_quota')
-      )
+      AND p.oid <> ALL (ARRAY[
+        'private.abandon_laudo_upload(uuid)'::regprocedure,
+        'private.can_access_reserved_laudo_object(text, text[], boolean)'::regprocedure,
+        'private.current_user_is_admin()'::regprocedure,
+        'private.has_clinic_role(uuid, text[])'::regprocedure,
+        'private.reserve_laudo_upload(uuid)'::regprocedure,
+        'public.consume_clinical_rate_limit(text)'::regprocedure,
+        'public.increment_ai_quota(uuid)'::regprocedure
+      ])
   ),
   0::bigint,
   'authenticated has no unapproved SECURITY DEFINER entry point'
@@ -178,13 +183,18 @@ SELECT is(
     JOIN pg_namespace AS n ON n.oid = p.pronamespace
     WHERE p.prosecdef
       AND has_function_privilege('authenticated', p.oid, 'EXECUTE')
-      AND (
-        (n.nspname = 'private' AND p.proname = 'current_user_is_admin')
-        OR (n.nspname = 'public' AND p.proname = 'increment_ai_quota')
-      )
+      AND p.oid = ANY (ARRAY[
+        'private.abandon_laudo_upload(uuid)'::regprocedure,
+        'private.can_access_reserved_laudo_object(text, text[], boolean)'::regprocedure,
+        'private.current_user_is_admin()'::regprocedure,
+        'private.has_clinic_role(uuid, text[])'::regprocedure,
+        'private.reserve_laudo_upload(uuid)'::regprocedure,
+        'public.consume_clinical_rate_limit(text)'::regprocedure,
+        'public.increment_ai_quota(uuid)'::regprocedure
+      ])
   ),
-  2::bigint,
-  'authenticated can execute the two approved SECURITY DEFINER functions'
+  7::bigint,
+  'authenticated can execute the seven approved SECURITY DEFINER functions'
 );
 
 SELECT ok(

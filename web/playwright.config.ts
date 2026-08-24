@@ -4,6 +4,7 @@ const port = Number(process.env.PORT ?? 3000)
 const host = process.env.PLAYWRIGHT_HOST ?? 'localhost'
 const localChromiumChannel = process.env.PLAYWRIGHT_CHANNEL ?? (process.env.CI ? undefined : 'chrome')
 const crossBrowserSmoke = /cross-browser-smoke\.spec\.ts/
+const authenticatedLocalExtraction = /local-extraction-auth\.spec\.ts/
 const useProductionServer = process.env.PLAYWRIGHT_USE_PRODUCTION_SERVER === '1'
 const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === '0'
   ? false
@@ -62,6 +63,35 @@ export default defineConfig({
     {
       name: 'webkit-smoke',
       testMatch: crossBrowserSmoke,
+      use: {
+        ...devices['Desktop Safari'],
+        browserName: 'webkit',
+      },
+    },
+    {
+      name: 'chromium-mobile-auth',
+      testMatch: authenticatedLocalExtraction,
+      use: {
+        ...devices['Pixel 5'],
+        browserName: 'chromium',
+        ...(localChromiumChannel ? { channel: localChromiumChannel } : {}),
+      },
+    },
+    {
+      name: 'chromium-tablet-auth',
+      testMatch: authenticatedLocalExtraction,
+      use: {
+        browserName: 'chromium',
+        ...(localChromiumChannel ? { channel: localChromiumChannel } : {}),
+        viewport: { width: 768, height: 1024 },
+        deviceScaleFactor: 1,
+        hasTouch: true,
+        isMobile: true,
+      },
+    },
+    {
+      name: 'webkit-auth',
+      testMatch: authenticatedLocalExtraction,
       use: {
         ...devices['Desktop Safari'],
         browserName: 'webkit',

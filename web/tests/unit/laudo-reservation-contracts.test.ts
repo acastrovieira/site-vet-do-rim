@@ -132,3 +132,21 @@ test('LaudoUploader reserves server-side before uploading, never inserts laudos_
   // upsert continua desabilitado no upload direto ao Storage.
   assert.match(source, /upsert: false/)
 })
+
+test('lab upload makes the two explicit steps and the resulting evolution table discoverable', () => {
+  const uploaderSource = readFileSync(
+    resolve(import.meta.dirname, '../../src/components/lab/LaudoUploader.tsx'),
+    'utf8',
+  )
+  const patientSource = readFileSync(
+    resolve(import.meta.dirname, '../../src/app/lab/pacientes/[petId]/page.tsx'),
+    'utf8',
+  )
+
+  assert.match(uploaderSource, /1\. Enviar PDF ao histórico/)
+  assert.match(uploaderSource, /2\. Analisar com IA e gerar tabela/)
+  assert.match(uploaderSource, /router\.refresh\(\)/)
+  assert.match(uploaderSource, /Ver tabela evolutiva do paciente/)
+  assert.match(uploaderSource, /\/lab\/pacientes\/\$\{petId\}#evolucao-laboratorial/)
+  assert.match(patientSource, /id="evolucao-laboratorial"/)
+})

@@ -96,7 +96,24 @@ export async function verifyTableRowsAbsent(supabase, table, ids) {
 export async function verifyStoragePathsAbsent(supabase, bucket, paths) {
   for (const path of new Set(paths)) {
     const { data: exists, error } = await supabase.storage.from(bucket).exists(path)
-    if (error) throw new Error(`Failed to verify storage cleanup for ${path}: ${error.message}`)
+    if (error) {
+      // Algumas versões do Storage local ainda não implementam `exists`.
+      // A listagem exata do diretório mantém a verificação fail-closed sem
+      // transformar uma resposta HTTP genérica em alegação de remoção.
+      const separator = path.lastIndexOf('/')
+      const directory = separator >= 0 ? path.slice(0, separator) : ''
+      const fileName = separator >= 0 ? path.slice(separator + 1) : path
+      const { data: entries, error: listError } = await supabase.storage
+        .from(bucket)
+        .list(directory, { limit: 100, search: fileName })
+      if (listError) {
+        throw new Error(`Failed to verify storage cleanup for ${path}: ${listError.message}`)
+      }
+      if (entries?.some((entry) => entry.name === fileName)) {
+        throw new Error(`Storage cleanup left residue: ${path}`)
+      }
+      continue
+    }
     if (typeof exists !== 'boolean') {
       throw new Error(`Storage residue query did not return a verifiable result for ${path}.`)
     }

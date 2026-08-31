@@ -37,7 +37,14 @@ function parseSource(value: unknown): LocalExtractionSource {
   return value
 }
 
-function parseItem(value: unknown, index: number): ReviewedLocalItem {
+/**
+ * Validacao de um item laboratorial revisado. Compartilhada com o lancamento
+ * manual (manual-entry.ts), que envia os mesmos campos com page 0 — assim as
+ * duas entradas passam pelas MESMAS travas: parametro na allowlist, valor
+ * numerico limitado, e transcricao (valueText/referenceText) coerente com os
+ * numeros gravados.
+ */
+export function parseItem(value: unknown, index: number): ReviewedLocalItem {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new ApiValidationError(`Item ${index + 1} invalido`)
   }
@@ -168,7 +175,9 @@ export function buildReviewedLocalResult(
       proteina_total: value('proteina_total'),
     },
     interpretacao_ia: {
-      resumo: 'Valores extraídos localmente e conferidos pelo usuário. Nenhuma interpretação clínica automática foi gerada.',
+      resumo: payload.source === 'manual'
+        ? 'Valores lançados manualmente pelo usuário. Nenhuma extração automática e nenhuma interpretação clínica foram geradas.'
+        : 'Valores extraídos localmente e conferidos pelo usuário. Nenhuma interpretação clínica automática foi gerada.',
       achados_relevantes: [],
       alertas: [],
       estadiamento_iris_sugerido: null,

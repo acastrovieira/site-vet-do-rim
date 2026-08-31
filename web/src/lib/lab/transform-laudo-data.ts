@@ -81,7 +81,8 @@ export interface ResultadoIA {
   extracao_local?: {
     schema_version: 1 | 2
     parser_version: string
-    source: 'pdf-text' | 'ocr'
+    /** 'manual' = digitado na planilha, sem PDF e sem IA. */
+    source: 'pdf-text' | 'ocr' | 'manual'
     reviewed: true
     items: Array<{
       parametro: HemogramaKey

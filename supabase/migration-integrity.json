@@ -88,6 +88,30 @@
     {
       "file": "20260824004343_distributed_rate_limit.sql",
       "sha256": "4c242dc7a89f7ed027e61a6e709274c33d027571f77aab939e8e8b23743b7f8b"
+    },
+    {
+      "file": "20260825000000_fix_service_insert_profile_policy.sql",
+      "sha256": "541eb5d706fb33a4846ab468b7c68f25bf90a082896925b9090af51f2c1634a7"
+    },
+    {
+      "file": "20260825000100_fix_claim_events_ttl.sql",
+      "sha256": "55cbc1ff4d24e90a5b449ac237ea9d9e3f55e12dcf2db3926f53fb2d16719bb3"
+    },
+    {
+      "file": "20260825000200_fix_missing_clinic_memberships.sql",
+      "sha256": "0f9f93e0603c16b70ff2cebabd6c8cca8ad0d7f4f312ee5f1ed45e5618f911f8"
+    },
+    {
+      "file": "20260825000300_fix_stuck_processing_laudos.sql",
+      "sha256": "cc278904c023dd088697763e48c482cfd9494b9dd87ef89036af56ab9ae67518"
+    },
+    {
+      "file": "20260828000000_remediation_001_recreate_has_clinic_role.sql",
+      "sha256": "f8c189aa536b0d5639611b0441bb8f370a44c27d9c98f80bbcf803927a228705"
+    },
+    {
+      "file": "20260829000000_remediation_002_missing_tenant_columns.sql",
+      "sha256": "3591a2b8ce581c3c31a0ae88ed102043192f5e89611e5d4392ba07435a07fd62"
     }
   ],
   "approvedHistoricalTransitions": [

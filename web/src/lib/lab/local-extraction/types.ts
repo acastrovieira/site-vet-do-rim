@@ -1,7 +1,12 @@
 import type { HemogramaKey } from '../reference-values.ts'
 import type { CanonicalLaboratoryObservation } from '../canonical-observation.ts'
 
-export type LocalExtractionSource = 'pdf-text' | 'ocr'
+/**
+ * Procedencia do dado laboratorial. 'manual' identifica o lancamento digitado
+ * direto na planilha, sem PDF e sem IA — nunca e produzido pelo parser, apenas
+ * pelo fluxo de entrada manual.
+ */
+export type LocalExtractionSource = 'pdf-text' | 'ocr' | 'manual'
 export type LocalConfidenceLevel = 'high' | 'medium' | 'low'
 
 export interface LocalExtractedItem {

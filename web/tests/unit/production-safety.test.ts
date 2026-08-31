@@ -1045,7 +1045,7 @@ test('parse-laudo keeps bounded attempts, transactional claim and sanitized fail
 
   // Proveniencia da IA (Tarefa 2.3): PROMPT_VERSION versionado localmente,
   // sha256 do PDF e nome/versao do schema clinico, sem PII nem conteudo bruto.
-  assert.match(source, /const PROMPT_VERSION = "2026-07-18\.1"/)
+  assert.match(source, /const PROMPT_VERSION = "2026-08-29\.1"/)
   assert.match(source, /prompt_version: PROMPT_VERSION/)
   assert.match(source, /pdf_sha256: input\.pdfSha256/)
   assert.match(source, /schema_name: HEMOGRAMA_SCHEMA\.name/)
@@ -1058,11 +1058,27 @@ test('parse-laudo keeps bounded attempts, transactional claim and sanitized fail
   assert.match(contracts, /readBoundedText\(response\.body, maxBytes\)/)
 
   const containmentIndex = source.indexOf(
-    'containClinicalInference(parsedOutput, HEMOGRAMA_SCHEMA.schema)',
+    'containClinicalInference(outputForValidation, HEMOGRAMA_SCHEMA.schema)',
   )
   const finalizeIndex = source.indexOf('.rpc("finalize_laudo_ia",')
   assert.ok(containmentIndex >= 0)
   assert.ok(finalizeIndex > containmentIndex)
+
+  // Modo economico: o schema/prompt enviados ao provider sao os selecionados por
+  // REQUEST_INTERPRETATION, mas a validacao local continua contra o contrato
+  // clinico COMPLETO — nenhum campo deixa de ser conferido por ser barato.
+  assert.match(source, /toGeminiSchema\(REQUEST_SCHEMA\.schema\)/)
+  assert.match(source, /schema: REQUEST_SCHEMA\.schema/)
+  assert.match(source, /parts: \[\{ text: REQUEST_SYSTEM_PROMPT \}\]/)
+  assert.match(source, /content: REQUEST_SYSTEM_PROMPT/)
+  // A interpretacao suprimida vira bloco neutro gerado no servidor: um laudo
+  // barato nunca pode carregar texto interpretativo de origem incerta.
+  assert.match(source, /interpretacao_ia: \{ \.\.\.NEUTRAL_INTERPRETATION \}/)
+  assert.match(source, /estadiamento_iris_sugerido: null/)
+  assert.match(source, /interpretation_requested: REQUEST_INTERPRETATION/)
+  // O prompt economico mantem as mesmas travas clinicas do prompt completo.
+  assert.match(source, /EXTRACTION_ONLY_SYSTEM_PROMPT = "[^"]*Nao diagnostique DRC[^"]*"/)
+  assert.match(source, /EXTRACTION_ONLY_SYSTEM_PROMPT = "[^"]*nao sugira estadiamento IRIS[^"]*"/)
   assert.match(source, /Nao diagnostique DRC/)
   assert.match(source, /nao sugira estadiamento IRIS/)
   assert.doesNotMatch(source, /Sugira estadiamento IRIS apenas se creatinina/)

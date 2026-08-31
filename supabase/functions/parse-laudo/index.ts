@@ -25,7 +25,22 @@ const extractionRateBuckets = new Map<string, { count: number; resetAt: number }
 // gravada em ia_provenance a cada laudo finalizado para permitir reproduzir
 // "qual prompt gerou este resultado". INCREMENTE este valor (data.sequencia)
 // toda vez que o texto de SYSTEM_PROMPT ou a estrategia de extracao mudar.
-const PROMPT_VERSION = "2026-07-18.1";
+const PROMPT_VERSION = "2026-08-29.1";
+
+/**
+ * Modo economico (padrao). A interpretacao clinica textual e o item mais caro
+ * da resposta — sozinha responde por cerca de metade dos tokens de saida, que
+ * custam varias vezes o token de entrada em todos os provedores. Fora dela, o
+ * laudo so precisa dos valores numericos, que sao o que a planilha consome.
+ *
+ * Com o modo economico ligado, o bloco interpretacao_ia nao e pedido ao modelo
+ * e passa a ser preenchido neutro no servidor: o contrato gravado em
+ * resultado_ia permanece identico, entao nada a jusante (planilha, export,
+ * componentes) precisa mudar.
+ *
+ * PARSE_LAUDO_INTERPRETATION=on restaura o comportamento anterior.
+ */
+const REQUEST_INTERPRETATION = Deno.env.get("PARSE_LAUDO_INTERPRETATION") === "on";
 
 /**
  * Erros de autenticação/autorização usam 401/403/503; falhas de processamento
@@ -195,6 +210,10 @@ function buildProvenance(input: {
     pdf_bytes: input.pdfBytes,
     schema_name: HEMOGRAMA_SCHEMA.name,
     schema_version: HEMOGRAMA_SCHEMA.version,
+    // Registra se a interpretacao textual foi pedida ao modelo neste laudo. Sem
+    // isso, um resultado_ia com interpretacao_ia vazia seria indistinguivel de
+    // um laudo em que o modelo simplesmente nao achou nada a relatar.
+    interpretation_requested: REQUEST_INTERPRETATION,
   };
 
   const bytes = new TextEncoder().encode(JSON.stringify(provenance)).byteLength;
@@ -208,6 +227,7 @@ function buildProvenance(input: {
       pdf_bytes: input.pdfBytes,
       schema_name: HEMOGRAMA_SCHEMA.name,
       schema_version: HEMOGRAMA_SCHEMA.version,
+      interpretation_requested: REQUEST_INTERPRETATION,
     };
   }
 
@@ -320,6 +340,42 @@ const HEMOGRAMA_SCHEMA = {
 
 const SYSTEM_PROMPT = "Voce e um assistente de extracao de dados de laudos veterinarios. Extraia somente informacoes presentes no PDF e retorne JSON estruturado conforme o schema fornecido. Use exclusivamente YYYY-MM-DD em data_coleta e data_resultado; quando a data ou outro campo nao constar no laudo, retorne null. Nao diagnostique DRC, nao recomende tratamento e nao sugira estadiamento IRIS. Em interpretacao_ia, liste apenas achados que o proprio laudo sinaliza fora da referencia e mantenha estadiamento_iris_sugerido como null. A avaliacao clinica depende de exame, hidratacao, estabilidade, especie e outros marcadores revisados por medico-veterinario.";
 
+/**
+ * Prompt do modo economico: sem as instrucoes sobre interpretacao_ia, que nao e
+ * mais pedida. Mantem intactas as travas clinicas (nao diagnosticar, nao
+ * estadiar) — elas valem para qualquer texto que o modelo possa produzir.
+ */
+const EXTRACTION_ONLY_SYSTEM_PROMPT = "Voce e um assistente de extracao de dados de laudos veterinarios. Extraia somente informacoes presentes no PDF e retorne JSON estruturado conforme o schema fornecido. Use exclusivamente YYYY-MM-DD em data_coleta e data_resultado; quando a data ou outro campo nao constar no laudo, retorne null. Transcreva apenas os valores medidos, sem comentar, interpretar ou classificar. Nao diagnostique DRC, nao recomende tratamento e nao sugira estadiamento IRIS.";
+
+/** Bloco neutro gravado no lugar da interpretacao que deixou de ser pedida. */
+const NEUTRAL_INTERPRETATION = {
+  resumo: "",
+  achados_relevantes: [] as string[],
+  alertas: [] as string[],
+  estadiamento_iris_sugerido: null,
+};
+
+/** HEMOGRAMA_SCHEMA sem o bloco interpretacao_ia (schema pedido ao provider). */
+const EXTRACTION_ONLY_SCHEMA = (() => {
+  const { interpretacao_ia: _omitted, ...properties } = HEMOGRAMA_SCHEMA.schema.properties;
+  return {
+    ...HEMOGRAMA_SCHEMA,
+    schema: {
+      ...HEMOGRAMA_SCHEMA.schema,
+      properties,
+      required: HEMOGRAMA_SCHEMA.schema.required.filter((field) => field !== "interpretacao_ia"),
+    },
+  };
+})();
+
+/**
+ * Schema efetivamente enviado ao provider. A validacao local do resultado
+ * continua usando HEMOGRAMA_SCHEMA.schema (completo) — o bloco neutro e
+ * injetado antes dela.
+ */
+const REQUEST_SCHEMA = REQUEST_INTERPRETATION ? HEMOGRAMA_SCHEMA : EXTRACTION_ONLY_SCHEMA;
+const REQUEST_SYSTEM_PROMPT = REQUEST_INTERPRETATION ? SYSTEM_PROMPT : EXTRACTION_ONLY_SYSTEM_PROMPT;
+
 // ── Gemini API ───────────────────────────────────────────────────────────
 
 /**
@@ -377,11 +433,11 @@ async function callGemini(
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-  const geminiSchema = toGeminiSchema(HEMOGRAMA_SCHEMA.schema);
+  const geminiSchema = toGeminiSchema(REQUEST_SCHEMA.schema);
 
   const requestBody = JSON.stringify({
     system_instruction: {
-      parts: [{ text: SYSTEM_PROMPT }],
+      parts: [{ text: REQUEST_SYSTEM_PROMPT }],
     },
     contents: [
       {
@@ -526,15 +582,15 @@ async function callOpenAI(
         text: {
           format: {
             type: "json_schema",
-            name: HEMOGRAMA_SCHEMA.name,
-            strict: HEMOGRAMA_SCHEMA.strict,
-            schema: HEMOGRAMA_SCHEMA.schema,
+            name: REQUEST_SCHEMA.name,
+            strict: REQUEST_SCHEMA.strict,
+            schema: REQUEST_SCHEMA.schema,
           },
         },
         input: [
           {
             role: "system",
-            content: SYSTEM_PROMPT,
+            content: REQUEST_SYSTEM_PROMPT,
           },
           {
             role: "user",
@@ -830,10 +886,23 @@ Deno.serve(async (req: Request) => {
       throw new ProviderFailure("Não foi possível interpretar a resposta da IA. Tente reenviar o PDF.", "invalid_provider_response", false);
     }
 
+    // No modo economico o provider nao devolve interpretacao_ia. O bloco neutro
+    // entra aqui, antes da validacao, para que o resultado continue sendo
+    // conferido e gravado contra o contrato clinico COMPLETO — o campo existe e
+    // e verificado como sempre; o que mudou e que nenhum texto interpretativo
+    // foi gerado por um modelo. Valores nao-objeto passam intactos e sao
+    // rejeitados pela validacao logo abaixo.
+    const outputForValidation = REQUEST_INTERPRETATION
+        || parsedOutput === null
+        || typeof parsedOutput !== "object"
+        || Array.isArray(parsedOutput)
+      ? parsedOutput
+      : { ...parsedOutput, interpretacao_ia: { ...NEUTRAL_INTERPRETATION } };
+
     // ── Valida contrato clínico local ──────────────────────────────────
     let resultadoIa: Record<string, unknown>;
     try {
-      resultadoIa = containClinicalInference(parsedOutput, HEMOGRAMA_SCHEMA.schema);
+      resultadoIa = containClinicalInference(outputForValidation, HEMOGRAMA_SCHEMA.schema);
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Resposta da IA invalida.";
       throw new ProviderFailure(msg, "invalid_result_schema", false);

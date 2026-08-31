@@ -8,6 +8,7 @@ import {
   buildReviewedLocalResult,
   parseReviewedLocalExtractionPayload,
 } from '../../src/lib/lab/local-extraction/reviewed-result.ts'
+import { parseManualLabEntryPayload } from '../../src/lib/lab/manual-entry.ts'
 
 test('local number parser handles pt-BR and en-US without guessing ambiguous thousands', () => {
   assert.equal(parseLocalNumber('2,15').value, 2.15)
@@ -161,4 +162,149 @@ test('local flow stays provider-free and server persistence is narrowly authoriz
   assert.match(route, /\.eq\('status', 'pendente'\)/)
   assert.match(route, /expectedPath = `clinics\/\$\{authorization\.clinicId\}\/laudos\/\$\{id\}\/original\.pdf`/)
   assert.match(csp, /worker-src 'self' blob:/)
+})
+
+test('parser reads the printed reference interval even when it precedes the result', () => {
+  const draft = parseLocalLabText([
+    [
+      'Creatinina  0,5 - 1,8  mg/dL  2,1',
+      'Ureia  21 a 60  mg/dL  85',
+    ].join('\n'),
+  ], 'pdf-text')
+
+  const creatinina = draft.items.find((item) => item.key === 'creatinina')
+  const ureia = draft.items.find((item) => item.key === 'ureia')
+
+  assert.equal(creatinina?.value, 2.1)
+  assert.equal(creatinina?.referenceMin, 0.5)
+  assert.equal(creatinina?.referenceMax, 1.8)
+  assert.equal(ureia?.value, 85)
+  assert.equal(ureia?.referenceMin, 21)
+  assert.equal(ureia?.referenceMax, 60)
+})
+
+test('a line carrying only the reference interval never yields a measured value', () => {
+  const draft = parseLocalLabText([
+    'Hemoglobina 12 - 18 g/dL',
+  ], 'pdf-text')
+
+  assert.equal(draft.items.find((item) => item.key === 'hemoglobina'), undefined)
+})
+
+test('longest alias wins over catalog order, so band cells never land in segmented', () => {
+  const draft = parseLocalLabText([
+    [
+      'Neutrófilos bastonetes 120 /µL 0 - 300',
+      'Neutrófilos 7000 /µL 3000 - 11500',
+    ].join('\n'),
+  ], 'pdf-text')
+
+  const bastoes = draft.items.find((item) => item.key === 'neutrofilos_bastoes')
+  const segmentados = draft.items.find((item) => item.key === 'neutrofilos_segmentados')
+
+  assert.equal(bastoes?.value, 120)
+  assert.equal(segmentados?.value, 7000)
+})
+
+test('parser matches Brazilian laboratory naming and hyphen-separated enzyme labels', () => {
+  const draft = parseLocalLabText([
+    [
+      'ALT-TGP 45 U/L 10 - 125',
+      'Volume globular 31 % 37 - 55',
+      'Glóbulos brancos 12000 /µL 6000 - 17000',
+      'Trombócitos 210000 /µL 175000 - 500000',
+      'Proteínas plasmáticas totais 6,2 g/dL 5,4 - 7,1',
+    ].join('\n'),
+  ], 'pdf-text')
+
+  assert.equal(draft.items.find((item) => item.key === 'alt_tgp')?.value, 45)
+  assert.equal(draft.items.find((item) => item.key === 'hematocrito')?.value, 31)
+  assert.equal(draft.items.find((item) => item.key === 'leucocitos_totais')?.value, 12000)
+  assert.equal(draft.items.find((item) => item.key === 'plaquetas_contagem')?.value, 210000)
+  assert.equal(draft.items.find((item) => item.key === 'proteina_total')?.value, 6.2)
+})
+
+test('manual lab entry reuses the reviewed item validation and demands a collection date', () => {
+  const validItem = {
+    key: 'creatinina',
+    value: 2.1,
+    valueText: '2,1',
+    unit: 'mg/dL',
+    referenceMin: 0.5,
+    referenceMax: 1.8,
+    referenceText: '0,5 - 1,8',
+    page: 0,
+  }
+
+  const payload = parseManualLabEntryPayload({
+    items: [validItem],
+    laboratory: 'Lab Teste',
+    collectionDate: '2026-08-23',
+    resultDate: '2026-08-25',
+  })
+  assert.equal(payload.source, 'manual')
+  assert.equal(payload.collectionDate, '2026-08-23')
+  assert.equal(payload.items[0].value, 2.1)
+
+  // Data de coleta e o eixo da planilha evolutiva: sem ela o ponto nao tem lugar.
+  assert.throws(() => parseManualLabEntryPayload({ items: [validItem] }), /Data de coleta/)
+  assert.throws(
+    () => parseManualLabEntryPayload({ items: [validItem], collectionDate: '2026-08-23', resultDate: '2026-08-22' }),
+    /anterior a data de coleta/,
+  )
+  // Um lancamento manual nunca aponta para pagina de PDF.
+  assert.throws(
+    () => parseManualLabEntryPayload({ items: [{ ...validItem, page: 2 }], collectionDate: '2026-08-23' }),
+    /pagina de PDF/,
+  )
+  // As travas do fluxo de PDF valem igual: transcricao tem de bater com o numero.
+  assert.throws(
+    () => parseManualLabEntryPayload({ items: [{ ...validItem, valueText: '9,9' }], collectionDate: '2026-08-23' }),
+    /Evidencia do valor/,
+  )
+  assert.throws(
+    () => parseManualLabEntryPayload({ items: [{ ...validItem, key: 'sdma' }], collectionDate: '2026-08-23' }),
+    /Parametro/,
+  )
+  assert.throws(
+    () => parseManualLabEntryPayload({
+      items: [validItem, validItem],
+      collectionDate: '2026-08-23',
+    }),
+    /apenas uma vez/,
+  )
+})
+
+test('the PDF review flow never accepts a manual provenance, and manual results stay interpretation-free', () => {
+  // 'manual' e exclusivo do lancamento digitado: o payload de revisao de PDF
+  // continua restrito a pdf-text/ocr.
+  assert.throws(
+    () => parseReviewedLocalExtractionPayload({
+      items: [{
+        key: 'ureia', value: 85, valueText: '85', unit: 'mg/dL',
+        referenceMin: null, referenceMax: null, referenceText: null, page: 1,
+      }],
+      source: 'manual',
+    }),
+    /Origem da extracao invalida/,
+  )
+
+  const result = buildReviewedLocalResult(
+    parseManualLabEntryPayload({
+      items: [{
+        key: 'ureia', value: 85, valueText: '85', unit: 'mg/dL',
+        referenceMin: null, referenceMax: null, referenceText: null, page: 0,
+      }],
+      collectionDate: '2026-08-23',
+    }),
+    { name: 'Lava', species: 'canino', breed: '', age: '', weightKg: null, tutor: '' },
+  )
+
+  assert.equal(result.bioquimica.ureia, 85)
+  assert.equal(result.data_coleta, '2026-08-23')
+  assert.equal(result.extracao_local?.source, 'manual')
+  assert.equal(result.extracao_local?.items[0]?.observation?.measurement.value, 85)
+  assert.deepEqual(result.interpretacao_ia.achados_relevantes, [])
+  assert.equal(result.interpretacao_ia.estadiamento_iris_sugerido, null)
+  assert.match(result.interpretacao_ia.resumo, /lançados manualmente/)
 })

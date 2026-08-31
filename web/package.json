@@ -14,7 +14,7 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "typecheck": "tsc --noEmit",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/unit/production-safety.test.ts tests/unit/frontend-safety.test.ts tests/unit/staging-audit-safety.test.ts tests/unit/parse-laudo-contracts.test.ts tests/unit/migration-integrity.test.ts tests/unit/tenancy-context.test.ts tests/unit/laudo-reservation-contracts.test.ts tests/unit/local-extraction.test.ts tests/unit/clinical-data-contract.test.ts tests/unit/server-rate-limit.test.ts tests/unit/sprint0-security-contracts.test.ts",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/unit/production-safety.test.ts tests/unit/frontend-safety.test.ts tests/unit/staging-audit-safety.test.ts tests/unit/parse-laudo-contracts.test.ts tests/unit/migration-integrity.test.ts tests/unit/tenancy-context.test.ts tests/unit/laudo-reservation-contracts.test.ts tests/unit/local-extraction.test.ts tests/unit/clinical-references.test.ts tests/unit/clinical-data-contract.test.ts tests/unit/server-rate-limit.test.ts tests/unit/sprint0-security-contracts.test.ts",
     "check:migrations": "node scripts/verify-migration-integrity.mjs --check",
     "check:edge": "node scripts/verify-edge-functions.mjs",
     "check:sprint-3-safety": "node scripts/verify-sprint-3-safety.mjs",

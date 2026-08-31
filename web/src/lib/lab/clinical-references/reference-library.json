@@ -1,0 +1,1004 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-30",
+  "status": "draft-awaiting-clinical-approval",
+  "transcriptionVerifiedAt": "2026-08-31",
+  "precedence": "O intervalo impresso no proprio laudo tem prioridade sobre esta biblioteca, que e fallback.",
+  "sources": {
+    "knoll-tufts": {
+      "citation": "Knoll JS. Apendice 1: Tabelas de Valores Laboratoriais Normais. In: Exames Laboratoriais e Procedimentos Diagnosticos: Canino e Felino.",
+      "population": "Cummings School of Veterinary Medicine, Tufts University",
+      "instrument": "CellDyn 3700 (hematologia, diferencial manual); Hitachi 911 (bioquimica)",
+      "page": "p. 1211-1212 do PDF"
+    },
+    "thrall-schalm": {
+      "citation": "Thrall MA et al. Hematologia e Bioquimica Clinica Veterinaria, 2a ed., Tabela 10.1.",
+      "population": "Diretrizes derivadas do trabalho original de Schalm",
+      "instrument": null,
+      "page": "p. 266 do PDF"
+    },
+    "iris-2026": {
+      "citation": "IRIS Staging of CKD (Modified 2026). International Renal Interest Society (IRIS) Ltd.",
+      "population": "Caes e gatos com DRC diagnosticada, estaveis e hidratados",
+      "instrument": "SDMA: metodologia proprietaria IDEXX (a propria diretriz adverte que outros ensaios podem nao ser equivalentes)",
+      "page": "iris-kidney.com — IRIS_staging_guidelines 2026.pdf",
+      "supersedes": "IRIS Staging Guidelines 2023"
+    }
+  },
+  "parameters": [
+    {
+      "key": "albumina",
+      "label": "Albumina",
+      "category": "bioquimica_renal",
+      "unit": "g/dL",
+      "species": {
+        "canino": {
+          "min": 2.8,
+          "max": 4
+        },
+        "felino": {
+          "min": 2.4,
+          "max": 4
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "alt_tgp",
+      "label": "ALT (TGP)",
+      "category": "bioquimica_hepatica",
+      "unit": "U/L",
+      "species": {
+        "canino": {
+          "min": 18,
+          "max": 86
+        },
+        "felino": {
+          "min": 29,
+          "max": 145
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "ast_tgo",
+      "label": "AST (TGO)",
+      "category": "bioquimica_hepatica",
+      "unit": "U/L",
+      "species": {
+        "canino": {
+          "min": 16,
+          "max": 54
+        },
+        "felino": {
+          "min": 12,
+          "max": 42
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "basofilos",
+      "label": "Basófilos",
+      "category": "serie_branca",
+      "unit": "/µL",
+      "species": {
+        "canino": {
+          "min": 0,
+          "max": 300
+        },
+        "felino": {
+          "min": 0,
+          "max": 300
+        }
+      },
+      "source": "knoll-tufts",
+      "requiresArbitration": true,
+      "alternateSources": [
+        {
+          "source": "thrall-schalm",
+          "species": {
+            "canino": {
+              "min": 0,
+              "max": 100
+            },
+            "felino": {
+              "min": 0,
+              "max": 100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "bilirrubina_total",
+      "label": "Bilirrubina total",
+      "category": "bioquimica_hepatica",
+      "unit": "mg/dL",
+      "species": {
+        "canino": {
+          "min": 0.1,
+          "max": 0.3
+        },
+        "felino": {
+          "min": 0.1,
+          "max": 0.3
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "calcio_total",
+      "label": "Cálcio total",
+      "category": "eletrolitos",
+      "unit": "mg/dL",
+      "species": {
+        "canino": {
+          "min": 9.4,
+          "max": 11.6
+        },
+        "felino": {
+          "min": 8.9,
+          "max": 11.5
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "chcm",
+      "label": "CHCM",
+      "category": "serie_vermelha",
+      "unit": "g/dL",
+      "species": {
+        "canino": {
+          "min": 33,
+          "max": 36
+        },
+        "felino": {
+          "min": 30.5,
+          "max": 36.2
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "cloro",
+      "label": "Cloreto",
+      "category": "eletrolitos",
+      "unit": "mEq/L",
+      "species": {
+        "canino": {
+          "min": 106,
+          "max": 116
+        },
+        "felino": {
+          "min": 110,
+          "max": 125
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "colesterol",
+      "label": "Colesterol",
+      "category": "bioquimica_geral",
+      "unit": "mg/dL",
+      "species": {
+        "canino": {
+          "min": 82,
+          "max": 355
+        },
+        "felino": {
+          "min": 77,
+          "max": 258
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "creatinina",
+      "label": "Creatinina",
+      "category": "bioquimica_renal",
+      "unit": "mg/dL",
+      "species": {
+        "canino": {
+          "min": 0.6,
+          "max": 2
+        },
+        "felino": {
+          "min": 0.9,
+          "max": 2.1
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "eosinofilos",
+      "label": "Eosinófilos",
+      "category": "serie_branca",
+      "unit": "/µL",
+      "species": {
+        "canino": {
+          "min": 100,
+          "max": 1250
+        },
+        "felino": {
+          "min": 0,
+          "max": 1900
+        }
+      },
+      "source": "knoll-tufts",
+      "requiresArbitration": true,
+      "alternateSources": [
+        {
+          "source": "thrall-schalm",
+          "species": {
+            "canino": {
+              "min": 100,
+              "max": 1200
+            },
+            "felino": {
+              "min": 0,
+              "max": 1500
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "fosfatase_alcalina",
+      "label": "Fosfatase alcalina",
+      "category": "bioquimica_hepatica",
+      "unit": "U/L",
+      "species": {
+        "canino": {
+          "min": 12,
+          "max": 121
+        },
+        "felino": {
+          "min": 10,
+          "max": 72
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "fosforo",
+      "label": "Fósforo",
+      "category": "bioquimica_renal",
+      "unit": "mg/dL",
+      "species": {
+        "canino": {
+          "min": 2.6,
+          "max": 7.2
+        },
+        "felino": {
+          "min": 3,
+          "max": 6.3
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "ggt",
+      "label": "GGT",
+      "category": "bioquimica_hepatica",
+      "unit": "U/L",
+      "species": {
+        "canino": {
+          "min": 2,
+          "max": 10
+        },
+        "felino": {
+          "min": 0,
+          "max": 5
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "glicose",
+      "label": "Glicose",
+      "category": "bioquimica_geral",
+      "unit": "mg/dL",
+      "species": {
+        "canino": {
+          "min": 67,
+          "max": 135
+        },
+        "felino": {
+          "min": 70,
+          "max": 120
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "globulina",
+      "label": "Globulina (calculada)",
+      "category": "bioquimica_geral",
+      "unit": "g/dL",
+      "species": {
+        "canino": {
+          "min": 2.3,
+          "max": 4.2
+        },
+        "felino": {
+          "min": 2.5,
+          "max": 5.8
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "hcm",
+      "label": "HCM",
+      "category": "serie_vermelha",
+      "unit": "pg",
+      "species": {
+        "canino": {
+          "min": 19.1,
+          "max": 26.2
+        },
+        "felino": {
+          "min": 13.8,
+          "max": 17.1
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "hemacias",
+      "label": "Hemácias",
+      "category": "serie_vermelha",
+      "unit": "×10⁶/µL",
+      "species": {
+        "canino": {
+          "min": 5.8,
+          "max": 8.5
+        },
+        "felino": {
+          "min": 6.8,
+          "max": 10
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "hematocrito",
+      "label": "Hematócrito",
+      "category": "serie_vermelha",
+      "unit": "%",
+      "species": {
+        "canino": {
+          "min": 40,
+          "max": 56
+        },
+        "felino": {
+          "min": 31,
+          "max": 49
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "hemoglobina",
+      "label": "Hemoglobina",
+      "category": "serie_vermelha",
+      "unit": "g/dL",
+      "species": {
+        "canino": {
+          "min": 14,
+          "max": 19.1
+        },
+        "felino": {
+          "min": 10.5,
+          "max": 14.9
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "leucocitos_totais",
+      "label": "Leucócitos totais",
+      "category": "serie_branca",
+      "unit": "/µL",
+      "species": {
+        "canino": {
+          "min": 4900,
+          "max": 16900
+        },
+        "felino": {
+          "min": 4500,
+          "max": 15700
+        }
+      },
+      "source": "knoll-tufts",
+      "requiresArbitration": true,
+      "alternateSources": [
+        {
+          "source": "thrall-schalm",
+          "species": {
+            "canino": {
+              "min": 6000,
+              "max": 17000
+            },
+            "felino": {
+              "min": 5500,
+              "max": 19500
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "linfocitos",
+      "label": "Linfócitos",
+      "category": "serie_branca",
+      "unit": "/µL",
+      "species": {
+        "canino": {
+          "min": 1000,
+          "max": 4800
+        },
+        "felino": {
+          "min": 1100,
+          "max": 6000
+        }
+      },
+      "source": "knoll-tufts",
+      "requiresArbitration": true,
+      "alternateSources": [
+        {
+          "source": "thrall-schalm",
+          "species": {
+            "canino": {
+              "min": 1000,
+              "max": 5000
+            },
+            "felino": {
+              "min": 1500,
+              "max": 7000
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "magnesio_total",
+      "label": "Magnésio total",
+      "category": "eletrolitos",
+      "unit": "mg/dL",
+      "species": {
+        "canino": {
+          "min": 1.8,
+          "max": 2.6
+        },
+        "felino": {
+          "min": 2,
+          "max": 2.7
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "monocitos",
+      "label": "Monócitos",
+      "category": "serie_branca",
+      "unit": "/µL",
+      "species": {
+        "canino": {
+          "min": 100,
+          "max": 1500
+        },
+        "felino": {
+          "min": 0,
+          "max": 1600
+        }
+      },
+      "source": "knoll-tufts",
+      "requiresArbitration": true,
+      "alternateSources": [
+        {
+          "source": "thrall-schalm",
+          "species": {
+            "canino": {
+              "min": 0,
+              "max": 1200
+            },
+            "felino": {
+              "min": 0,
+              "max": 800
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "neutrofilos_bastoes",
+      "label": "Bastonetes",
+      "category": "serie_branca",
+      "unit": "/µL",
+      "species": {
+        "canino": {
+          "min": 0,
+          "max": 300
+        },
+        "felino": {
+          "min": 0,
+          "max": 300
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "neutrofilos_segmentados",
+      "label": "Neutrófilos segmentados",
+      "category": "serie_branca",
+      "unit": "/µL",
+      "species": {
+        "canino": {
+          "min": 2800,
+          "max": 11500
+        },
+        "felino": {
+          "min": 2100,
+          "max": 10100
+        }
+      },
+      "source": "knoll-tufts",
+      "requiresArbitration": true,
+      "alternateSources": [
+        {
+          "source": "thrall-schalm",
+          "species": {
+            "canino": {
+              "min": 3000,
+              "max": 11500
+            },
+            "felino": {
+              "min": 2500,
+              "max": 12500
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "plaquetas_contagem",
+      "label": "Plaquetas",
+      "category": "plaquetas",
+      "unit": "/µL",
+      "species": {
+        "canino": {
+          "min": 181000,
+          "max": 525000
+        },
+        "felino": {
+          "min": 183000,
+          "max": 643000
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "potassio",
+      "label": "Potássio",
+      "category": "eletrolitos",
+      "unit": "mEq/L",
+      "species": {
+        "canino": {
+          "min": 3.9,
+          "max": 5.6
+        },
+        "felino": {
+          "min": 3.6,
+          "max": 5.4
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "proteina_total",
+      "label": "Proteína total",
+      "category": "bioquimica_renal",
+      "unit": "g/dL",
+      "species": {
+        "canino": {
+          "min": 5.5,
+          "max": 7.8
+        },
+        "felino": {
+          "min": 6,
+          "max": 8.4
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "rdw",
+      "label": "RDW",
+      "category": "serie_vermelha",
+      "unit": "%",
+      "species": {
+        "canino": {
+          "min": 14.5,
+          "max": 19.9
+        },
+        "felino": {
+          "min": 17.9,
+          "max": 24.8
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "sdma",
+      "label": "SDMA",
+      "category": "bioquimica_renal",
+      "unit": "µg/dL",
+      "species": {
+        "canino": {
+          "min": 0,
+          "max": 14
+        },
+        "felino": {
+          "min": 0,
+          "max": 14
+        }
+      },
+      "source": "iris-2026"
+    },
+    {
+      "key": "sodio",
+      "label": "Sódio",
+      "category": "eletrolitos",
+      "unit": "mEq/L",
+      "species": {
+        "canino": {
+          "min": 143,
+          "max": 154
+        },
+        "felino": {
+          "min": 149,
+          "max": 162
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "triglicerides",
+      "label": "Triglicerídios",
+      "category": "bioquimica_geral",
+      "unit": "mg/dL",
+      "species": {
+        "canino": {
+          "min": 30,
+          "max": 321
+        },
+        "felino": {
+          "min": 25,
+          "max": 191
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "ureia",
+      "label": "Ureia",
+      "category": "bioquimica_renal",
+      "unit": "mg/dL",
+      "species": {
+        "canino": {
+          "min": 8,
+          "max": 30
+        },
+        "felino": {
+          "min": 15,
+          "max": 32
+        }
+      },
+      "source": "knoll-tufts"
+    },
+    {
+      "key": "vcm",
+      "label": "VCM",
+      "category": "serie_vermelha",
+      "unit": "fL",
+      "species": {
+        "canino": {
+          "min": 60,
+          "max": 75
+        },
+        "felino": {
+          "min": 39,
+          "max": 56
+        }
+      },
+      "source": "knoll-tufts"
+    }
+  ],
+  "irisStaging": {
+    "source": "iris-2026",
+    "criterion": "Creatinina e SDMA em jejum, em ao menos duas ocasiões, com paciente hidratado e estável, após diagnóstico de DRC.",
+    "discrepancyRule": "Quando creatinina e SDMA discordam, estadiar pelo marcador persistentemente mais avançado.",
+    "earlyCkdMarker": {
+      "parameter": "sdma",
+      "persistentlyAbove": 14,
+      "unit": "µg/dL"
+    },
+    "stages": {
+      "canino": [
+        {
+          "stage": 1,
+          "creatinineMgDl": {
+            "max": 1.4,
+            "inclusiveMax": false
+          },
+          "creatinineUmolL": {
+            "max": 125,
+            "inclusiveMax": false
+          },
+          "sdma": {
+            "max": 18,
+            "inclusiveMax": false
+          }
+        },
+        {
+          "stage": 2,
+          "creatinineMgDl": {
+            "min": 1.4,
+            "max": 2.8
+          },
+          "creatinineUmolL": {
+            "min": 125,
+            "max": 250
+          },
+          "sdma": {
+            "min": 18,
+            "max": 35
+          }
+        },
+        {
+          "stage": 3,
+          "creatinineMgDl": {
+            "min": 2.9,
+            "max": 5
+          },
+          "creatinineUmolL": {
+            "min": 251,
+            "max": 440
+          },
+          "sdma": {
+            "min": 36,
+            "max": 54
+          }
+        },
+        {
+          "stage": 4,
+          "creatinineMgDl": {
+            "min": 5,
+            "inclusiveMin": false
+          },
+          "creatinineUmolL": {
+            "min": 440,
+            "inclusiveMin": false
+          },
+          "sdma": {
+            "min": 54,
+            "inclusiveMin": false
+          }
+        }
+      ],
+      "felino": [
+        {
+          "stage": 1,
+          "creatinineMgDl": {
+            "max": 1.6,
+            "inclusiveMax": false
+          },
+          "creatinineUmolL": {
+            "max": 140,
+            "inclusiveMax": false
+          },
+          "sdma": {
+            "max": 18,
+            "inclusiveMax": false
+          }
+        },
+        {
+          "stage": 2,
+          "creatinineMgDl": {
+            "min": 1.6,
+            "max": 2.8
+          },
+          "creatinineUmolL": {
+            "min": 140,
+            "max": 250
+          },
+          "sdma": {
+            "min": 18,
+            "max": 25
+          }
+        },
+        {
+          "stage": 3,
+          "creatinineMgDl": {
+            "min": 2.9,
+            "max": 5
+          },
+          "creatinineUmolL": {
+            "min": 251,
+            "max": 440
+          },
+          "sdma": {
+            "min": 26,
+            "max": 38
+          }
+        },
+        {
+          "stage": 4,
+          "creatinineMgDl": {
+            "min": 5,
+            "inclusiveMin": false
+          },
+          "creatinineUmolL": {
+            "min": 440,
+            "inclusiveMin": false
+          },
+          "sdma": {
+            "min": 38,
+            "inclusiveMin": false
+          }
+        }
+      ]
+    },
+    "proteinuriaSubstaging": {
+      "canino": [
+        {
+          "category": "nao_proteinurico",
+          "abbreviation": "NP",
+          "upc": {
+            "max": 0.2,
+            "inclusiveMax": false
+          }
+        },
+        {
+          "category": "borderline_proteinurico",
+          "abbreviation": "BP",
+          "upc": {
+            "min": 0.2,
+            "max": 0.5
+          }
+        },
+        {
+          "category": "proteinurico",
+          "abbreviation": "P",
+          "upc": {
+            "min": 0.5,
+            "inclusiveMin": false
+          }
+        }
+      ],
+      "felino": [
+        {
+          "category": "nao_proteinurico",
+          "abbreviation": "NP",
+          "upc": {
+            "max": 0.2,
+            "inclusiveMax": false
+          }
+        },
+        {
+          "category": "borderline_proteinurico",
+          "abbreviation": "BP",
+          "upc": {
+            "min": 0.2,
+            "max": 0.4
+          }
+        },
+        {
+          "category": "proteinurico",
+          "abbreviation": "P",
+          "upc": {
+            "min": 0.4,
+            "inclusiveMin": false
+          }
+        }
+      ]
+    },
+    "bloodPressureSubstaging": [
+      {
+        "category": "normotenso",
+        "systolicMmHg": {
+          "max": 140,
+          "inclusiveMax": false
+        },
+        "targetOrganRisk": "minimo"
+      },
+      {
+        "category": "pre_hipertenso",
+        "systolicMmHg": {
+          "min": 140,
+          "max": 159
+        },
+        "targetOrganRisk": "baixo"
+      },
+      {
+        "category": "hipertenso",
+        "systolicMmHg": {
+          "min": 160,
+          "max": 179
+        },
+        "targetOrganRisk": "moderado"
+      },
+      {
+        "category": "gravemente_hipertenso",
+        "systolicMmHg": {
+          "min": 180
+        },
+        "targetOrganRisk": "alto"
+      }
+    ]
+  },
+  "unsourced": [
+    {
+      "key": "plaquetas_vpm",
+      "label": "VPM",
+      "category": "plaquetas",
+      "unit": "fL",
+      "reason": "Ausente nas tabelas de Knoll e Thrall consultadas."
+    },
+    {
+      "key": "reticulocitos",
+      "label": "Reticulócitos",
+      "category": "serie_vermelha",
+      "unit": "/µL",
+      "reason": "Citado no texto do Thrall, sem tabela de intervalo canino/felino localizada."
+    },
+    {
+      "key": "upc",
+      "label": "Relação proteína:creatinina urinária",
+      "category": "urinalise",
+      "unit": null,
+      "reason": "Subestadiamento IRIS; limiar categórico, não faixa de normalidade."
+    },
+    {
+      "key": "densidade_urinaria",
+      "label": "Densidade urinária",
+      "category": "urinalise",
+      "unit": null,
+      "reason": "Valor de corte (>1.030 cão, >1.035 gato), não faixa min/max."
+    },
+    {
+      "key": "ph_urinario",
+      "label": "pH urinário",
+      "category": "urinalise",
+      "unit": null,
+      "reason": "Faixa do JSON IRIS ainda não conferida contra obra de referência."
+    },
+    {
+      "key": "proteina_fita",
+      "label": "Proteína (fita)",
+      "category": "urinalise",
+      "unit": null,
+      "reason": "Resultado qualitativo (negativo/traços), não numérico."
+    },
+    {
+      "key": "calcio_ionizado",
+      "label": "Cálcio ionizado",
+      "category": "eletrolitos",
+      "unit": "mmol/L",
+      "reason": "Não consta da diretriz IRIS de estadiamento nem das tabelas de Knoll/Thrall consultadas. O valor do JSON de 2023 não tem fonte rastreável."
+    }
+  ],
+  "unitConversions": {
+    "creatinina_mgdl_para_umoll": 88.4,
+    "ureia_mgdl_para_mmoll": 0.357,
+    "calcio_mgdl_para_mmoll": 0.25,
+    "fosforo_mgdl_para_mmoll": 0.323,
+    "glicose_mgdl_para_mmoll": 0.0555,
+    "colesterol_mgdl_para_mmoll": 0.026,
+    "albumina_gdl_para_gl": 10
+  }
+}

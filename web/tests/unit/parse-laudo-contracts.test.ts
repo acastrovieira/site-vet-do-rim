@@ -190,7 +190,7 @@ test('parse-laudo edge function calls claim/finalize/refund RPCs and never the o
 
   // PROMPT_VERSION versionado localmente e presente na proveniencia gravada
   // por finalize_laudo_ia.
-  assert.match(source, /const PROMPT_VERSION = "2026-07-18\.1"/)
+  assert.match(source, /const PROMPT_VERSION = "2026-08-29\.1"/)
   assert.match(source, /p_provenance: provenance/)
   assert.match(source, /prompt_version: PROMPT_VERSION/)
   assert.match(source, /pdf_sha256: input\.pdfSha256/)

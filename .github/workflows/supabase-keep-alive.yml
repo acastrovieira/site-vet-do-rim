@@ -1,0 +1,77 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Executa todos os dias às 06:00 e 18:00 UTC (duas vezes ao dia)
+    # Garante que o Supabase nunca fique inativo e previne a pausa de 7 dias do Free Tier
+    - cron: '0 6,18 * * *'
+  workflow_dispatch: # Permite disparar manualmente pelo botão "Run workflow" no GitHub
+
+jobs:
+  keep_alive:
+    name: Keep Supabase Active
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping Supabase Database & Site Cron
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          echo "=== Início do Keep-Alive ==="
+          STATUS_SUCCESS=0
+
+          # 1. Se SITE_URL e CRON_SECRET estiverem configurados, aciona o endpoint do site
+          if [ -n "$SITE_URL" ] && [ -n "$CRON_SECRET" ]; then
+            echo "-> Testando endpoint do site: $SITE_URL/api/cron/keep-alive"
+            HTTP_CODE=$(curl -s -o /tmp/site_response.json -w "%{http_code}" \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              "$SITE_URL/api/cron/keep-alive" || echo "000")
+
+            echo "   Resposta HTTP: $HTTP_CODE"
+            cat /tmp/site_response.json 2>/dev/null || true
+            echo ""
+
+            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+              echo "✓ Endpoint do site executou e validou dependências com sucesso."
+              STATUS_SUCCESS=1
+            else
+              echo "⚠ Endpoint do site retornou status $HTTP_CODE. Tentando consulta direta ao Supabase..."
+            fi
+          fi
+
+          # 2. Consulta direta à REST API do Supabase (garantia infalível de query real no banco)
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_KEY" ]; then
+            echo "-> Executando query direta no banco de dados do Supabase..."
+            SUPABASE_HTTP_CODE=$(curl -s -o /tmp/supabase_response.json -w "%{http_code}" \
+              -X GET "$SUPABASE_URL/rest/v1/profiles?select=id&limit=1" \
+              -H "apikey: $SUPABASE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_KEY" \
+              -H "Content-Type: application/json" || echo "000")
+
+            echo "   Supabase REST HTTP: $SUPABASE_HTTP_CODE"
+
+            if [ "$SUPABASE_HTTP_CODE" -ge 200 ] && [ "$SUPABASE_HTTP_CODE" -lt 300 ]; then
+              echo "✓ Atividade registrada no banco de dados com sucesso. Supabase acordado e ativo!"
+              STATUS_SUCCESS=1
+            else
+              echo "✗ Falha ao consultar Supabase REST (HTTP $SUPABASE_HTTP_CODE)."
+              cat /tmp/supabase_response.json 2>/dev/null || true
+              echo ""
+            fi
+          elif [ -z "$SITE_URL" ]; then
+            echo "✗ ERRO: Nenhuma credencial configurada nos GitHub Secrets!"
+            echo "  Configure NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (ou NEXT_PUBLIC_SUPABASE_ANON_KEY)"
+            echo "  em: Repositório > Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+
+          if [ "$STATUS_SUCCESS" -eq 1 ]; then
+            echo "=== Keep-Alive concluído com sucesso! ==="
+          else
+            echo "=== Keep-Alive falhou em todas as tentativas! Verifique as credenciais. ==="
+            exit 1
+          fi

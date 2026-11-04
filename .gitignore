@@ -49,6 +49,7 @@ Thumbs.db
 
 # ─── Supabase ─────────────────────────────────────────────────────────────────
 supabase/.temp/
-**/deno.lock
+# Keep the Edge Function dependency lock reproducible in CI.
+!supabase/functions/parse-laudo/deno.lock
 
 .vercel

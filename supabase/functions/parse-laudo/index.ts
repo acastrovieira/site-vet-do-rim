@@ -859,12 +859,12 @@ Deno.serve(async (req: Request) => {
 
     if (geminiKey) {
       // Modelo estável configurável por GEMINI_MODEL.
-      modelUsed = Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash";
+      modelUsed = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
       outputText = await callGemini(geminiKey, modelUsed, base64Pdf, fileName);
       providerUsed = "gemini";
     } else if (openaiKey) {
       // OpenAI é usado somente quando Gemini não está configurado.
-      modelUsed = Deno.env.get("OPENAI_MODEL") || "gpt-5.6-terra";
+      modelUsed = Deno.env.get("OPENAI_MODEL") || "gpt-4o-mini";
       outputText = await callOpenAI(openaiKey, modelUsed, base64Pdf, fileName);
       providerUsed = "openai";
     } else {

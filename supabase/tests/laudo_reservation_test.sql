@@ -179,8 +179,9 @@ SELECT is(
   'reserved_upload_laudos (INSERT) and reserved_read_laudos (SELECT) both exist on storage.objects'
 );
 
--- 11. As policies legadas (owner_upload_laudos, owner_read_laudos) continuam
---     ativas — a migration e ADITIVA, nunca remove a autorizacao existente.
+-- 11. As policies legadas por prefixo de caminho (owner_upload_laudos,
+--     owner_read_laudos) foram removidas em 20260830000000 (HIGH-01): todo
+--     acesso a laudos passa pelas policies reservadas, restritas à clínica.
 SELECT is(
   (
     SELECT count(*)
@@ -189,8 +190,8 @@ SELECT is(
       AND tablename = 'objects'
       AND policyname IN ('owner_upload_laudos', 'owner_read_laudos')
   ),
-  2::bigint,
-  'the legacy owner_upload_laudos and owner_read_laudos policies remain active'
+  0::bigint,
+  'the legacy owner_upload_laudos and owner_read_laudos policies are removed'
 );
 
 -- 12. Nenhuma das duas policies novas reduz a USING(true)/WITH CHECK(true).

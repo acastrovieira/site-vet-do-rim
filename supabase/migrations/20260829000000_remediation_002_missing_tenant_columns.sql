@@ -39,10 +39,13 @@ BEGIN
   END IF;
   IF NOT EXISTS (
     SELECT 1 FROM public.clinics
-    WHERE id = '00000000-0000-0000-0000-000000000001'
-  ) THEN
+    WHERE id IN (
+      '00000000-0000-0000-0000-000000000001'::uuid,
+      '00000000-0000-4000-8000-00000000c11c'::uuid
+    )
+  ) AND NOT EXISTS (SELECT 1 FROM public.clinics) THEN
     RAISE EXCEPTION
-      'preflight: clínica padrão não encontrada. UUID esperado: 00000000-0000-0000-0000-000000000001';
+      'preflight: clínica padrão não encontrada.';
   END IF;
 END
 $$;
@@ -96,39 +99,57 @@ ALTER TABLE public.colaboradores
 COMMENT ON COLUMN public.colaboradores.clinic_id IS
   'ADR-001 tenant.';
 
--- ── Backfill: preenche clinic_id com a clínica padrão para todos os dados existentes ──
--- Clínica padrão em produção: 00000000-0000-0000-0000-000000000001 (Vet do Rim Matriz)
+-- ── Backfill: preenche clinic_id com a clínica padrão resolvida dinamicamente ──
+DO $$
+DECLARE
+  v_default_clinic_id uuid;
+BEGIN
+  SELECT c.id INTO v_default_clinic_id
+  FROM public.clinics c
+  WHERE c.id IN (
+    '00000000-0000-0000-0000-000000000001'::uuid,
+    '00000000-0000-4000-8000-00000000c11c'::uuid
+  )
+  ORDER BY (c.id = '00000000-0000-0000-0000-000000000001'::uuid) DESC
+  LIMIT 1;
 
-UPDATE public.tutores
-  SET clinic_id = '00000000-0000-0000-0000-000000000001'
-  WHERE clinic_id IS NULL;
+  IF v_default_clinic_id IS NULL THEN
+    SELECT c.id INTO v_default_clinic_id
+    FROM public.clinics c
+    ORDER BY c.criado_em ASC
+    LIMIT 1;
+  END IF;
 
-UPDATE public.pets
-  SET clinic_id = '00000000-0000-0000-0000-000000000001'
-  WHERE clinic_id IS NULL;
+  UPDATE public.tutores
+    SET clinic_id = v_default_clinic_id
+    WHERE clinic_id IS NULL;
 
-UPDATE public.triagens
-  SET clinic_id = '00000000-0000-0000-0000-000000000001'
-  WHERE clinic_id IS NULL;
+  UPDATE public.pets
+    SET clinic_id = v_default_clinic_id
+    WHERE clinic_id IS NULL;
 
-UPDATE public.follow_ups
-  SET clinic_id = '00000000-0000-0000-0000-000000000001'
-  WHERE clinic_id IS NULL;
+  UPDATE public.triagens
+    SET clinic_id = v_default_clinic_id
+    WHERE clinic_id IS NULL;
 
-UPDATE public.colaboradores
-  SET clinic_id = '00000000-0000-0000-0000-000000000001'
-  WHERE clinic_id IS NULL;
+  UPDATE public.follow_ups
+    SET clinic_id = v_default_clinic_id
+    WHERE clinic_id IS NULL;
 
--- laudos_pdf.clinic_id já tinha valor (era o UUID diferente ou NULL)?
--- Backfill só onde NULL:
-UPDATE public.laudos_pdf
-  SET clinic_id = '00000000-0000-0000-0000-000000000001'
-  WHERE clinic_id IS NULL;
+  UPDATE public.colaboradores
+    SET clinic_id = v_default_clinic_id
+    WHERE clinic_id IS NULL;
 
--- Backfill created_by com vet_id onde possível (mesmo ator para dados legados)
+  UPDATE public.laudos_pdf
+    SET clinic_id = v_default_clinic_id
+    WHERE clinic_id IS NULL;
+END
+$$;
+
+-- Backfill created_by com vet_id apenas para reservas pendentes (M-01/ADR-001)
 UPDATE public.laudos_pdf
   SET created_by = vet_id
-  WHERE created_by IS NULL AND vet_id IS NOT NULL;
+  WHERE created_by IS NULL AND vet_id IS NOT NULL AND status = 'pendente';
 
 -- ── Índices de performance (IF NOT EXISTS → seguro re-executar) ─────────────
 CREATE INDEX IF NOT EXISTS idx_tutores_clinic

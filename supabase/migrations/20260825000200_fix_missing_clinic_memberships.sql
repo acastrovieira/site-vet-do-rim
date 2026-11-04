@@ -30,6 +30,8 @@ BEGIN;
 
 -- Preflight
 DO $$
+DECLARE
+  v_default_clinic_id uuid;
 BEGIN
   IF pg_catalog.to_regclass('public.clinics') IS NULL THEN
     RAISE EXCEPTION 'preflight: public.clinics ausente (ADR-001 requerido)';
@@ -37,49 +39,56 @@ BEGIN
   IF pg_catalog.to_regclass('public.clinic_memberships') IS NULL THEN
     RAISE EXCEPTION 'preflight: public.clinic_memberships ausente';
   END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM public.clinics
-    WHERE id = '00000000-0000-0000-0000-000000000001'
-  ) THEN
-    RAISE EXCEPTION
-      'Clínica padrão "Vet do Rim Matriz" (UUID 00000000-0000-0000-0000-000000000001) não encontrada.';
-  END IF;
-END
-$$;
 
--- ── Insere memberships faltantes para vets/admins ──────────────────────
-WITH usuarios_sem_membership AS (
+  SELECT c.id INTO v_default_clinic_id
+  FROM public.clinics c
+  WHERE c.id IN (
+    '00000000-0000-0000-0000-000000000001'::uuid,
+    '00000000-0000-4000-8000-00000000c11c'::uuid
+  )
+  ORDER BY (c.id = '00000000-0000-0000-0000-000000000001'::uuid) DESC
+  LIMIT 1;
+
+  IF v_default_clinic_id IS NULL THEN
+    SELECT c.id INTO v_default_clinic_id
+    FROM public.clinics c
+    ORDER BY c.criado_em ASC
+    LIMIT 1;
+  END IF;
+
+  IF v_default_clinic_id IS NULL THEN
+    RAISE EXCEPTION
+      'Clínica padrão "Vet do Rim Matriz" não encontrada.';
+  END IF;
+
+  -- ── Insere memberships faltantes para vets/admins ──────────────────────
+  INSERT INTO public.clinic_memberships (
+    clinic_id,
+    user_id,
+    role,
+    status,
+    created_by
+  )
   SELECT
+    v_default_clinic_id AS clinic_id,
     p.id AS user_id,
-    p.role,
     CASE p.role
       WHEN 'admin' THEN 'clinic_admin'
       ELSE 'vet'
-    END AS membership_role
+    END AS role,
+    'active',
+    NULL  -- sem ator humano identificado; correção de backfill
   FROM public.profiles p
   WHERE p.role IN ('vet', 'admin')
     AND NOT EXISTS (
       SELECT 1
       FROM public.clinic_memberships cm
       WHERE cm.user_id = p.id
-        AND cm.clinic_id = '00000000-0000-0000-0000-000000000001'
+        AND cm.clinic_id = v_default_clinic_id
     )
-)
-INSERT INTO public.clinic_memberships (
-  clinic_id,
-  user_id,
-  role,
-  status,
-  created_by
-)
-SELECT
-  '00000000-0000-0000-0000-000000000001'::uuid AS clinic_id,
-  u.user_id,
-  u.membership_role,
-  'active',
-  NULL  -- sem ator humano identificado; correção de backfill
-FROM usuarios_sem_membership u
-ON CONFLICT (clinic_id, user_id) DO NOTHING;
+  ON CONFLICT (clinic_id, user_id) DO NOTHING;
+END
+$$;
 
 -- ── Relatório do que foi inserido ─────────────────────────────────────────
 SELECT
@@ -91,7 +100,10 @@ SELECT
 FROM public.clinic_memberships cm
 JOIN auth.users  u ON u.id = cm.user_id
 JOIN public.profiles p ON p.id = cm.user_id
-WHERE cm.clinic_id = '00000000-0000-0000-0000-000000000001'
+WHERE cm.clinic_id IN (
+  '00000000-0000-0000-0000-000000000001'::uuid,
+  '00000000-0000-4000-8000-00000000c11c'::uuid
+)
 ORDER BY u.email;
 
 COMMIT;

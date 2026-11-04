@@ -147,3 +147,38 @@ test('three disclosed historical transitions remove only the proven replay block
     assert.equal(event.ticket, 'AUDIT-001')
   }
 })
+
+test('20260830000000 remediation restores tenant FKs, immutability triggers, and hardens storage/profile/quota grants', () => {
+  const remediation = readFileSync(
+    resolve(
+      repoRoot,
+      'supabase/migrations/20260830000000_sprint0_tenancy_fks_rls_and_remediation.sql',
+    ),
+    'utf8',
+  )
+
+  for (const fkName of [
+    'fk_tutores_clinic',
+    'fk_pets_clinic',
+    'fk_pets_tutor_same_clinic',
+    'fk_triagens_pet_same_clinic',
+    'fk_follow_ups_triagem_same_clinic',
+    'fk_colaboradores_membership_same_clinic',
+    'fk_laudos_pdf_pet_same_clinic',
+    'fk_laudos_pdf_vet_membership',
+  ]) {
+    assert.match(remediation, new RegExp(fkName))
+  }
+
+  assert.match(remediation, /private\.enforce_tenant_row_immutability\(\)/)
+  assert.match(remediation, /DROP POLICY IF EXISTS "owner_upload_laudos" ON storage\.objects/)
+  assert.match(remediation, /DROP POLICY IF EXISTS "owner_read_laudos" ON storage\.objects/)
+  // increment_ai_quota pode não existir em produção: a revogação percorre
+  // toda versão existente da função em vez de citar a assinatura (uuid).
+  assert.match(remediation, /p\.proname = 'increment_ai_quota'/)
+  assert.match(remediation, /REVOKE ALL ON FUNCTION public\.%I\(%s\) FROM PUBLIC, anon, authenticated/)
+  assert.match(remediation, /chk_laudos_pdf_origem_resultado/)
+  assert.match(remediation, /chk_laudos_pdf_origem_storage/)
+  assert.match(remediation, /private\.safe_parse_numeric\(/)
+  assert.match(remediation, /private\.safe_parse_date\(/)
+})

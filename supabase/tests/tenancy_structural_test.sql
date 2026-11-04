@@ -17,7 +17,7 @@
 -- BEGIN/ROLLBACK — nada aqui persiste).
 
 BEGIN;
-SELECT plan(16);
+SELECT plan(17);
 
 -- 1. As três tabelas novas do tenant root existem.
 SELECT is(
@@ -122,14 +122,14 @@ SELECT is(
   'clinic_id and created_by are nullable uuid columns on all six legacy tables'
 );
 
--- 7. As 19 FKs de tenant/composição entram como NOT VALID (não bloqueiam
---    linhas legadas no expand; VALIDATE só acontece no enforce).
+-- 7. As 19 FKs de tenant/composição existem. Entram como NOT VALID no expand;
+--    20260830000000 valida as 10 de clínica/mesma-clínica (7b), as demais
+--    seguem NOT VALID até o enforce.
 SELECT is(
   (
     SELECT count(*)
     FROM pg_constraint
     WHERE contype = 'f'
-      AND NOT convalidated
       AND conname = ANY (ARRAY[
         'fk_tutores_clinic', 'fk_tutores_created_by',
         'fk_pets_clinic', 'fk_pets_created_by', 'fk_pets_tutor_same_clinic',
@@ -144,7 +144,27 @@ SELECT is(
       ])
   ),
   19::bigint,
-  'all nineteen tenancy foreign keys exist and are still NOT VALID'
+  'all nineteen tenancy foreign keys exist'
+);
+
+-- 7b. As 10 FKs de clínica/mesma-clínica foram validadas por 20260830000000.
+SELECT is(
+  (
+    SELECT count(*)
+    FROM pg_constraint
+    WHERE contype = 'f'
+      AND convalidated
+      AND conname = ANY (ARRAY[
+        'fk_tutores_clinic',
+        'fk_pets_clinic', 'fk_pets_tutor_same_clinic',
+        'fk_triagens_clinic', 'fk_triagens_pet_same_clinic',
+        'fk_follow_ups_clinic', 'fk_follow_ups_triagem_same_clinic',
+        'fk_colaboradores_clinic',
+        'fk_laudos_pdf_clinic', 'fk_laudos_pdf_pet_same_clinic'
+      ])
+  ),
+  10::bigint,
+  'the ten clinic and same-clinic foreign keys are validated'
 );
 
 -- 8. private.has_clinic_role é SECURITY DEFINER, dono postgres, search_path

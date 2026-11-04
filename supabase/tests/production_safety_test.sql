@@ -168,8 +168,7 @@ SELECT is(
         'private.current_user_is_admin()'::regprocedure,
         'private.has_clinic_role(uuid, text[])'::regprocedure,
         'private.reserve_laudo_upload(uuid)'::regprocedure,
-        'public.consume_clinical_rate_limit(text)'::regprocedure,
-        'public.increment_ai_quota(uuid)'::regprocedure
+        'public.consume_clinical_rate_limit(text)'::regprocedure
       ])
   ),
   0::bigint,
@@ -189,12 +188,11 @@ SELECT is(
         'private.current_user_is_admin()'::regprocedure,
         'private.has_clinic_role(uuid, text[])'::regprocedure,
         'private.reserve_laudo_upload(uuid)'::regprocedure,
-        'public.consume_clinical_rate_limit(text)'::regprocedure,
-        'public.increment_ai_quota(uuid)'::regprocedure
+        'public.consume_clinical_rate_limit(text)'::regprocedure
       ])
   ),
-  7::bigint,
-  'authenticated can execute the seven approved SECURITY DEFINER functions'
+  6::bigint,
+  'authenticated can execute the six approved SECURITY DEFINER functions'
 );
 
 SELECT ok(
@@ -260,10 +258,13 @@ SELECT is(
   'SECURITY DEFINER functions do not grant EXECUTE to PUBLIC'
 );
 
+-- HIGH-03 (20260830000000): a RPC legada de cota deixou de ser chamável pelo
+-- cliente; só o fluxo de servidor (service_role) pode executá-la.
 SELECT ok(
-  has_function_privilege('authenticated', 'public.increment_ai_quota(uuid)', 'EXECUTE')
-    AND NOT has_function_privilege('anon', 'public.increment_ai_quota(uuid)', 'EXECUTE'),
-  'the quota RPC is authenticated-only'
+  NOT has_function_privilege('authenticated', 'public.increment_ai_quota(uuid)', 'EXECUTE')
+    AND NOT has_function_privilege('anon', 'public.increment_ai_quota(uuid)', 'EXECUTE')
+    AND has_function_privilege('service_role', 'public.increment_ai_quota(uuid)', 'EXECUTE'),
+  'the legacy quota RPC is service_role-only'
 );
 
 SELECT * FROM finish();

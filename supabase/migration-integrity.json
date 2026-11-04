@@ -99,7 +99,7 @@
     },
     {
       "file": "20260825000200_fix_missing_clinic_memberships.sql",
-      "sha256": "0f9f93e0603c16b70ff2cebabd6c8cca8ad0d7f4f312ee5f1ed45e5618f911f8"
+      "sha256": "c848ef0ad4233706e6cacc5093e961f7447752682a65317d467d87e86168c61c"
     },
     {
       "file": "20260825000300_fix_stuck_processing_laudos.sql",
@@ -111,7 +111,11 @@
     },
     {
       "file": "20260829000000_remediation_002_missing_tenant_columns.sql",
-      "sha256": "3591a2b8ce581c3c31a0ae88ed102043192f5e89611e5d4392ba07435a07fd62"
+      "sha256": "5f315d23fc0b9d19fad96e6814bf5faec6b34d369ed262930aeb82d663e06574"
+    },
+    {
+      "file": "20260830000000_sprint0_tenancy_fks_rls_and_remediation.sql",
+      "sha256": "2af6ce3b35b656073786bc2a190bb9e861998761c20e7c8d1c5b132f17fe5030"
     }
   ],
   "approvedHistoricalTransitions": [
@@ -150,6 +154,24 @@
       "remoteReconciliationRequired": true,
       "ticket": "AUDIT-001",
       "reason": "PostgreSQL rejects CREATE INDEX CONCURRENTLY inside this migration's explicit transaction; the single index build was made non-concurrent without changing its columns or predicate."
+    },
+    {
+      "file": "20260825000200_fix_missing_clinic_memberships.sql",
+      "baseSha256": "0f9f93e0603c16b70ff2cebabd6c8cca8ad0d7f4f312ee5f1ed45e5618f911f8",
+      "currentSha256": "c848ef0ad4233706e6cacc5093e961f7447752682a65317d467d87e86168c61c",
+      "remoteArtifactSha256": null,
+      "remoteReconciliationRequired": true,
+      "ticket": "AUDIT-001",
+      "reason": "The migration hardcoded production clinic UUID 00000000-0000-0000-0000-000000000001 which aborts a fresh baseline replay where 20260718100100 creates 00000000-0000-4000-8000-00000000c11c; resolved default clinic dynamically."
+    },
+    {
+      "file": "20260829000000_remediation_002_missing_tenant_columns.sql",
+      "baseSha256": "3591a2b8ce581c3c31a0ae88ed102043192f5e89611e5d4392ba07435a07fd62",
+      "currentSha256": "5f315d23fc0b9d19fad96e6814bf5faec6b34d369ed262930aeb82d663e06574",
+      "remoteArtifactSha256": null,
+      "remoteReconciliationRequired": true,
+      "ticket": "AUDIT-001",
+      "reason": "The migration hardcoded production clinic UUID 00000000-0000-0000-0000-000000000001 in preflight and backfill, aborting fresh replay; resolved default clinic dynamically and restricted created_by backfill to pending reservations."
     }
   ]
 }

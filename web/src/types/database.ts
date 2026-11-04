@@ -33,6 +33,8 @@ export type LaudoStatus = 'pendente' | 'processando' | 'concluido' | 'erro' | 'a
 export type ClinicStatus = 'active' | 'suspended'
 export type ClinicMembershipRole = 'clinic_admin' | 'vet' | 'recepcao'
 export type ClinicMembershipStatus = 'active' | 'inactive'
+export type LaudoResultadoOrigem = 'pdf_ia' | 'pdf_local' | 'manual'
+export type ExamResultStatusRef = 'normal' | 'alto' | 'baixo' | 'indisponivel'
 
 export interface Database {
   public: {
@@ -246,7 +248,7 @@ export interface Database {
           id: string
           pet_id: string
           vet_id: string | null
-          storage_path: string
+          storage_path: string | null
           nome_arquivo: string
           tipo_exame: string
           status: LaudoStatus
@@ -255,6 +257,9 @@ export interface Database {
           tamanho_bytes: number | null
           clinic_id: string | null
           created_by: string | null
+          storage_deleted_at: string | null
+          pdf_sha256: string | null
+          origem_resultado: LaudoResultadoOrigem
           // Tarefa 2.5 (20260718120000): trilha de compensacao de reserva.
           abandoned_at: string | null
           abandoned_by: string | null
@@ -265,7 +270,7 @@ export interface Database {
           id?: string
           pet_id: string
           vet_id?: string | null
-          storage_path: string
+          storage_path?: string | null
           nome_arquivo: string
           tipo_exame?: string
           status?: LaudoStatus
@@ -274,12 +279,53 @@ export interface Database {
           tamanho_bytes?: number | null
           clinic_id?: string | null
           created_by?: string | null
+          storage_deleted_at?: string | null
+          pdf_sha256?: string | null
+          origem_resultado?: LaudoResultadoOrigem
           abandoned_at?: string | null
           abandoned_by?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['laudos_pdf']['Insert']>
+        Relationships: []
+      }
+      exam_result_items: {
+        Row: {
+          id: string
+          laudo_id: string
+          clinic_id: string
+          pet_id: string
+          parametro: string
+          categoria: string
+          valor: number | null
+          unidade: string | null
+          ref_min: number | null
+          ref_max: number | null
+          especie: 'canino' | 'felino' | 'outro'
+          status_ref: ExamResultStatusRef | null
+          data_coleta: string | null
+          extracted_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          laudo_id: string
+          clinic_id: string
+          pet_id: string
+          parametro: string
+          categoria: string
+          valor?: number | null
+          unidade?: string | null
+          ref_min?: number | null
+          ref_max?: number | null
+          especie?: 'canino' | 'felino' | 'outro'
+          status_ref?: ExamResultStatusRef | null
+          data_coleta?: string | null
+          extracted_at?: string
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['exam_result_items']['Insert']>
         Relationships: []
       }
       // ADR-001 tenant root — supabase/migrations/20260718100000_tenancy_expand.sql
@@ -346,6 +392,14 @@ export interface Database {
       consume_clinical_rate_limit: {
         Args: { p_scope: 'laudo_reserve' | 'laudo_local_extraction' | 'lab_export' }
         Returns: { allowed: boolean; retry_after_seconds: number }[]
+      }
+      populate_exam_result_items: {
+        Args: { p_laudo_id: string }
+        Returns: number
+      }
+      purge_old_claim_events: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
     }
     Enums: Record<string, never>

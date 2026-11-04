@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Users, Plus, Phone, Mail, ChevronRight, AlertTriangle, RefreshCw, Search } from 'lucide-react'
 import { ListPagination } from '@/components/lab/ListPagination'
 import { listPageRange, parseListPage } from '@/lib/list-pagination'
+import { resolveActiveClinic } from '@/lib/server-clinic-context'
 
 export const metadata: Metadata = {
   title: 'Tutores — Lab Evolution',
@@ -38,6 +39,8 @@ function tutorsHref(page: number, query: string) {
 
 export default async function TutoresPage({ searchParams }: TutoresPageProps) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
   const params = await searchParams
   const query = normalizedQuery(params?.q)
   const page = parseListPage(params?.page, PAGE_SIZE)
@@ -60,6 +63,9 @@ export default async function TutoresPage({ searchParams }: TutoresPageProps) {
     .order('id', { ascending: false })
     .range(firstRow, lastRow)
 
+  if (activeClinic?.clinicId) {
+    tutorsQuery = tutorsQuery.eq('clinic_id', activeClinic.clinicId)
+  }
   if (query) tutorsQuery = tutorsQuery.ilike('nome', `%${query}%`)
 
   const { data: tutores, error, count } = await tutorsQuery as {

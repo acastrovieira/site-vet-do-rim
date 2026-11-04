@@ -11,6 +11,7 @@ import {
 import { ListPagination } from '@/components/lab/ListPagination'
 import { isUuid } from '@/lib/identifiers'
 import { listPageRange, parseListPage } from '@/lib/list-pagination'
+import { resolveActiveClinic } from '@/lib/server-clinic-context'
 
 interface Props {
   params: Promise<{ petId: string }>
@@ -42,14 +43,21 @@ export default async function LaudosPacientePage({ params, searchParams }: Props
   const page = parseListPage(queryParams?.page, PAGE_SIZE)
   const { firstRow, lastRow } = listPageRange(page, PAGE_SIZE)
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
 
   type PetRow = { id: string; nome: string; especie: string; raca: string | null }
 
   // Busca dados do pet para exibir nome
-  const { data: pet, error: petError } = await supabase
+  let petQuery = supabase
     .from('pets')
     .select('id, nome, especie, raca')
     .eq('id', petId)
+  if (activeClinic?.clinicId) {
+    petQuery = petQuery.eq('clinic_id', activeClinic.clinicId)
+  }
+
+  const { data: pet, error: petError } = await petQuery
     .maybeSingle() as { data: PetRow | null; error: unknown }
 
   assertServerQuerySucceeded(petError, 'PATIENT_LAUDOS_QUERY_FAILED')
@@ -63,13 +71,18 @@ export default async function LaudosPacientePage({ params, searchParams }: Props
     created_at: string
   }
 
-  const { data: laudos, error: laudosError, count } = await supabase
+  let laudosQuery = supabase
     .from('laudos_pdf')
     .select('id, nome_arquivo, tipo_exame, status, created_at', { count: 'exact' })
     .eq('pet_id', petId)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
-    .range(firstRow, lastRow) as {
+    .range(firstRow, lastRow)
+  if (activeClinic?.clinicId) {
+    laudosQuery = laudosQuery.eq('clinic_id', activeClinic.clinicId)
+  }
+
+  const { data: laudos, error: laudosError, count } = await laudosQuery as {
       data: LaudoRow[] | null
       error: unknown
       count: number | null
@@ -95,7 +108,12 @@ export default async function LaudosPacientePage({ params, searchParams }: Props
           Pacientes
         </Link>
         <span className="shrink-0 text-slate-300 dark:text-science-700">/</span>
-        <span className="min-w-0 truncate text-sm font-medium text-slate-700 dark:text-science-100">{pet.nome}</span>
+        <Link
+          href={`/lab/pacientes/${pet.id}`}
+          className="min-w-0 truncate text-sm font-medium text-slate-700 dark:text-science-100 hover:text-brand-600 dark:hover:text-gold-400 transition-colors"
+        >
+          {pet.nome}
+        </Link>
         <span className="shrink-0 text-slate-300 dark:text-science-700">/</span>
         <span className="shrink-0 text-sm font-semibold text-slate-900 dark:text-white">Laudos</span>
       </div>

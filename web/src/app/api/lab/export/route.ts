@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { authorizeClinicAccess } from '@/lib/server-authorization'
-import { authorizationFailureJson } from '@/lib/server-api-response'
+import { authorizationFailureJson, privateApiJson } from '@/lib/server-api-response'
 import { isUuid } from '@/lib/identifiers'
 import { isCivilDate } from '@/lib/civil-date'
 import {
@@ -34,17 +34,17 @@ export async function GET(request: Request) {
   const toDate = searchParams.get('to')
 
   if (!petId || !isUuid(petId)) {
-    return NextResponse.json({ error: 'petId inválido.' }, { status: 400 })
+    return privateApiJson({ error: 'petId inválido.' }, { status: 400 })
   }
 
   if (!['csv', 'xlsx'].includes(format)) {
-    return NextResponse.json({ error: 'format deve ser csv ou xlsx.' }, { status: 400 })
+    return privateApiJson({ error: 'format deve ser csv ou xlsx.' }, { status: 400 })
   }
   if ((fromDate && !isCivilDate(fromDate)) || (toDate && !isCivilDate(toDate))) {
-    return NextResponse.json({ error: 'Período inválido.' }, { status: 400 })
+    return privateApiJson({ error: 'Período inválido.' }, { status: 400 })
   }
   if (fromDate && toDate && fromDate > toDate) {
-    return NextResponse.json({ error: 'Data inicial deve ser anterior à data final.' }, { status: 400 })
+    return privateApiJson({ error: 'Data inicial deve ser anterior à data final.' }, { status: 400 })
   }
 
   const supabase = await createServerClient()
@@ -52,12 +52,11 @@ export async function GET(request: Request) {
   if (!authorization.ok) return authorizationFailureJson(authorization)
   const rateLimit = await consumeClinicalRateLimit(supabase, CLINICAL_RATE_LIMIT_SCOPES.export)
   if (rateLimit.state === 'limited') {
-    return NextResponse.json(
+    return privateApiJson(
       { error: 'Muitas exportações em sequência. Aguarde e tente novamente.', code: 'RATE_LIMITED' },
       {
         status: 429,
         headers: {
-          'Cache-Control': 'private, no-store, no-cache, max-age=0, must-revalidate',
           'Retry-After': String(rateLimit.retryAfterSeconds),
         },
       },
@@ -68,7 +67,7 @@ export async function GET(request: Request) {
   // operacional sem registrar PII ou conteúdo clínico.
   const rateLimitDegraded = rateLimit.state === 'unavailable'
   if (!authorization.clinicId || !authorization.membershipRole) {
-    return NextResponse.json({ error: 'Clínica ativa não confirmada.' }, { status: 403 })
+    return privateApiJson({ error: 'Clínica ativa não confirmada.' }, { status: 403 })
   }
 
   // Busca informações do pet para o nome do arquivo
@@ -80,7 +79,7 @@ export async function GET(request: Request) {
     .maybeSingle()
 
   if (!pet) {
-    return NextResponse.json({ error: 'Pet não encontrado.' }, { status: 404 })
+    return privateApiJson({ error: 'Pet não encontrado.' }, { status: 404 })
   }
 
   const { data: laudos, error: queryError } = await supabase
@@ -93,7 +92,7 @@ export async function GET(request: Request) {
 
   if (queryError) {
     console.error('[Export] query_error', { code: queryError.code })
-    return NextResponse.json({ error: 'Erro ao buscar dados.' }, { status: 500 })
+    return privateApiJson({ error: 'Erro ao buscar dados.' }, { status: 500 })
   }
 
   const items: ExamItem[] = []
@@ -147,7 +146,7 @@ export async function GET(request: Request) {
   }
 
   if (!items || items.length === 0) {
-    return NextResponse.json(
+    return privateApiJson(
       { error: 'Nenhum resultado encontrado para este pet no período.' },
       { status: 404 },
     )
@@ -314,6 +313,7 @@ function buildCsv(items: ExamItem[]): string {
 // ──────────────────────────────────────────────────────────────
 function escapeXml(str: string): string {
   return str
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\uFFFE\uFFFF]/g, '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

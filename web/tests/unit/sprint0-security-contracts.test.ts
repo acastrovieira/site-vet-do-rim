@@ -182,3 +182,24 @@ test('20260830000000 remediation restores tenant FKs, immutability triggers, and
   assert.match(remediation, /private\.safe_parse_numeric\(/)
   assert.match(remediation, /private\.safe_parse_date\(/)
 })
+
+test('manual exam entry writes origem manual without a file, matching chk_laudos_pdf_origem_storage', () => {
+  const manualRoute = readFileSync(
+    resolve(repoRoot, 'web/src/app/api/lab/pacientes/[petId]/exames-manuais/route.ts'),
+    'utf8',
+  )
+
+  assert.match(manualRoute, /origem_resultado: 'manual'/)
+  assert.match(manualRoute, /storage_path: null/)
+  assert.doesNotMatch(manualRoute, /manual:\/\//)
+  assert.match(manualRoute, /\.eq\('clinic_id', authorization\.clinicId\)/)
+})
+
+test('tutor creation records LGPD consent only when explicitly accepted', () => {
+  const tutoresRoute = readFileSync(resolve(repoRoot, 'web/src/app/api/tutores/route.ts'), 'utf8')
+
+  assert.match(
+    tutoresRoute,
+    /lgpd_aceito_em: body\.lgpd_aceito === true \? new Date\(\)\.toISOString\(\) : null/,
+  )
+})

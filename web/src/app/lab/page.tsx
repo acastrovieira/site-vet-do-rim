@@ -6,6 +6,7 @@ import {
   assertServerQuerySucceeded,
   throwServerQueryFailure,
 } from '@/lib/server-query-safety'
+import { resolveActiveClinic } from '@/lib/server-clinic-context'
 
 export const metadata: Metadata = {
   title: 'Dashboard — Lab Evolution',
@@ -18,10 +19,19 @@ export default async function LabDashboardPage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) redirect('/auth/login?redirectTo=/lab')
 
+  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
+
+  let petsCountQuery = supabase.from('pets').select('id', { count: 'exact', head: true })
+  let tutoresCountQuery = supabase.from('tutores').select('id', { count: 'exact', head: true })
+  if (activeClinic?.clinicId) {
+    petsCountQuery = petsCountQuery.eq('clinic_id', activeClinic.clinicId)
+    tutoresCountQuery = tutoresCountQuery.eq('clinic_id', activeClinic.clinicId)
+  }
+
   // Métricas rápidas (dados reais do banco)
   const [petsResult, tutoresResult] = await Promise.all([
-    supabase.from('pets').select('id', { count: 'exact', head: true }),
-    supabase.from('tutores').select('id', { count: 'exact', head: true }),
+    petsCountQuery,
+    tutoresCountQuery,
   ])
   assertServerQuerySucceeded(petsResult.error, 'LAB_PETS_COUNT_FAILED')
   assertServerQuerySucceeded(tutoresResult.error, 'LAB_TUTORES_COUNT_FAILED')

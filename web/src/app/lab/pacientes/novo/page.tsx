@@ -9,6 +9,7 @@ import {
   TUTOR_SELECTION_LIMIT,
   type TutorOption,
 } from '@/lib/lab/tutor-selection'
+import { resolveActiveClinic } from '@/lib/server-clinic-context'
 
 export const metadata: Metadata = {
   title: 'Novo Paciente — Lab Evolution',
@@ -23,22 +24,32 @@ interface PageProps {
 export default async function NovoPacientePage({ searchParams }: PageProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
   const { tutor_id: rawDefaultTutorId } = await searchParams
   const requestedTutorId = isUuid(rawDefaultTutorId) ? rawDefaultTutorId : undefined
 
   // Carrega um item além do limite seguro para detectar truncamento e falhar fechado.
-  const tutorListQuery = supabase
+  let tutorListQuery = supabase
     .from('tutores')
     .select('id, nome')
     .order('nome', { ascending: true })
     .order('id', { ascending: true })
     .limit(TUTOR_SELECTION_LIMIT + 1)
-  const selectedTutorQuery = requestedTutorId
+  if (activeClinic?.clinicId) {
+    tutorListQuery = tutorListQuery.eq('clinic_id', activeClinic.clinicId)
+  }
+
+  let selectedTutorFilter = requestedTutorId
     ? supabase
       .from('tutores')
       .select('id, nome')
       .eq('id', requestedTutorId)
-      .maybeSingle()
+    : null
+  if (selectedTutorFilter && activeClinic?.clinicId) {
+    selectedTutorFilter = selectedTutorFilter.eq('clinic_id', activeClinic.clinicId)
+  }
+  const selectedTutorQuery = selectedTutorFilter
+    ? selectedTutorFilter.maybeSingle()
     : Promise.resolve({ data: null, error: null })
 
   const [rawTutorListResult, rawSelectedTutorResult] = await Promise.all([

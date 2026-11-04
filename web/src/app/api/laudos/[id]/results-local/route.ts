@@ -165,6 +165,13 @@ export async function POST(request: Request, { params }: Params) {
       )
     }
 
+    const { error: populateError } = await (service as unknown as {
+      rpc: (fn: string, args: { p_laudo_id: string }) => Promise<{ error: { code?: string } | null }>
+    }).rpc('populate_exam_result_items', { p_laudo_id: id })
+    if (populateError) {
+      console.warn('[POST /api/laudos/:id/results-local] populate_exam_result_items warning', { code: populateError.code })
+    }
+
     return privateApiJson({ ok: true, data: result })
   } catch (error) {
     if (error instanceof ApiPayloadTooLargeError) {

@@ -279,6 +279,9 @@ function CategorySection({
           const rowBackground = i % 2 === 0
             ? 'bg-white dark:bg-transparent'
             : 'bg-slate-50 dark:bg-white/[0.03]'
+          const stickyCellBackground = i % 2 === 0
+            ? 'bg-white dark:bg-[#0F2244]'
+            : 'bg-slate-50 dark:bg-[#132952]'
 
           return (
             <tr
@@ -287,7 +290,7 @@ function CategorySection({
             >
               {/* Nome do parâmetro */}
               <td
-                className={`sticky left-0 z-10 whitespace-nowrap border-r border-slate-100/80 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:border-white/10 dark:text-science-100 ${rowBackground}`}
+                className={`sticky left-0 z-10 whitespace-nowrap border-r border-slate-100/80 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:border-white/10 dark:text-science-100 ${stickyCellBackground}`}
               >
                 {parameterLabel}
               </td>

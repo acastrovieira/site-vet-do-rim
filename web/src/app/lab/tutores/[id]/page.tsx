@@ -10,6 +10,7 @@ import { TutorPetActions } from './TutorPetActions'
 import { ListPagination } from '@/components/lab/ListPagination'
 import { isUuid } from '@/lib/identifiers'
 import { listPageRange, parseListPage } from '@/lib/list-pagination'
+import { resolveActiveClinic } from '@/lib/server-clinic-context'
 import {
   ArrowLeft,
   Phone,
@@ -46,6 +47,8 @@ export default async function TutorDetailPage({
   const page = parseListPage(queryParams?.page, PAGE_SIZE)
   const { firstRow, lastRow } = listPageRange(page, PAGE_SIZE)
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
 
   type TutorRow = {
     id: string; nome: string; email: string | null; telefone: string
@@ -53,10 +56,15 @@ export default async function TutorDetailPage({
     cep: string | null; criado_em: string
   }
 
-  const { data: tutor, error: tutorError } = await supabase
+  let tutorQuery = supabase
     .from('tutores')
     .select('id, nome, email, telefone, cidade, estado, endereco, cep, criado_em')
     .eq('id', id)
+  if (activeClinic?.clinicId) {
+    tutorQuery = tutorQuery.eq('clinic_id', activeClinic.clinicId)
+  }
+
+  const { data: tutor, error: tutorError } = await tutorQuery
     .maybeSingle() as { data: TutorRow | null; error: unknown }
 
   assertServerQuerySucceeded(tutorError, 'TUTOR_DETAIL_QUERY_FAILED')
@@ -67,14 +75,19 @@ export default async function TutorDetailPage({
     idade_anos: number | null; status_paciente: string; peso_atual: number | null
   }
 
-  const { data: pets, error: petsError, count: petsCount } = await supabase
+  let petsQuery = supabase
     .from('pets')
     .select('id, nome, especie, raca, idade_anos, status_paciente, peso_atual', { count: 'exact' })
     .eq('tutor_id', id)
     .neq('status_paciente', 'inativo')
     .order('criado_em', { ascending: false })
     .order('id', { ascending: false })
-    .range(firstRow, lastRow) as {
+    .range(firstRow, lastRow)
+  if (activeClinic?.clinicId) {
+    petsQuery = petsQuery.eq('clinic_id', activeClinic.clinicId)
+  }
+
+  const { data: pets, error: petsError, count: petsCount } = await petsQuery as {
       data: PetRow[] | null
       error: unknown
       count: number | null
@@ -179,13 +192,32 @@ export default async function TutorDetailPage({
                     {ESPECIE_EMOJI[pet.especie] ?? '🐾'}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="break-words font-display font-bold text-slate-900 dark:text-white">{pet.nome}</p>
+                    <Link
+                      href={`/lab/pacientes/${pet.id}`}
+                      className="break-words font-display font-bold text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-gold-400 transition-colors"
+                    >
+                      {pet.nome}
+                    </Link>
                     <p className="text-xs text-slate-400 dark:text-science-400 capitalize">
                       {pet.especie}{pet.raca ? ` · ${pet.raca}` : ''}{pet.idade_anos ? ` · ${pet.idade_anos} anos` : ''}
                     </p>
                     {pet.peso_atual && (
                       <p className="text-xs text-slate-500 dark:text-science-200 mt-0.5">{pet.peso_atual} kg</p>
                     )}
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-semibold">
+                      <Link
+                        href={`/lab/pacientes/${pet.id}`}
+                        className="text-brand-600 dark:text-gold-400 hover:underline"
+                      >
+                        Ver evolução
+                      </Link>
+                      <Link
+                        href={`/lab/pacientes/${pet.id}/laudos`}
+                        className="text-slate-600 dark:text-science-200 hover:underline"
+                      >
+                        Laudos →
+                      </Link>
+                    </div>
                   </div>
                 </div>
 

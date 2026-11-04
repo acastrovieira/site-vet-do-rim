@@ -4,12 +4,14 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { TutorPetActions } from '@/app/lab/tutores/[id]/TutorPetActions'
 import { LabEvolutionTable } from '@/components/lab/LabEvolutionTable'
+import { ManualExamForm } from '@/components/lab/ManualExamForm'
 import type { ResultadoIA } from '@/lib/lab/transform-laudo-data'
 import { isUuid } from '@/lib/identifiers'
 import {
   assertServerQuerySucceeded,
   throwServerQueryFailure,
 } from '@/lib/server-query-safety'
+import { resolveActiveClinic } from '@/lib/server-clinic-context'
 import {
   ArrowLeft,
   User,
@@ -28,12 +30,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { petId } = await params
   if (!isUuid(petId)) notFound()
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
 
   type PetMeta = { nome: string }
-  const { data: pet, error: petError } = await supabase
+  let petMetaQuery = supabase
     .from('pets')
     .select('nome')
     .eq('id', petId)
+  if (activeClinic?.clinicId) {
+    petMetaQuery = petMetaQuery.eq('clinic_id', activeClinic.clinicId)
+  }
+  const { data: pet, error: petError } = await petMetaQuery
     .maybeSingle() as { data: PetMeta | null; error: unknown }
   assertServerQuerySucceeded(petError, 'PATIENT_METADATA_QUERY_FAILED')
 
@@ -69,6 +77,8 @@ export default async function PacienteDetailPage({ params }: Props) {
   const { petId } = await params
   if (!isUuid(petId)) notFound()
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
 
   type PetRow = {
     id: string
@@ -83,10 +93,15 @@ export default async function PacienteDetailPage({ params }: Props) {
     tutor_id: string
   }
 
-  const { data: pet, error: petError } = await supabase
+  let petQuery = supabase
     .from('pets')
     .select('id, nome, especie, raca, idade_anos, idade_meses, peso_atual, status_paciente, criado_em, tutor_id')
     .eq('id', petId)
+  if (activeClinic?.clinicId) {
+    petQuery = petQuery.eq('clinic_id', activeClinic.clinicId)
+  }
+
+  const { data: pet, error: petError } = await petQuery
     .maybeSingle() as { data: PetRow | null; error: unknown }
 
   assertServerQuerySucceeded(petError, 'PATIENT_DETAIL_QUERY_FAILED')
@@ -94,10 +109,15 @@ export default async function PacienteDetailPage({ params }: Props) {
 
   type TutorRow = { id: string; nome: string; telefone: string; email: string | null }
 
-  const { data: tutor, error: tutorError } = await supabase
+  let tutorQuery = supabase
     .from('tutores')
     .select('id, nome, telefone, email')
     .eq('id', pet.tutor_id)
+  if (activeClinic?.clinicId) {
+    tutorQuery = tutorQuery.eq('clinic_id', activeClinic.clinicId)
+  }
+
+  const { data: tutor, error: tutorError } = await tutorQuery
     .maybeSingle() as { data: TutorRow | null; error: unknown }
   assertServerQuerySucceeded(tutorError, 'PATIENT_TUTOR_QUERY_FAILED')
   if (!tutor) throwServerQueryFailure('PATIENT_TUTOR_NOT_FOUND')
@@ -111,13 +131,18 @@ export default async function PacienteDetailPage({ params }: Props) {
     resultado_ia: ResultadoIA | null
   }
 
-  const { data: laudos, error: laudosError } = await supabase
+  let laudosQuery = supabase
     .from('laudos_pdf')
     .select('id, nome_arquivo, tipo_exame, status, created_at, resultado_ia')
     .eq('pet_id', petId)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
-    .limit(50) as { data: LaudoRow[] | null; error: unknown }
+    .limit(50)
+  if (activeClinic?.clinicId) {
+    laudosQuery = laudosQuery.eq('clinic_id', activeClinic.clinicId)
+  }
+
+  const { data: laudos, error: laudosError } = await laudosQuery as { data: LaudoRow[] | null; error: unknown }
   assertServerQuerySucceeded(laudosError, 'PATIENT_REPORTS_QUERY_FAILED')
 
   const statusInfo = STATUS_LABELS[pet.status_paciente] ?? { label: pet.status_paciente, color: 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-science-200' }
@@ -293,6 +318,8 @@ export default async function PacienteDetailPage({ params }: Props) {
           />
         </div>
       )}
+
+      <ManualExamForm petId={petId} petSpecies={pet.especie} />
 
       {/* Dados físicos */}
       <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 p-6">

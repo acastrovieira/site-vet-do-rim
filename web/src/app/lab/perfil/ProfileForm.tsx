@@ -118,7 +118,10 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
 
       let emailRequestSent = false
       if (nextEmail !== lastRequestedEmail) {
-        const { error: emailError } = await supabase.auth.updateUser({ email: nextEmail })
+        const { error: emailError } = await supabase.auth.updateUser(
+          { email: nextEmail },
+          { emailRedirectTo: new URL('/auth/callback', window.location.origin).toString() },
+        )
         if (emailError) {
           setContactStatus('error')
           setContactMsg('Não foi possível atualizar o e-mail. Verifique o endereço informado e tente novamente.')

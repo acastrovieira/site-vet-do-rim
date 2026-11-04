@@ -5,6 +5,7 @@ import { FlaskConical, Plus, Search, AlertTriangle, RefreshCw } from 'lucide-rea
 import { redirect } from 'next/navigation'
 import { ListPagination } from '@/components/lab/ListPagination'
 import { listPageRange, parseListPage } from '@/lib/list-pagination'
+import { resolveActiveClinic } from '@/lib/server-clinic-context'
 
 export const metadata: Metadata = {
   title: 'Pacientes — Lab Evolution',
@@ -38,6 +39,8 @@ function patientsHref(page: number, query: string) {
 
 export default async function PacientesPage({ searchParams }: PacientesPageProps) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
   const params = await searchParams
   const query = normalizedQuery(params?.q)
   const page = parseListPage(params?.page, PAGE_SIZE)
@@ -50,6 +53,9 @@ export default async function PacientesPage({ searchParams }: PacientesPageProps
     .order('id', { ascending: false })
     .range(firstRow, lastRow)
 
+  if (activeClinic?.clinicId) {
+    petsQuery = petsQuery.eq('clinic_id', activeClinic.clinicId)
+  }
   if (query) petsQuery = petsQuery.ilike('nome', `%${query}%`)
 
   const { data: pets, error, count } = await petsQuery as {
@@ -169,7 +175,12 @@ export default async function PacientesPage({ searchParams }: PacientesPageProps
                           {pet.nome.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-900 dark:text-white">{pet.nome}</p>
+                          <Link
+                            href={`/lab/pacientes/${pet.id}`}
+                            className="font-semibold text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-gold-400 transition-colors"
+                          >
+                            {pet.nome}
+                          </Link>
                           <p className="text-xs text-slate-400 dark:text-science-400">{pet.raca ?? 'Raça não informada'}</p>
                         </div>
                       </div>
@@ -184,13 +195,22 @@ export default async function PacientesPage({ searchParams }: PacientesPageProps
                       </span>
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <Link
-                        href={`/lab/pacientes/${pet.id}/laudos`}
-                        className="text-xs font-semibold text-brand-600 hover:underline"
-                        aria-label={`Ver laudos de ${pet.nome}`}
-                      >
-                        Ver laudos →
-                      </Link>
+                      <div className="inline-flex items-center justify-end gap-3">
+                        <Link
+                          href={`/lab/pacientes/${pet.id}`}
+                          className="text-xs font-semibold text-slate-600 dark:text-science-200 hover:text-brand-600 dark:hover:text-white hover:underline"
+                          aria-label={`Ver ficha e evolução de ${pet.nome}`}
+                        >
+                          Evolução
+                        </Link>
+                        <Link
+                          href={`/lab/pacientes/${pet.id}/laudos`}
+                          className="text-xs font-semibold text-brand-600 dark:text-gold-400 hover:underline"
+                          aria-label={`Ver laudos de ${pet.nome}`}
+                        >
+                          Ver laudos →
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

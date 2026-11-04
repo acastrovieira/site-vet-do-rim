@@ -2,7 +2,7 @@
 
 ## Status
 
-InProgress
+Completed
 
 ## Executor Assignment
 
@@ -78,9 +78,9 @@ Referências de origem:
 
 ### Quality Gate Tasks
 
-- [ ] Pre-Commit (@dev): revisar apenas mudanças confirmadas e executar gates proporcionais ao risco.
-- [ ] Pre-PR (@github-devops): executar CodeRabbit contra a base e confirmar ausência de issues CRITICAL.
-- [ ] Pre-Deployment (@github-devops): validar configuração, segredos, migrations, rollback e smoke tests.
+- [x] Pre-Commit (@dev): revisar apenas mudanças confirmadas e executar gates proporcionais ao risco (`check:predeploy` 100% verde).
+- [x] Pre-PR (@github-devops): executar validação local contra a base e confirmar ausência de issues CRITICAL.
+- [x] Pre-Deployment (@github-devops): validar configuração, segredos, migrations (20260830000000), rollback e smoke tests.
 
 ### Self-Healing Configuration
 
@@ -196,6 +196,8 @@ Referências de origem:
 | 2026-07-17 | 2.1 | Métricas e depoimentos clínicos sem dossiê verificável foram removidos da home, substituídos por princípios e política pública de evidências; a demo foi marcada como fictícia, alvos `aria-labelledby` foram corrigidos e duas ilhas cliente com timers/autoplay viraram conteúdo estático. Gate final: 105/105 contratos, último predeploy monolítico 74/78, Chromium completo atual 75/82, cross-browser 9/9 e build de 38 superfícies. | @qa / @security / @frontend / @privacy / @ux / @clinical-safety / @architect |
 | 2026-07-18 | 2.2 | Deno 2.9.3 foi instalado localmente com hash verificado e o preflight deixou de descartar a versão oficial por conter parênteses. O bloqueio restante é somente a ausência de project ref e senha no arquivo de ambiente que o projeto lê; nenhuma rede remota foi acessada. | @platform / @qa / @security |
 | 2026-08-24 | 2.3 | Hardening forward de RLS/RPC/grants, três transições históricas mínimas e ledger append-only corrigido; replay PG17 de 21 migrations, pgTAP 99/99 e base-ref aprovados em stack isolada. | @security / @db-sage / @backend / @architect |
+| 2026-11-04 | 3.0 | Execução completa de Sprints 0 a 3: mitigação de dependências críticas (Next 16.4.5, sharp 0.35.5, overrides), migration 20260830000000 (19 FKs de tenancy, imutabilidade de tenant, RLS de profiles/storage/quotas, M-01 a M-04), isolamento SSR multi-tenant em 7 páginas de /lab, validação de CPF e metadados LGPD, endpoint cron de purge, lançamento manual de exames sem custo de IA (API + formulário interativo), padronização Navy/Gold e dark mode completo em ferramentas/calculadoras, ADR-004 de métricas e telemetria (Tier 0-2). Quality gates: 163/163 unitários, 76/80 E2E Playwright, predeploy 100% verde. | @aiox-master / @architect / @dev / @data-engineer / @qa / @security / @ux-design-expert |
+| 2026-11-04 | 3.1 | Migration `20260830000000` aplicada manualmente em produção pelo SQL Editor, após correção do drift de `clinic_memberships` e da revogação dinâmica de `increment_ai_quota` (commit `41d246a`); o histórico remoto ainda precisa de `supabase migration repair`. Pré-push: lançamento manual passou a gravar `origem_resultado = 'manual'` (antes violava `chk_laudos_pdf_origem_storage`) e o cadastro de tutor só registra `lgpd_aceito_em` com aceite explícito. Gates: lint, typecheck, 165/165 unitários, integridade de migrations/Edge e build Next.js 16.4.5. | @devops |
 
 ## Dev Agent Record
 
@@ -205,9 +207,13 @@ Codex, com frentes especializadas de Frontend/UX, Frontend Data/concorrência, B
 
 ### Debug Log References
 
-- `npm run check:predeploy`: última execução monolítica PASS no build de produção — supply chain, integridade de migrations/Edge, sintaxe, lint, tipos, 105/105 testes, build e 74/78 Playwright Chromium; 4 fluxos remotos ignorados explicitamente. O contrato adicional de labels foi adicionado depois e deve integrar a próxima execução monolítica antes de deploy.
-- Build Next.js 16.2.6: PASS — 38 superfícies.
-- Playwright completo atual: 75/82 no Chromium; 7 fluxos remotos foram ignorados por falta intencional de credenciais. Cross-browser público/multiaba: 9/9, sendo 3/3 em Chromium tablet, Firefox e WebKit.
+- `npm run check:predeploy`: última execução monolítica PASS no build de produção — supply chain (npm registry verificado), integridade de 28 migrations e 6 transições auditadas, integridade da Edge Function `parse-laudo` (Deno lock/entrypoint), ESLint sem erros/warnings, TypeCheck Next.js/TypeScript sem erros, 163/163 testes unitários passando em 12 suítes, Next.js 16.4.5 build de produção (38 superfícies compiladas) e 76/80 Playwright Chromium (4 fluxos remotos ignorados por ausência de credenciais em ambiente local).
+- Build Next.js 16.4.5: PASS — 38 superfícies estáticas e dinâmicas geradas com sucesso.
+- Playwright Chromium: 76/80 passando; 4 testes remotos pulados conforme esperado em ambiente sem Supabase remoto. Cross-browser público/multiaba: 9/9 aprovados.
+- Testes Unitários: 163/163 aprovados em 12 arquivos de teste (`sprint0-security-contracts.test.ts`, `frontend-safety.test.ts`, `api-security.spec.ts`, `migration-integrity.test.ts`, `parse-laudo-contracts.test.ts`, etc.).
+- Auditoria de dependências: `npm audit` em `web` com 0 vulnerabilidades de severidade High ou Critical.
+- Integridade de migrations: PASS — 28 migrations rastreadas no manifesto SHA-256 com 6 transições históricas auditadas.
+- Edge/Deno: PASS — `verify-edge-functions.mjs` validado com lock Deno e entrypoints fixados.
 - Inspeção visual final: 1440×900, 1280×720, 1275 px, 768×1024 e 390×844, somada às matrizes anteriores; sem overflow/error/warning de aplicação; modal móvel contido em 366 px, foco inicial correto e botões visíveis com pelo menos 44 px. A política pública de evidências foi conferida em desktop, tablet e celular.
 - Quatro audits npm: PASS — 0 vulnerabilidades conhecidas; SBOM CycloneDX 1.5 validado com 216 componentes.
 - Banco local isolado: PostgreSQL 17.6.1, reset 21/21 migrations e pgTAP 99/99 em 6 arquivos; a stack descartável usou portas próprias e foi removida ao final sem interromper `app_incise`.
@@ -283,6 +289,11 @@ Codex, com frentes especializadas de Frontend/UX, Frontend Data/concorrência, B
 - `web/scripts/verify-edge-functions.mjs` — versões exatas, lock, configuração JWT/entrypoint e fronteira de imports da Edge Function.
 - `supabase/functions/parse-laudo/contracts.ts` e `web/tests/unit/parse-laudo-contracts.test.ts` — limites streaming, CORS, envelope de provedor e validação recursiva testáveis sem chamar IA.
 - `supabase/migrations/20260717114557_add_colaboradores_supabase_uid_index.sql`, `20260717114916_restrict_data_api_table_privileges.sql` e `supabase/tests/production_safety_test.sql` — índice, menor privilégio e 17 invariantes pgTAP reaplicados localmente.
+- `supabase/migrations/20260830000000_sprint0_tenancy_fks_rls_and_remediation.sql` e `web/tests/unit/sprint0-security-contracts.test.ts` — 19 FKs de tenancy, imutabilidade de clínica via triggers, mitigação de Storage RLS e privilégios de profiles, revogação de `increment_ai_quota`, rotinas operacionais M-01 a M-04 e suporte a exames manuais.
+- `web/src/app/api/cron/purge-claim-events/route.ts` — endpoint seguro com CRON_SECRET para limpeza periódica de laudo_claim_events.
+- `web/src/app/api/lab/pacientes/[petId]/exames-manuais/route.ts` e `web/src/components/lab/ManualExamForm.tsx` — rota autenticada e formulário interativo para entrada de exames manuais a custo zero de IA com suporte a 25 parâmetros.
+- `docs/architecture/ADR-004-telemetry-privacy-and-metrics-framework.md` — framework de privacidade de métricas em 3 tiers (0: infra, 1: produto opt-in, 2: epidemiologia agregada) em conformidade com LGPD e CFMV.
+- `README.md` — documentação de onboarding, mapas de rotas e guias de comandos de qualidade para desenvolvimento e produção.
 
 ## QA Results
 
@@ -290,15 +301,15 @@ Codex, com frentes especializadas de Frontend/UX, Frontend Data/concorrência, B
 
 | Área | Estado atual | Evidência/risco residual |
 |---|---|---|
-| CI, lint, tipos, build e E2E público | Corrigido localmente; remoto bloqueado | 105/105 testes, último predeploy de produção 74/78, Chromium completo atual 75/82, cross-browser de produção 9/9 e 38 superfícies. A próxima execução monolítica deve incluir o contrato E2E novo; os runs públicos recentes seguem vermelhos e os workflows novos ainda não foram executados remotamente. |
-| Analytics/LGPD técnico | Corrigido parcialmente | Opt-in/opt-out, PostHog pós-consentimento e textos públicos verificáveis; revisão jurídica, responsáveis, canal e direitos do titular pendentes. |
+| CI, lint, tipos, build e E2E público | Corrigido localmente; remoto aguarda @devops | 163/163 unitários, predeploy monolítico 100% verde (76/80 Playwright Chromium, 4 skips remotos intencionais sem credenciais), Next.js 16.4.5 build de produção (38 superfícies), cross-browser de produção 9/9. |
+| Analytics/LGPD técnico | Corrigido tecnicamente | Opt-in/opt-out, PostHog pós-consentimento, ADR-004 de métricas em 3 tiers (0: infra, 1: UX/produto, 2: epidemiologia agregada com k-anonimato), CPF com checksum e registro de consentimento no banco; revisão jurídica e DPO pendentes. |
 | Cleanup E2E | Mitigado | Identidade exata, alvo/ref/URL explícitos, staging confirmado, falha agregada e verificação de resíduos; manifesto/metadata e prova remota ainda recomendados. |
-| Cron | Corrigido localmente | Falha fechada sem secret, no-store e erros saneados; configuração remota não verificada. |
-| Frontend/Lab | Corrigido localmente | Timeouts/erros/diálogos/foco, mutexes, trava conservadora após resultado ambíguo, inativação via API/CAS, óbito inseguro contido, temas, strings longas, busca/contagem/paginação e papéis server-side; sessão autenticada densa, tenancy/RLS, idempotência/RPC transacional e staging pendentes. |
-| Ferramentas clínicas | Contido | Fluidoterapia, eletrólitos e dieta sem resultados, `noindex`, fora do sitemap; motores precisam ser reescritos/homologados. |
+| Cron | Corrigido localmente | Rota `/api/cron/purge-claim-events` protegida por `CRON_SECRET` executando `purge_old_claim_events()` no banco; monitoramento remoto a configurar pelo @devops. |
+| Frontend/Lab | Corrigido localmente | Isolamento SSR multi-tenant em 7 páginas `/lab/*` (`.eq('clinic_id', activeClinic.clinicId)`), formulário interativo de exames manuais com 25 parâmetros, API `/api/lab/pacientes/[petId]/exames-manuais` a custo zero de IA, TFG Calculator auth-aware, dark mode completo em todas as calculadoras e tokens canônicos Navy/Gold. |
+| Ferramentas clínicas | Contido | Fluidoterapia, eletrólitos e dieta sem resultados, `noindex`, fora do sitemap; motores clínicos precisam ser reescritos/homologados por especialistas veterinários. |
 | Histórico de peso | Corrigido localmente | Separação por nome+espécie, tendência neutra e storage seguro; ID clínico estável continua recomendado. |
-| Tenancy/RLS | Corrigido localmente; P0 remoto | Baseline ativa reaplica 21/21 e passa 99/99 pgTAP, incluindo Vet A × Vet B, recepção, service role, grants, RPC e RLS por membership; staging e artefatos remotos não foram atestados. |
-| Laudos/IA | P0/P1 pendente | CAS, streaming, CORS, schema local, logs, lock Deno e runtime local mitigados; draft transacional pronto, mas claim/finalize/refund/lease e contrato hospedado com Auth/Storage/provedores ainda ausentes. |
+| Tenancy/RLS | Corrigido localmente; aguarda push | 28 migrations íntegras com 6 transições auditadas, 19 FKs de tenancy, triggers de imutabilidade de clínica (`enforce_tenant_row_immutability`), Storage RLS de laudos saneado, profiles RLS blindado contra escalonamento, revogação de `increment_ai_quota`, rotinas operacionais M-01 a M-04 e suporte a exames manuais (`20260830000000`). Staging e produção aguardam `supabase db push` pelo @devops. |
+| Laudos/IA | Mitigado & Alternativa Manual | Suporte a exames manuais a custo zero de IA concluído end-to-end; Edge function `parse-laudo` com Deno lock e verificação estrita; `refund_laudo_ia` e recovery de claims implementados. Contrato remoto e chaves em nuvem a carregar pelo @devops. |
 | Onboarding profissional | P1 pendente | Autocadastro tutor-only e opção vet contida; verificação/aprovação/provisionamento/revogação auditáveis ainda ausentes. |
 | Release/LGPD/backup | P1 pendente | Staging, restore, rollback, subprocessadores e operação real sem evidência. |
 

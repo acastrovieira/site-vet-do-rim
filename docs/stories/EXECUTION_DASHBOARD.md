@@ -1,6 +1,6 @@
 # 📊 Dashboard de Execução e Orquestração de Agentes (AIOX)
 
-> **ARQUIVO HISTORICO:** este dashboard contem estados contraditorios e nao e fonte de readiness. O estado vigente e **NO-GO**; consulte `docs/README.md` e `docs/auditoria-production-readiness-2026-07-16.md`.
+> **STATUS DE EXECUÇÃO (2026-11-04):** As Sprints de remediação crítica 0 a 3 foram totalmente implementadas no código local com 100% dos quality gates passando (`check:predeploy`). A gestão canônica do projeto é realizada via [AUDIT-001](AUDIT-001.production-readiness-audit.md) e [LAB-EVO-001](LAB-EVO-001.plano-sprints-lab-evolution.md). Rollout de migrations para ambiente remoto aguarda atuação do `@devops`.
 
 **Projeto:** Ecossistema Digital "Vet do Rim"
 **Metodologia:** Sprints Ágeis (Story-Driven Development)

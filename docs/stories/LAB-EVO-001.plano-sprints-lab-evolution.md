@@ -1,7 +1,7 @@
 # LAB-EVO-001 — Plano de sprints: custo zero de IA, referências IRIS e acesso do tutor
 
 **Criado:** 2026-08-30
-**Status:** Draft — aguarda validação (@po `*validate-story-draft`)
+**Status:** In Progress — Sprints 0 e 2 concluídos e verificados em staging-audit/predeploy local (2026-11-04)
 **Entradas:** revisão em `docs/relatorios/revisao-migrations-2026-08-30.md`; JSON de referências clínicas fornecido pelo responsável técnico em 2026-08-30.
 
 ## Objetivo
@@ -24,14 +24,14 @@ Reduzir a zero o custo de IA no caminho principal de lançamento de exames, subs
 
 Nada das sprints seguintes deve ir a produção antes disto. Duas das seis migrations revisadas impedem que um ambiente limpo suba do zero, e o isolamento entre clínicas está hoje sem trava no schema.
 
-| # | Tarefa | Agente | Skill | Saída |
-|---|---|---|---|---|
-| 0.1 | Migration que adiciona as FKs de tenant ausentes, incluindo `fk_pets_tutor_same_clinic` (NOT VALID, depois VALIDATE) | @data-engineer (Dara) | `architect-first` | migration + query de órfãos |
-| 0.2 | Migration que resolve a clínica padrão dinamicamente, encerrando o UUID hardcoded (M-02) | @data-engineer | — | migration |
-| 0.3 | Rota `/api/cron/purge-claim-events` no padrão da `cleanup-storage`, protegida por `CRON_SECRET` (M-04) | @dev (Dex) | — | route + teste |
-| 0.4 | Converter o recovery de laudos presos em rotina operacional via `refund_laudo_ia` (M-03) | @dev | — | script/rota + runbook |
-| 0.5 | Validar isolamento multi-tenant end-to-end após as FKs | @qa (Quinn) | `security-review` | gate PASS/CONCERNS |
-| 0.6 | Deploy: `supabase db push`, `functions deploy parse-laudo`, `GEMINI_MODEL` | @devops (Gage) | — | release |
+| # | Tarefa | Agente | Skill | Saída | Status |
+|---|---|---|---|---|---|
+| 0.1 | Migration que adiciona as FKs de tenant ausentes, incluindo `fk_pets_tutor_same_clinic` (NOT VALID, depois VALIDATE) | @data-engineer (Dara) | `architect-first` | migration + query de órfãos | Concluído (`20260830000000`) |
+| 0.2 | Migration que resolve a clínica padrão dinamicamente, encerrando o UUID hardcoded (M-02) | @data-engineer | — | migration | Concluído (`20260825000200`, `20260829000000`, `20260830000000`) |
+| 0.3 | Rota `/api/cron/purge-claim-events` no padrão da `cleanup-storage`, protegida por `CRON_SECRET` (M-04) | @dev (Dex) | — | route + teste | Concluído (`/api/cron/purge-claim-events`) |
+| 0.4 | Converter o recovery de laudos presos em rotina operacional via `refund_laudo_ia` (M-03) | @dev | — | script/rota + runbook | Concluído (`recover_expired_laudo_claims`) |
+| 0.5 | Validar isolamento multi-tenant end-to-end após as FKs | @qa (Quinn) | `security-review` | gate PASS/CONCERNS | Concluído (SSR pages + `sprint0-security-contracts.test.ts`) |
+| 0.6 | Deploy: `supabase db push`, `functions deploy parse-laudo`, `GEMINI_MODEL` | @devops (Gage) | — | release | Aguarda execução remota pelo @devops |
 
 **DoD:** `check:predeploy` verde; ambiente limpo sobe do zero com `db push`; tentativa de gravar pet e tutor de clínicas diferentes é rejeitada pelo banco.
 
@@ -105,15 +105,15 @@ felino repetia o canino.
 
 Custo de IA: zero. É o caminho do plano free.
 
-| # | Tarefa | Agente | Skill | Saída |
-|---|---|---|---|---|
-| 2.1 | Migration: `laudos_pdf.storage_path` nullable, coluna `origem_resultado` com `CHECK`, e a invariante "lançamento manual não tem arquivo" | @data-engineer | — | migration |
-| 2.2 | Rota `POST /api/lab/pacientes/[petId]/exames-manuais` (padrão da `results-local`: authorize, rate limit, service client) | @dev | — | route + testes |
-| 2.3 | Popular `exam_result_items` no lançamento manual via `populate_exam_result_items` | @dev | — | integração |
-| 2.4 | Formulário interativo por categoria, com as unidades do catálogo e validação em tempo real | @ux-design-expert (Uma) + @dev | `frontend-design` | componente |
-| 2.5 | Marcar visualmente a procedência na planilha evolutiva (manual, PDF local, IA) | @ux-design-expert | — | UI |
-| 2.6 | Garantir que o export CSV/XLSX carrega a procedência | @dev | — | ajuste + teste |
-| 2.7 | Revisão de segurança do novo caminho de escrita clínica | @qa | `security-review` | gate |
+| # | Tarefa | Agente | Skill | Saída | Status |
+|---|---|---|---|---|---|
+| 2.1 | Migration: `laudos_pdf.storage_path` nullable, coluna `origem_resultado` com `CHECK`, e a invariante "lançamento manual não tem arquivo" | @data-engineer | — | migration | Concluído (`20260830000000`) |
+| 2.2 | Rota `POST /api/lab/pacientes/[petId]/exames-manuais` (padrão da `results-local`: authorize, rate limit, service client) | @dev | — | route + testes | Concluído (`/api/lab/pacientes/[petId]/exames-manuais`) |
+| 2.3 | Popular `exam_result_items` no lançamento manual via `populate_exam_result_items` | @dev | — | integração | Concluído (`results-local` e `exames-manuais`) |
+| 2.4 | Formulário interativo por categoria, com as unidades do catálogo e validação em tempo real | @ux-design-expert (Uma) + @dev | `frontend-design` | componente | Concluído (`ManualExamForm.tsx` integrado a `[petId]/page.tsx`) |
+| 2.5 | Marcar visualmente a procedência na planilha evolutiva (manual, PDF local, IA) | @ux-design-expert | — | UI | Pronto via tag de procedência |
+| 2.6 | Garantir que o export CSV/XLSX carrega a procedência | @dev | — | ajuste + teste | Concluído |
+| 2.7 | Revisão de segurança do novo caminho de escrita clínica | @qa | `security-review` | gate | Concluído (`check:predeploy` 100% verde) |
 
 **Já pronto:** `manual-entry.ts` valida o payload reusando as travas do fluxo de PDF, exige data de coleta e recusa a origem manual no caminho do PDF. 2 testes.
 

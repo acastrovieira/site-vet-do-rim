@@ -81,7 +81,7 @@ docs/
 - Use conventional commits: `feat:`, `fix:`, `docs:`, etc.
 - Reference story ID in commits: `feat: implement IDE detection [Story 2.1]`
 - Ensure GitHub CLI is configured: `gh auth status`
-- Push regularly to avoid conflicts
+- Respect AIOX Constitution authority: only `@devops` executes `git push`, PR creation, and releases
 
 ## Common Patterns
 

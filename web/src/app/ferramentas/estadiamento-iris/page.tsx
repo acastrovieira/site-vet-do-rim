@@ -32,17 +32,17 @@ export default function EstadiamentoIRISPage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
       />
       <Header />
-      <main id="main-content" className="pt-24 pb-16">
+      <main id="main-content" className="pt-24 pb-16 bg-science-50 dark:bg-[#0A1628] transition-colors">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 border border-brand-100 text-brand-700 text-xs font-semibold uppercase tracking-wider mb-6">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 dark:bg-[#0F2244] border border-brand-100 dark:border-white/10 text-brand-700 dark:text-gold-400 text-xs font-semibold uppercase tracking-wider mb-6">
               🔬 Ferramenta gratuita · IRIS 2026
             </span>
-            <h1 className="font-display text-4xl sm:text-5xl font-bold text-slate-900 text-balance mb-4">
+            <h1 className="font-display text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white text-balance mb-4">
               Estadiamento{' '}
               <span className="text-gradient-brand">IRIS da DRC</span>
             </h1>
-            <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
+            <p className="text-slate-500 dark:text-science-200 text-lg max-w-2xl mx-auto leading-relaxed">
               Compare os marcadores com as faixas IRIS após o diagnóstico de DRC.
               O resultado precisa ser confirmado pelo médico-veterinário.
             </p>
@@ -50,7 +50,7 @@ export default function EstadiamentoIRISPage() {
 
           <IRISStagingModel />
 
-          <p className="mt-8 text-center text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+          <p className="mt-8 text-center text-xs text-slate-400 dark:text-science-400 max-w-lg mx-auto leading-relaxed">
             ⚠️ Baseado nas diretrizes IRIS 2026. O estadiamento só se aplica a paciente estável,
             hidratado e com DRC diagnosticada. Não substitui avaliação clínica presencial.
           </p>

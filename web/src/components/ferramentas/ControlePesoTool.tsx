@@ -166,11 +166,11 @@ function InputField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-700 mb-1.5">
+      <label htmlFor={id} className="block text-sm font-medium text-slate-700 dark:text-science-200 mb-1.5">
         {label} {required && <span className="text-brand-500">*</span>}
       </label>
       {children}
-      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-slate-400 dark:text-science-400">{hint}</p>}
     </div>
   )
 }
@@ -270,15 +270,15 @@ export function ControlePesoTool() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Scale className="h-5 w-5 text-teal-600" aria-hidden />
-            <h2 className="font-display font-bold text-slate-900">Histórico de Peso</h2>
+            <Scale className="h-5 w-5 text-teal-600 dark:text-gold-400" aria-hidden />
+            <h2 className="font-display font-bold text-slate-900 dark:text-white">Histórico de Peso</h2>
             {registros.length > 0 && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-50 dark:bg-white/10 text-teal-700 dark:text-gold-400">
                 {registros.length} registro{registros.length !== 1 ? 's' : ''}
               </span>
             )}
           </div>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-science-200">
             Acompanhe a evolução do peso e do ECC ao longo do tempo
           </p>
         </div>
@@ -286,7 +286,7 @@ export function ControlePesoTool() {
           {registros.length > 0 && (
             <button
               onClick={() => downloadCSV(registros)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-600 dark:text-science-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
               title="Exportar CSV"
             >
               <Download className="h-4 w-4" aria-hidden />
@@ -305,14 +305,14 @@ export function ControlePesoTool() {
 
       {/* Formulário de registro */}
       {mostrarForm && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div className="bg-white dark:bg-[#0F2244] rounded-2xl border border-slate-100 dark:border-white/10 shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="font-display font-semibold text-slate-900">Novo Registro</h3>
+            <h3 className="font-display font-semibold text-slate-900 dark:text-white">Novo Registro</h3>
             <button
               type="button"
               onClick={() => setMostrarForm(false)}
               aria-label="Fechar formulário de peso"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-400 dark:text-science-300 transition-colors hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-white"
             >
               <X className="h-5 w-5" aria-hidden />
             </button>
@@ -335,10 +335,10 @@ export function ControlePesoTool() {
                   required
                   aria-invalid={Boolean(erros.nomePaciente)}
                   aria-describedby={erros.nomePaciente ? 'nomePaciente-erro' : undefined}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-science-400 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
                 {erros.nomePaciente && (
-                  <p id="nomePaciente-erro" className="mt-1 text-xs text-red-600">
+                  <p id="nomePaciente-erro" className="mt-1 text-xs text-red-600 dark:text-red-400">
                     {erros.nomePaciente}
                   </p>
                 )}
@@ -355,9 +355,9 @@ export function ControlePesoTool() {
                   required
                   aria-invalid={Boolean(erros.data)}
                   aria-describedby={erros.data ? 'data-erro' : undefined}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
-                {erros.data && <p id="data-erro" className="mt-1 text-xs text-red-600">{erros.data}</p>}
+                {erros.data && <p id="data-erro" className="mt-1 text-xs text-red-600 dark:text-red-400">{erros.data}</p>}
               </InputField>
 
               {/* Espécie */}
@@ -366,13 +366,13 @@ export function ControlePesoTool() {
                   id="especie"
                   value={form.especie}
                   onChange={(e) => setForm({ ...form, especie: e.target.value as Especie })}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white dark:bg-white/5"
                 >
                   <option value="">Selecione…</option>
                   <option value="cao">Cão</option>
                   <option value="gato">Gato</option>
                 </select>
-                {erros.especie && <p className="mt-1 text-xs text-red-600">{erros.especie}</p>}
+                {erros.especie && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{erros.especie}</p>}
               </InputField>
 
               {/* Peso */}
@@ -386,30 +386,30 @@ export function ControlePesoTool() {
                   value={form.pesoKg}
                   onChange={(e) => setForm({ ...form, pesoKg: e.target.value })}
                   placeholder="Ex: 8.5"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-science-400 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
-                {erros.pesoKg && <p className="mt-1 text-xs text-red-600">{erros.pesoKg}</p>}
+                {erros.pesoKg && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{erros.pesoKg}</p>}
               </InputField>
 
               {/* ECC com dropdown visual */}
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                <label className="block text-sm font-medium text-slate-700 dark:text-science-200 mb-1.5">
                   Escore de Condição Corporal (ECC) <span className="text-brand-500">*</span>
                 </label>
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setEccAberto(!eccAberto)}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 hover:bg-slate-50 transition-colors"
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 text-sm bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
                   >
                     {form.ecc
                       ? <span className={ECC_DESCRICOES[form.ecc as ECC].cor + ' font-medium'}>{ECC_DESCRICOES[form.ecc as ECC].label}</span>
-                      : <span className="text-slate-400">Selecione o ECC (1–9)…</span>
+                      : <span className="text-slate-400 dark:text-science-400">Selecione o ECC (1–9)…</span>
                     }
-                    <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${eccAberto ? 'rotate-180' : ''}`} aria-hidden />
+                    <ChevronDown className={`h-4 w-4 text-slate-400 dark:text-science-400 transition-transform ${eccAberto ? 'rotate-180' : ''}`} aria-hidden />
                   </button>
                   {eccAberto && (
-                    <div className="absolute top-full mt-1 left-0 right-0 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 overflow-hidden">
+                    <div className="absolute top-full mt-1 left-0 right-0 bg-white dark:bg-[#0F2244] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl z-20 overflow-hidden">
                       {(Object.entries(ECC_DESCRICOES) as [string, { label: string; descricao: string; cor: string }][]).map(([ecc, info]) => (
                         <button
                           key={ecc}
@@ -418,16 +418,16 @@ export function ControlePesoTool() {
                             setForm({ ...form, ecc: Number(ecc) as ECC })
                             setEccAberto(false)
                           }}
-                          className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 ${form.ecc === Number(ecc) ? 'bg-teal-50' : ''}`}
+                          className={`w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-50 dark:border-white/10 last:border-0 ${form.ecc === Number(ecc) ? 'bg-teal-50 dark:bg-white/10' : ''}`}
                         >
                           <p className={`text-sm font-semibold ${info.cor}`}>{info.label}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{info.descricao}</p>
+                          <p className="text-xs text-slate-500 dark:text-science-300 mt-0.5">{info.descricao}</p>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-                {erros.ecc && <p className="mt-1 text-xs text-red-600">{erros.ecc}</p>}
+                {erros.ecc && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{erros.ecc}</p>}
               </div>
 
               {/* Observações */}
@@ -439,7 +439,7 @@ export function ControlePesoTool() {
                     value={form.observacoes}
                     onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
                     placeholder="Ex: Consulta de retorno, paciente hidratado…"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-science-400 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
                   />
                 </InputField>
               </div>
@@ -456,7 +456,7 @@ export function ControlePesoTool() {
               <button
                 type="button"
                 onClick={() => { setMostrarForm(false); setForm(criarFormInicial()); setErros({}) }}
-                className="px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                className="px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-600 dark:text-science-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
               >
                 Cancelar
               </button>
@@ -466,7 +466,7 @@ export function ControlePesoTool() {
       )}
 
       {erroStorage && (
-        <div role="alert" className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div role="alert" className="flex gap-3 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40 p-4 text-sm text-amber-900 dark:text-amber-200">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
           <div>
             <p className="font-semibold">O histórico local precisa de atenção</p>
@@ -477,12 +477,12 @@ export function ControlePesoTool() {
 
       {/* Gráfico de evolução */}
       {registrosGrafico.length >= 2 && pacienteGrafico && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-[#0F2244] rounded-2xl border border-slate-100 dark:border-white/10 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="h-4 w-4 text-teal-600" aria-hidden />
-            <h3 className="font-display font-semibold text-slate-900 text-sm">Evolução do Peso</h3>
+            <TrendingUp className="h-4 w-4 text-teal-600 dark:text-gold-400" aria-hidden />
+            <h3 className="font-display font-semibold text-slate-900 dark:text-white text-sm">Evolução do Peso</h3>
           </div>
-          <p className="text-xs text-slate-400 mb-2">
+          <p className="text-xs text-slate-400 dark:text-science-300 mb-2">
             {pacienteGrafico.nomePaciente} · {especiesLabel[pacienteGrafico.especie]} · últimos {registrosGrafico.length} registros
           </p>
           <MiniLineChart dados={chartDados} />
@@ -491,12 +491,12 @@ export function ControlePesoTool() {
 
       {/* Estado vazio */}
       {registros.length === 0 && !mostrarForm && (
-        <div className="text-center py-16 px-6 bg-white rounded-2xl border border-dashed border-slate-200">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-50 mx-auto mb-4">
-            <PawPrint className="h-7 w-7 text-teal-500" aria-hidden />
+        <div className="text-center py-16 px-6 bg-white dark:bg-[#0F2244] rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-50 dark:bg-white/10 mx-auto mb-4">
+            <PawPrint className="h-7 w-7 text-teal-500 dark:text-gold-400" aria-hidden />
           </div>
-          <h3 className="font-display font-semibold text-slate-700 mb-2">Nenhum registro ainda</h3>
-          <p className="text-sm text-slate-400 max-w-sm mx-auto mb-5">
+          <h3 className="font-display font-semibold text-slate-700 dark:text-white mb-2">Nenhum registro ainda</h3>
+          <p className="text-sm text-slate-400 dark:text-science-200 max-w-sm mx-auto mb-5">
             Registre o primeiro peso para começar o acompanhamento evolutivo do seu paciente.
           </p>
           <button
@@ -511,12 +511,12 @@ export function ControlePesoTool() {
 
       {/* Tabela de registros */}
       {registros.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-display font-semibold text-slate-900 text-sm">Registros</h3>
+        <div className="bg-white dark:bg-[#0F2244] rounded-2xl border border-slate-100 dark:border-white/10 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
+            <h3 className="font-display font-semibold text-slate-900 dark:text-white text-sm">Registros</h3>
             <button
               onClick={() => setConfirmLimpar(true)}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-500 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-science-300 hover:text-red-500 transition-colors"
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden />
               Limpar tudo
@@ -525,33 +525,33 @@ export function ControlePesoTool() {
 
           {/* Confirmação de limpar */}
           {confirmLimpar && (
-            <div className="mx-4 my-3 p-4 bg-red-50 border border-red-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="mx-4 my-3 p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" aria-hidden />
-              <p className="text-sm text-red-700 flex-1">
+              <p className="text-sm text-red-700 dark:text-red-200 flex-1">
                 Apagar todos os {registros.length} registros? Esta ação não pode ser desfeita.
               </p>
               <div className="flex gap-2">
                 <button onClick={handleLimpar} className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors">
                   Apagar tudo
                 </button>
-                <button onClick={() => setConfirmLimpar(false)} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                <button onClick={() => setConfirmLimpar(false)} className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-medium text-slate-600 dark:text-science-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                   Cancelar
                 </button>
               </div>
             </div>
           )}
 
-          <div className="divide-y divide-slate-50">
+          <div className="divide-y divide-slate-50 dark:divide-white/10">
             {registros.map((r) => {
               const anterior = registroAnterior(r, registros)
               return (
-                <div key={r.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50/50 transition-colors">
+                <div key={r.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                   {/* Data */}
                   <div className="w-24 shrink-0">
-                    <p className="text-xs font-semibold text-slate-700">
+                    <p className="text-xs font-semibold text-slate-700 dark:text-science-200">
                       {new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                     </p>
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-[10px] text-slate-400 dark:text-science-400">
                       {new Date(r.data + 'T12:00:00').getFullYear()}
                     </p>
                   </div>
@@ -560,9 +560,9 @@ export function ControlePesoTool() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       {r.nomePaciente && (
-                        <span className="text-sm font-semibold text-slate-800">{r.nomePaciente}</span>
+                        <span className="text-sm font-semibold text-slate-800 dark:text-white">{r.nomePaciente}</span>
                       )}
-                      <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-medium">
+                      <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-science-200 rounded font-medium">
                         {especiesLabel[r.especie]}
                       </span>
                       <span className={`text-[10px] font-semibold ${ECC_DESCRICOES[r.ecc].cor}`}>
@@ -570,13 +570,13 @@ export function ControlePesoTool() {
                       </span>
                     </div>
                     {r.observacoes && (
-                      <p className="text-xs text-slate-400 mt-0.5 truncate">{r.observacoes}</p>
+                      <p className="text-xs text-slate-400 dark:text-science-300 mt-0.5 truncate">{r.observacoes}</p>
                     )}
                   </div>
 
                   {/* Peso + tendência */}
                   <div className="shrink-0 text-right">
-                    <p className="font-bold text-slate-900">{r.pesoKg.toFixed(2)} <span className="text-xs font-normal text-slate-400">kg</span></p>
+                    <p className="font-bold text-slate-900 dark:text-white">{r.pesoKg.toFixed(2)} <span className="text-xs font-normal text-slate-400 dark:text-science-400">kg</span></p>
                     {anterior && <TendenciaBadge atual={r.pesoKg} anterior={anterior.pesoKg} />}
                   </div>
 
@@ -591,7 +591,7 @@ export function ControlePesoTool() {
                       </button>
                       <button
                         onClick={() => setConfirmDeletar(null)}
-                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-100"
+                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-slate-500 dark:text-science-300 hover:bg-slate-100 dark:hover:bg-white/10"
                       >
                         Cancelar
                       </button>
@@ -599,7 +599,7 @@ export function ControlePesoTool() {
                   ) : (
                     <button
                       onClick={() => setConfirmDeletar(r.id)}
-                      className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      className="shrink-0 p-1.5 rounded-lg text-slate-300 dark:text-science-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
                       title="Remover registro"
                       aria-label={`Solicitar remoção do registro de ${r.nomePaciente ?? 'paciente'}`}
                     >
@@ -614,7 +614,7 @@ export function ControlePesoTool() {
       )}
 
       {/* Aviso de privacidade */}
-      <p className="text-center text-xs text-slate-400 leading-relaxed">
+      <p className="text-center text-xs text-slate-400 dark:text-science-400 leading-relaxed">
         🔒 Os nomes, pesos e observações ficam sem criptografia no armazenamento deste navegador e não são enviados ao servidor. Evite dados identificáveis em computadores ou perfis compartilhados.
       </p>
     </div>

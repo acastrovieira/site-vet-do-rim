@@ -42,31 +42,31 @@ export default function ControlePesoPage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(appSchema) }}
       />
       <Header />
-      <main id="main-content" className="pt-24 pb-16">
+      <main id="main-content" className="pt-24 pb-16 bg-science-50 dark:bg-[#0A1628] transition-colors">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           {/* Cabeçalho */}
           <div className="text-center mb-12">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-100 text-teal-700 text-xs font-semibold uppercase tracking-wider mb-6">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 dark:bg-[#0F2244] border border-teal-100 dark:border-white/10 text-teal-700 dark:text-gold-400 text-xs font-semibold uppercase tracking-wider mb-6">
               <Scale className="h-3.5 w-3.5" aria-hidden />
               Ferramenta gratuita
             </span>
-            <h1 className="font-display text-4xl sm:text-5xl font-bold text-slate-900 text-balance mb-4">
+            <h1 className="font-display text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white text-balance mb-4">
               Controle de{' '}
               <span className="bg-gradient-to-r from-teal-600 to-teal-400 bg-clip-text text-transparent">
                 Peso
               </span>
             </h1>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto leading-relaxed">
+            <p className="text-slate-500 dark:text-science-200 text-lg max-w-xl mx-auto leading-relaxed">
               Registre e acompanhe a evolução do peso e do{' '}
-              <strong className="text-slate-700">Escore de Condição Corporal (ECC)</strong> do seu
+              <strong className="text-slate-700 dark:text-white">Escore de Condição Corporal (ECC)</strong> do seu
               paciente ao longo do tempo. Sem cadastro. Gratuito.
             </p>
           </div>
 
           {/* Info box */}
-          <div className="mb-8 flex items-start gap-3 p-4 rounded-2xl bg-teal-50 border border-teal-100">
-            <Info className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" aria-hidden />
-            <p className="text-sm text-teal-800 leading-relaxed">
+          <div className="mb-8 flex items-start gap-3 p-4 rounded-2xl bg-teal-50 dark:bg-[#0F2244] border border-teal-100 dark:border-white/10">
+            <Info className="h-4 w-4 text-teal-600 dark:text-gold-400 shrink-0 mt-0.5" aria-hidden />
+            <p className="text-sm text-teal-800 dark:text-science-200 leading-relaxed">
               <strong>Para tutores e veterinários:</strong> Os dados ficam armazenados apenas no
               seu navegador (sem envio para servidores). Use o botão{' '}
               <em>&ldquo;Exportar CSV&rdquo;</em> para fazer backup e compartilhar com o veterinário.
@@ -76,7 +76,7 @@ export default function ControlePesoPage() {
           <ControlePesoTool />
 
           {/* Disclaimer */}
-          <p className="mt-10 text-center text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+          <p className="mt-10 text-center text-xs text-slate-400 dark:text-science-400 max-w-lg mx-auto leading-relaxed">
             ⚠️ Esta ferramenta é de apoio ao acompanhamento clínico. Variações de peso significativas
             devem ser avaliadas pelo médico veterinário responsável. O Escore de Condição Corporal
             (ECC) segue a escala de 9 pontos da{' '}
@@ -84,7 +84,7 @@ export default function ControlePesoPage() {
               href="https://www.wsava.org"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-teal-600 hover:underline font-medium"
+              className="text-teal-600 dark:text-gold-400 hover:underline font-medium"
             >
               WSAVA
             </a>

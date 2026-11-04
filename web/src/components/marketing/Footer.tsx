@@ -34,8 +34,8 @@ const footerLinks = {
 
 /**
  * Footer institucional clínico — Server Component puro (sem handlers JS).
- * Fundo: verde clínico escuro #1A3830.
- * Logo dourada PNG — excelente contraste sobre verde.
+ * Fundo: azul marinho escuro (#0F2244 a #091530).
+ * Logo dourada — excelente contraste sobre marinho.
  * Hover via CSS puro (group/Tailwind).
  */
 export function Footer() {

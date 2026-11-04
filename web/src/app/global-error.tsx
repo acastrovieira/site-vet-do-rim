@@ -37,7 +37,7 @@ export default function RootGlobalError({
               <button
                 type="button"
                 onClick={reset}
-                style={{ minHeight: 44, padding: '10px 18px', border: 0, borderRadius: 12, background: '#176b5b', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                style={{ minHeight: 44, padding: '10px 18px', border: 0, borderRadius: 12, background: '#1A3A6B', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
               >
                 Tentar novamente
               </button>

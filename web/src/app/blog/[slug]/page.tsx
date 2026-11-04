@@ -88,7 +88,7 @@ export default async function BlogPostPage({ params }: Props) {
           <nav className="mb-8" aria-label="Navegação de breadcrumb">
             <Link
               href="/blog"
-              className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-science-200 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden />
               Blog Científico
@@ -98,11 +98,11 @@ export default async function BlogPostPage({ params }: Props) {
           {/* Header do artigo */}
           <header className="mb-10">
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-100">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-100 dark:bg-white/10 dark:text-gold-400 dark:border-gold-400/25">
                 <Tag className="h-3 w-3" aria-hidden />
                 {frontmatter.categoria}
               </span>
-              <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+              <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 dark:text-science-300">
                 <Calendar className="h-3.5 w-3.5" aria-hidden />
                 {formatCivilDate(frontmatter.date, {
                   day: '2-digit',
@@ -110,28 +110,28 @@ export default async function BlogPostPage({ params }: Props) {
                   year: 'numeric',
                 })}
               </span>
-              <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+              <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 dark:text-science-300">
                 <Clock className="h-3.5 w-3.5" aria-hidden />
                 {frontmatter.leitura} de leitura
               </span>
             </div>
 
-            <h1 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 leading-tight text-balance mb-4">
+            <h1 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white leading-tight text-balance mb-4">
               {frontmatter.title}
             </h1>
 
-            <p className="text-lg text-slate-500 leading-relaxed">
+            <p className="text-lg text-slate-500 dark:text-science-200 leading-relaxed">
               {frontmatter.description}
             </p>
 
-            <div className="mt-5 pt-5 border-t border-slate-100 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-sm font-bold">
+            <div className="mt-5 pt-5 border-t border-slate-100 dark:border-white/10 flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-brand-100 text-brand-700 dark:bg-gold-400/15 dark:text-gold-400 flex items-center justify-center text-sm font-bold">
                 {frontmatter.autor.charAt(0)}
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-900">{frontmatter.autor}</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{frontmatter.autor}</p>
                 {frontmatter.crmv && (
-                  <p className="text-xs text-slate-400">{frontmatter.crmv}</p>
+                  <p className="text-xs text-slate-400 dark:text-science-300">{frontmatter.crmv}</p>
                 )}
               </div>
             </div>
@@ -147,14 +147,14 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
 
           {/* Footer do artigo */}
-          <footer className="mt-12 pt-8 border-t border-slate-100">
-            <p className="text-xs text-slate-400 leading-relaxed mb-6">
+          <footer className="mt-12 pt-8 border-t border-slate-100 dark:border-white/10">
+            <p className="text-xs text-slate-400 dark:text-science-300 leading-relaxed mb-6">
               ⚠️ Este artigo tem caráter educacional e informativo. Não substitui avaliação clínica
               presencial nem o julgamento do médico veterinário responsável pelo paciente.
             </p>
             <Link
               href="/blog"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:gap-3 transition-all duration-200"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-brand-600 dark:text-gold-400 hover:gap-3 transition-all duration-200"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden />
               Ver todos os artigos

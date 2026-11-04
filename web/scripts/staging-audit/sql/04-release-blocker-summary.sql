@@ -108,8 +108,8 @@ WITH checks AS (
   SELECT
     'SEC-008-storage-removal-policy',
     'P1',
-    count(*) >= 1,
-    'authenticated rollback needs a tenant-aware object removal policy'
+    count(*) = 0,
+    'authenticated must not have a direct DELETE policy on storage.objects'
   FROM pg_catalog.pg_policies
   WHERE schemaname = 'storage'
     AND tablename = 'objects'

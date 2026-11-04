@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     'SDMA creatinina calculadora veterinária',
     'ferramenta nefrologia veterinária grátis',
   ],
-  alternates: { canonical: '/ferramentas/calculadora-tfg' },
+  alternates: { canonical: '/ferramentas/estadiamento-iris' },
 }
 
 // JSON-LD SoftwareApplication (E-E-A-T)
@@ -39,18 +39,18 @@ export default function CalculadoraTFGPage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(appSchema) }}
       />
       <Header />
-      <main id="main-content" className="pt-24 pb-16">
+      <main id="main-content" className="pt-24 pb-16 bg-science-50 dark:bg-[#0A1628] transition-colors">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           {/* Header da página */}
           <div className="text-center mb-12">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 border border-brand-100 text-brand-700 text-xs font-semibold uppercase tracking-wider mb-6">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 dark:bg-[#0F2244] border border-brand-100 dark:border-white/10 text-brand-700 dark:text-gold-400 text-xs font-semibold uppercase tracking-wider mb-6">
               🧪 Ferramenta gratuita
             </span>
-            <h1 className="font-display text-4xl sm:text-5xl font-bold text-slate-900 text-balance mb-4">
+            <h1 className="font-display text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white text-balance mb-4">
               Calculadora de{' '}
               <span className="text-gradient-brand">Estadiamento IRIS</span>
             </h1>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto leading-relaxed">
+            <p className="text-slate-500 dark:text-science-200 text-lg max-w-xl mx-auto leading-relaxed">
               Compare creatinina, SDMA, UPC e pressão arterial com as faixas IRIS 2026.
               Esta ferramenta não mede nem estima a TFG.
             </p>
@@ -59,7 +59,7 @@ export default function CalculadoraTFGPage() {
           <TFGCalculator />
 
           {/* Aviso científico */}
-          <p className="mt-8 text-center text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+          <p className="mt-8 text-center text-xs text-slate-400 dark:text-science-400 max-w-lg mx-auto leading-relaxed">
             ⚠️ Ferramenta educativa baseada nas faixas IRIS 2026. O estadiamento só se aplica após
             diagnóstico de DRC em paciente estável e hidratado, com resultados confirmados. Não
             substitui avaliação clínica presencial nem o julgamento do médico-veterinário.

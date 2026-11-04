@@ -67,7 +67,7 @@
     },
     {
       "file": "20260823000000_perf_001_missing_indexes.sql",
-      "sha256": "8b4039266c29d00b5e74f173a15abd1fc6ba87cf099894b49fe4e0cfd4421311"
+      "sha256": "f27aa009e0647e56ea993a36b07b50412447521e8f776d07e4b8fe5a29de98dc"
     },
     {
       "file": "20260823000100_perf_002_rls_policy_optimization.sql",
@@ -116,6 +116,10 @@
     {
       "file": "20260830000000_sprint0_tenancy_fks_rls_and_remediation.sql",
       "sha256": "2af6ce3b35b656073786bc2a190bb9e861998761c20e7c8d1c5b132f17fe5030"
+    },
+    {
+      "file": "20261104000000_safe_parse_date_stable.sql",
+      "sha256": "995dfae40ee43d36f2367419b61110bb536f06d3feec069da6d0332f6ef6e109"
     }
   ],
   "approvedHistoricalTransitions": [
@@ -172,6 +176,15 @@
       "remoteReconciliationRequired": true,
       "ticket": "AUDIT-001",
       "reason": "The migration hardcoded production clinic UUID 00000000-0000-0000-0000-000000000001 in preflight and backfill, aborting fresh replay; resolved default clinic dynamically and restricted created_by backfill to pending reservations."
+    },
+    {
+      "file": "20260823000000_perf_001_missing_indexes.sql",
+      "baseSha256": "8b4039266c29d00b5e74f173a15abd1fc6ba87cf099894b49fe4e0cfd4421311",
+      "currentSha256": "f27aa009e0647e56ea993a36b07b50412447521e8f776d07e4b8fe5a29de98dc",
+      "remoteArtifactSha256": null,
+      "remoteReconciliationRequired": true,
+      "ticket": "AUDIT-001",
+      "reason": "The Supabase CLI applies each migration as a pipeline and rejects CREATE INDEX CONCURRENTLY (SQLSTATE 25001), so a clean replay never got past this file; the eleven index builds were made non-concurrent and the header comment updated, without changing any index columns, methods or predicates."
     }
   ]
 }

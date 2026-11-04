@@ -59,15 +59,18 @@ function validateMigrationRows(rows, label) {
   })
 }
 
+// Uma migration pode ter mais de uma transição desde que formem uma cadeia:
+// cada evento parte exatamente do hash final do evento anterior do mesmo
+// arquivo, e só o último precisa coincidir com o manifesto atual.
 function validateDriftEvents(events, manifestRows) {
   if (!Array.isArray(events)) {
     throw new Error('approvedHistoricalTransitions must be an array')
   }
 
   const manifestByFile = new Map(manifestRows.map((row) => [row.file, row]))
-  const files = new Set()
+  const lastByFile = new Map()
 
-  return events.map((event, index) => {
+  const validated = events.map((event, index) => {
     const label = `approvedHistoricalTransitions[${index}]`
     assertExactKeys(
       event,
@@ -101,18 +104,42 @@ function validateDriftEvents(events, manifestRows) {
     if (typeof event.ticket !== 'string' || !/^AUDIT-\d+$/.test(event.ticket)) {
       throw new Error(`${label}.ticket must reference an AUDIT story`)
     }
-    if (files.has(event.file)) {
-      throw new Error(`multiple historical transitions are not allowed for ${event.file}`)
+    const previous = lastByFile.get(event.file)
+    if (previous && previous.currentSha256 !== event.baseSha256) {
+      throw new Error(`${label} must chain from the previous transition of ${event.file}`)
     }
-
-    const manifestRow = manifestByFile.get(event.file)
-    if (!manifestRow || manifestRow.sha256 !== event.currentSha256) {
+    if (!manifestByFile.has(event.file)) {
       throw new Error(`${label}.currentSha256 must match the repository manifest`)
     }
 
-    files.add(event.file)
+    lastByFile.set(event.file, { ...event, label })
     return { ...event }
   })
+
+  for (const [file, last] of lastByFile) {
+    if (manifestByFile.get(file).sha256 !== last.currentSha256) {
+      throw new Error(`${last.label}.currentSha256 must match the repository manifest`)
+    }
+  }
+
+  return validated
+}
+
+// Segue a cadeia de transições de `file` a partir de `fromSha256`. Devolve os
+// eventos percorridos se ela termina exatamente em `toSha256`; senão, null.
+function walkTransitionChain(transitions, file, fromSha256, toSha256) {
+  const chain = transitions.filter((event) => event.file === file)
+  const walked = []
+  let hash = fromSha256
+
+  while (hash !== toSha256) {
+    const next = chain.find((event) => event.baseSha256 === hash && !walked.includes(event))
+    if (!next) return null
+    walked.push(next)
+    hash = next.currentSha256
+  }
+
+  return walked
 }
 
 export function validateMigrationManifest(manifest, actualRows) {
@@ -157,7 +184,6 @@ export function validateAppendOnlyMigrations(baseRows, currentRows, transitions 
   const base = validateMigrationRows(baseRows, 'base migrations')
   const current = validateMigrationRows(currentRows, 'current migrations')
   const currentByFile = new Map(current.map((row) => [row.file, row]))
-  const transitionByFile = new Map(transitions.map((event) => [event.file, event]))
 
   for (const baseRow of base) {
     const currentRow = currentByFile.get(baseRow.file)
@@ -166,12 +192,7 @@ export function validateAppendOnlyMigrations(baseRows, currentRows, transitions 
     }
     if (currentRow.sha256 === baseRow.sha256) continue
 
-    const exception = transitionByFile.get(baseRow.file)
-    if (
-      !exception ||
-      exception.baseSha256 !== baseRow.sha256 ||
-      exception.currentSha256 !== currentRow.sha256
-    ) {
+    if (!walkTransitionChain(transitions, baseRow.file, baseRow.sha256, currentRow.sha256)) {
       throw new Error(`historical migration modified without an exact approved transition: ${baseRow.file}`)
     }
   }
@@ -209,9 +230,9 @@ export function validateManifestAppendOnly(baseManifest, currentManifest) {
   }
 
   const appendedTransitions = current.transitions.slice(base.transitions.length)
-  const appendedByFile = new Map(appendedTransitions.map((event) => [event.file, event]))
   const baseByFile = new Map(base.migrations.map((row) => [row.file, row]))
   const currentByFile = new Map(current.migrations.map((row) => [row.file, row]))
+  const walkedEvents = new Set()
 
   for (const baseRow of base.migrations) {
     const currentRow = currentByFile.get(baseRow.file)
@@ -220,26 +241,23 @@ export function validateManifestAppendOnly(baseManifest, currentManifest) {
     }
     if (currentRow.sha256 === baseRow.sha256) continue
 
-    const event = appendedByFile.get(baseRow.file)
-    if (
-      !event ||
-      event.baseSha256 !== baseRow.sha256 ||
-      event.currentSha256 !== currentRow.sha256
-    ) {
+    const walked = walkTransitionChain(
+      appendedTransitions,
+      baseRow.file,
+      baseRow.sha256,
+      currentRow.sha256,
+    )
+    if (!walked) {
       throw new Error(`historical manifest row changed without an exact appended transition: ${baseRow.file}`)
     }
+    for (const event of walked) walkedEvents.add(event)
   }
 
+  // Todo evento novo precisa fazer parte da cadeia de uma linha que mudou.
   for (const event of appendedTransitions) {
     const baseRow = baseByFile.get(event.file)
     const currentRow = currentByFile.get(event.file)
-    if (
-      !baseRow ||
-      !currentRow ||
-      baseRow.sha256 === currentRow.sha256 ||
-      event.baseSha256 !== baseRow.sha256 ||
-      event.currentSha256 !== currentRow.sha256
-    ) {
+    if (!baseRow || !currentRow || baseRow.sha256 === currentRow.sha256 || !walkedEvents.has(event)) {
       throw new Error(`appended transition does not match a changed historical manifest row: ${event.file}`)
     }
   }

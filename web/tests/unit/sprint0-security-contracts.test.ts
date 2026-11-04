@@ -121,6 +121,9 @@ test('Data API grants are explicit for service and authenticated roles', () => {
 test('three disclosed historical transitions remove only the proven replay blockers', () => {
   assert.match(historicalMigrations.missingIndexes, /relname AS tablename/)
   assert.match(historicalMigrations.missingIndexes, /indexrelname AS indexname/)
+  const executableIndexes = historicalMigrations.missingIndexes.replace(/^\s*--.*$/gm, '')
+  assert.doesNotMatch(executableIndexes, /CREATE INDEX CONCURRENTLY/)
+  assert.equal((executableIndexes.match(/CREATE INDEX IF NOT EXISTS/g) ?? []).length, 11)
 
   const executableRls = historicalMigrations.rlsOptimization.replace(/^\s*--.*$/gm, '')
   assert.match(executableRls, /private\.current_user_is_admin\(\)/)
@@ -139,7 +142,15 @@ test('three disclosed historical transitions remove only the proven replay block
     ({ file }) => expectedFiles.has(file),
   )
 
-  assert.equal(sprintTransitions.length, expectedFiles.size)
+  // perf_001 tem duas transições encadeadas: aliases do catálogo e, depois,
+  // índices sem CONCURRENTLY. As demais têm uma só.
+  assert.deepEqual(new Set(sprintTransitions.map(({ file }) => file)), expectedFiles)
+  const perfChain = sprintTransitions.filter(
+    ({ file }) => file === '20260823000000_perf_001_missing_indexes.sql',
+  )
+  assert.equal(perfChain.length, 2)
+  assert.equal(perfChain[1].baseSha256, perfChain[0].currentSha256)
+  assert.equal(sprintTransitions.length, expectedFiles.size + 1)
   for (const event of sprintTransitions) {
     assert.notEqual(event.baseSha256, event.currentSha256)
     assert.equal(event.remoteArtifactSha256, null)

@@ -124,6 +124,57 @@ test('manifest ledger preserves its immutable prefix and permits exact appended 
   )
 })
 
+test('a migration may carry several transitions only as an exact chain', () => {
+  const file = '20260101000000_initial.sql'
+  const rows = [migration(file, digest('c'))]
+  const first = transition(file, digest('a'), digest('b'))
+  const second = transition(file, digest('b'), digest('c'))
+
+  assert.equal(validateMigrationManifest(manifest(rows, [first, second]), rows).transitions.length, 2)
+
+  const broken = transition(file, digest('d'), digest('c'))
+  assert.throws(
+    () => validateMigrationManifest(manifest(rows, [first, broken]), rows),
+    /must chain from the previous transition/u,
+  )
+
+  assert.throws(
+    () => validateMigrationManifest(manifest(rows, [second, first]), rows),
+    /must chain from the previous transition|must match the repository manifest/u,
+  )
+
+  // A base publicada pode estar no meio da cadeia: só o trecho seguinte conta.
+  assert.equal(
+    validateAppendOnlyMigrations([migration(file, digest('b'))], rows, [first, second]),
+    true,
+  )
+  assert.throws(
+    () => validateAppendOnlyMigrations([migration(file, digest('b'))], rows, [first]),
+    /modified without an exact approved transition/u,
+  )
+})
+
+test('a published transition can be followed by an appended chained transition', () => {
+  const file = '20260101000000_initial.sql'
+  const first = transition(file, digest('a'), digest('b'))
+  const baseManifest = manifest([migration(file, digest('b'))], [first])
+  const second = transition(file, digest('b'), digest('c'))
+
+  assert.equal(
+    validateManifestAppendOnly(baseManifest, manifest([migration(file, digest('c'))], [first, second])),
+    true,
+  )
+
+  const skipsPublishedHash = transition(file, digest('a'), digest('c'))
+  assert.throws(
+    () => validateManifestAppendOnly(
+      baseManifest,
+      manifest([migration(file, digest('c'))], [first, skipsPublishedHash]),
+    ),
+    /must chain from the previous transition/u,
+  )
+})
+
 test('every changed historical manifest row requires one exact appended event', () => {
   const baseRows = [migration('20260102000000_initial.sql', digest('a'))]
   const changedRows = [migration(baseRows[0].file, digest('b'))]

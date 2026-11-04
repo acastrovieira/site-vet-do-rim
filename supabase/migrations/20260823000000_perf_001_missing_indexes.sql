@@ -15,9 +15,11 @@
 --         (impacto controlado pela função current_user_is_admin() já existente;
 --          reescrever policies exige DROP+CREATE que afeta sessões ativas)
 --
--- Seguro para aplicar CONCURRENTLY (não bloqueia writes/reads em produção).
--- Obs: CREATE INDEX CONCURRENTLY não pode rodar dentro de uma transação
--- explícita, então este arquivo NÃO usa BEGIN/COMMIT.
+-- Os índices são criados sem CONCURRENTLY: a CLI do Supabase aplica cada
+-- migration em pipeline e rejeita CREATE INDEX CONCURRENTLY (SQLSTATE 25001).
+-- As definições (colunas, métodos e predicados) são as originais. Para
+-- recriar um índice em produção sem bloquear escrita, use CONCURRENTLY
+-- manualmente fora da cadeia de migrations.
 -- ============================================================
 
 -- Preflight: garante que as tabelas necessárias existem
@@ -46,11 +48,11 @@ $$;
 -- O `id` é PK (B-tree já existe), mas o filtro adicional em `role` sem índice
 -- força um re-check no heap. O índice cobrindo (id, role) permite index-only scan.
 -- ──────────────────────────────────────────────────────────────
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_id_role
+CREATE INDEX IF NOT EXISTS idx_profiles_id_role
   ON public.profiles (id, role);
 
 -- Índice adicional em role para queries administrativas (listar todos os vets, etc.)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_role
+CREATE INDEX IF NOT EXISTS idx_profiles_role
   ON public.profiles (role);
 
 -- ──────────────────────────────────────────────────────────────
@@ -62,11 +64,11 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_role
 -- Sem este índice, qualquer busca dentro do JSONB faz Full Scan da tabela.
 -- jsonb_path_ops é menor e mais rápido para @> e @? que o padrão.
 -- ──────────────────────────────────────────────────────────────
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_laudos_resultado_ia_gin
+CREATE INDEX IF NOT EXISTS idx_laudos_resultado_ia_gin
   ON public.laudos_pdf USING GIN (resultado_ia jsonb_path_ops);
 
 -- GIN também em ia_provenance para queries de auditoria por provider/modelo
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_laudos_ia_provenance_gin
+CREATE INDEX IF NOT EXISTS idx_laudos_ia_provenance_gin
   ON public.laudos_pdf USING GIN (ia_provenance jsonb_path_ops)
   WHERE ia_provenance IS NOT NULL;
 
@@ -80,12 +82,12 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_laudos_ia_provenance_gin
 
 -- Índice parcial: apenas follow-ups pendentes (não enviados)
 -- É menor que um índice full e cobre 100% das queries de agendamento
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_follow_ups_scheduled_pending
+CREATE INDEX IF NOT EXISTS idx_follow_ups_scheduled_pending
   ON public.follow_ups (scheduled_at ASC, clinic_id)
   WHERE sent_at IS NULL AND opt_out = false;
 
 -- Índice para histórico de envios
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_follow_ups_sent_at
+CREATE INDEX IF NOT EXISTS idx_follow_ups_sent_at
   ON public.follow_ups (sent_at DESC)
   WHERE sent_at IS NOT NULL;
 
@@ -96,11 +98,11 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_follow_ups_sent_at
 -- queries tenant-scoped. Este cobre queries legacy/backfill sem clinic_id
 -- e listagens globais de admin.
 -- ──────────────────────────────────────────────────────────────
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_triagens_criado
+CREATE INDEX IF NOT EXISTS idx_triagens_criado
   ON public.triagens (criado_em DESC);
 
 -- Status + criado para filtro de triagens ativas por data
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_triagens_status_criado
+CREATE INDEX IF NOT EXISTS idx_triagens_status_criado
   ON public.triagens (status, criado_em DESC);
 
 -- ──────────────────────────────────────────────────────────────
@@ -108,7 +110,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_triagens_status_criado
 --
 -- Filtro esperado na listagem de laudos: tipo + clínica + status
 -- ──────────────────────────────────────────────────────────────
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_laudos_tipo_exame_clinic
+CREATE INDEX IF NOT EXISTS idx_laudos_tipo_exame_clinic
   ON public.laudos_pdf (tipo_exame, clinic_id, created_at DESC);
 
 -- ──────────────────────────────────────────────────────────────
@@ -118,7 +120,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_laudos_tipo_exame_clinic
 -- Sem índice → Full Scan em todos os profiles. Com índice parcial → somente
 -- os registros que precisam de reset são tocados.
 -- ──────────────────────────────────────────────────────────────
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_quota_reset_due
+CREATE INDEX IF NOT EXISTS idx_profiles_quota_reset_due
   ON public.profiles (ai_quota_reset_date ASC)
   WHERE ai_quota_reset_date IS NOT NULL;
 
@@ -129,7 +131,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_quota_reset_due
 -- Já coberta por idx_laudos_pdf_clinic + idx_laudos_pdf_status,
 -- mas o composto evita bitmap heap scan separado
 -- ──────────────────────────────────────────────────────────────
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_laudos_clinic_status_date
+CREATE INDEX IF NOT EXISTS idx_laudos_clinic_status_date
   ON public.laudos_pdf (clinic_id, status, created_at DESC);
 
 -- ──────────────────────────────────────────────────────────────

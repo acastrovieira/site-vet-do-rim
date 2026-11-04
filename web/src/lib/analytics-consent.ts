@@ -5,7 +5,7 @@ export const ANALYTICS_CONSENT_EVENT = 'vetdorim:analytics-consent'
 export type AnalyticsConsent = 'accepted' | 'declined' | null
 
 export function isAnalyticsAllowedPath(pathname: string): boolean {
-  return !['/auth', '/lab', '/portal'].some(
+  return !['/auth', '/lab', '/portal', '/admin', '/dashboard'].some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   )
 }

@@ -28,7 +28,6 @@ const statusOptions = [
   { value: 'em_tratamento', label: 'Em tratamento' },
   { value: 'alta', label: 'Alta' },
   { value: 'inativo', label: 'Inativo' },
-  { value: 'obito', label: 'Óbito' },
 ]
 
 interface Props {

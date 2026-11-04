@@ -18,7 +18,7 @@ import {
 import { isUuid } from '@/lib/identifiers'
 
 const ESPECIES = new Set(['canino', 'felino', 'equino', 'bovino', 'suino', 'ave', 'roedor', 'reptil', 'outro'])
-const STATUS = new Set(['ativo', 'em_tratamento', 'alta', 'inativo', 'obito'])
+const STATUS = new Set(['ativo', 'em_tratamento', 'alta', 'inativo'])
 
 function badRequest(error: string) {
   return privateApiJson({ ok: false, error, code: 'VALIDATION' }, { status: 400 })
@@ -55,6 +55,16 @@ export async function POST(request: Request) {
 
     if (!isUuid(tutorId)) return badRequest('Tutor invalido')
     if (!ESPECIES.has(especie)) return badRequest('Especie invalida')
+    if (statusPaciente === 'obito') {
+      return privateApiJson(
+        {
+          ok: false,
+          error: 'O registro de obito exige fluxo clinico dedicado com confirmacao transacional.',
+          code: 'DEATH_WORKFLOW_UNAVAILABLE',
+        },
+        { status: 409 },
+      )
+    }
     if (!STATUS.has(statusPaciente)) return badRequest('Status invalido')
 
     // Fase 1.5 (ADR-001): quando ja existe contexto de clinica, o tutor

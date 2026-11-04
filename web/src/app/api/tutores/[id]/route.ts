@@ -26,6 +26,35 @@ type TutorUpdate = Database['public']['Tables']['tutores']['Update']
 const UF_RE = /^[A-Z]{2}$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+function isValidCpf(value: string): boolean {
+  if (!/^[\d.\-\s]+$/.test(value)) return false
+  const digits = value.replace(/\D/g, '')
+  if (digits.length !== 11) return false
+  if (/^(\d)\1{10}$/.test(digits)) return false
+
+  let sum1 = 0
+  for (let i = 0; i < 9; i += 1) {
+    sum1 += Number(digits[i]) * (10 - i)
+  }
+  const check1 = (sum1 * 10) % 11 === 10 ? 0 : (sum1 * 10) % 11
+  if (check1 !== Number(digits[9])) return false
+
+  let sum2 = 0
+  for (let i = 0; i < 10; i += 1) {
+    sum2 += Number(digits[i]) * (11 - i)
+  }
+  const check2 = (sum2 * 10) % 11 === 10 ? 0 : (sum2 * 10) % 11
+  return check2 === Number(digits[10])
+}
+
+function validateOptionalCpf(value: string | null): string | null {
+  if (!value) return null
+  if (!isValidCpf(value)) {
+    throw new ApiValidationError('CPF inválido.')
+  }
+  return value.replace(/\D/g, '')
+}
+
 function badRequest(error: string) {
   return privateApiJson({ ok: false, error, code: 'VALIDATION' }, { status: 400 })
 }
@@ -77,7 +106,11 @@ export async function PATCH(request: Request, { params }: Params) {
                   ? 16
                   : 32
         const parsedValue = optionalText(body[field], field, maxLength)
-        const value = field === 'estado' ? parsedValue?.toUpperCase() ?? null : parsedValue
+        const value = field === 'estado'
+          ? parsedValue?.toUpperCase() ?? null
+          : field === 'cpf'
+            ? validateOptionalCpf(parsedValue)
+            : parsedValue
         if (field === 'email' && value && !EMAIL_RE.test(value)) return badRequest('Email invalido')
         if (field === 'estado' && value && !UF_RE.test(value)) return badRequest('Estado invalido')
         updates[field] = value

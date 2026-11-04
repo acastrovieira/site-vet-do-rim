@@ -51,7 +51,7 @@ export default function PrivacidadePage() {
             <h2>2. Dados que podem ser tratados</h2>
             <p>Conforme as funcionalidades efetivamente habilitadas, a Plataforma pode tratar:</p>
             <ul>
-              <li><strong>Dados de cadastro:</strong> nome completo, e-mail, tipo de perfil (veterinário ou tutor);</li>
+              <li><strong>Dados de cadastro e tutores:</strong> nome completo, e-mail, telefone/WhatsApp, CPF (opcional), endereço, CEP, cidade, estado e tipo de perfil (veterinário ou tutor);</li>
               <li><strong>Dados de pacientes:</strong> nome do animal, espécie, raça, peso e dados clínicos laboratoriais;</li>
               <li><strong>Dados de uso:</strong> páginas acessadas e funcionalidades utilizadas, se o serviço de analytics estiver habilitado e houver registro de consentimento;</li>
               <li><strong>Dados técnicos:</strong> registros produzidos pelos serviços de autenticação, hospedagem e segurança, conforme suas configurações e contratos.</li>

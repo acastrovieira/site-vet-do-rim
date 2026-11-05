@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { LaudoUploader } from '@/components/lab/LaudoUploader'
+import { ManualExamForm } from '@/components/lab/ManualExamForm'
 import { ArrowLeft, FileText } from 'lucide-react'
 import Link from 'next/link'
 import {
@@ -130,6 +131,9 @@ export default async function LaudosPacientePage({ params, searchParams }: Props
 
       {/* Uploader com visualização side-by-side */}
       <LaudoUploader petId={petId} />
+
+      {/* Alternativa sem PDF: digitação dos valores do exame */}
+      <ManualExamForm petId={petId} petSpecies={pet.especie} />
 
       <section className="space-y-4" aria-labelledby="report-history-heading">
         <div>

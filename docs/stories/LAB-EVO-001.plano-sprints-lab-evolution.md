@@ -110,7 +110,7 @@ Custo de IA: zero. É o caminho do plano free.
 | 2.1 | Migration: `laudos_pdf.storage_path` nullable, coluna `origem_resultado` com `CHECK`, e a invariante "lançamento manual não tem arquivo" | @data-engineer | — | migration | Concluído (`20260830000000`) |
 | 2.2 | Rota `POST /api/lab/pacientes/[petId]/exames-manuais` (padrão da `results-local`: authorize, rate limit, service client) | @dev | — | route + testes | Concluído (`/api/lab/pacientes/[petId]/exames-manuais`) |
 | 2.3 | Popular `exam_result_items` no lançamento manual via `populate_exam_result_items` | @dev | — | integração | Concluído (`results-local` e `exames-manuais`) |
-| 2.4 | Formulário interativo por categoria, com as unidades do catálogo e validação em tempo real | @ux-design-expert (Uma) + @dev | `frontend-design` | componente | Concluído (`ManualExamForm.tsx` integrado a `[petId]/page.tsx`) |
+| 2.4 | Formulário interativo por categoria, com as unidades do catálogo e validação em tempo real | @ux-design-expert (Uma) + @dev | `frontend-design` | componente | Concluído (`ManualExamForm.tsx` integrado a `[petId]/page.tsx` e, desde 2026-11-05, também a `[petId]/laudos/page.tsx`, abaixo do envio de PDF) |
 | 2.5 | Marcar visualmente a procedência na planilha evolutiva (manual, PDF local, IA) | @ux-design-expert | — | UI | Pronto via tag de procedência |
 | 2.6 | Garantir que o export CSV/XLSX carrega a procedência | @dev | — | ajuste + teste | Concluído |
 | 2.7 | Revisão de segurança do novo caminho de escrita clínica | @qa | `security-review` | gate | Concluído (`check:predeploy` 100% verde) |

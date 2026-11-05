@@ -1374,3 +1374,18 @@ test('laboratory references classify only complete numeric evidence', () => {
   assert.equal(getLabReferenceStatus({ name: 'Creatinina', value: '1,2', unit: 'mg/dL', refMin: '0,5', refMax: '1,4' }), 'normal')
   assert.equal(getLabReferenceStatus({ name: 'Creatinina', value: '1,2', unit: 'mg/dL', refMin: '2', refMax: '1' }), 'unavailable')
 })
+
+test('manual exam entry is offered next to the PDF uploader on the report page', () => {
+  const webRoot = resolve(import.meta.dirname, '../..')
+  const reportPage = readFileSync(
+    resolve(webRoot, 'src/app/lab/pacientes/[petId]/laudos/page.tsx'),
+    'utf8',
+  )
+
+  assert.match(reportPage, /import \{ ManualExamForm \} from '@\/components\/lab\/ManualExamForm'/)
+  assert.match(reportPage, /<ManualExamForm petId=\{petId\} petSpecies=\{pet\.especie\} \/>/)
+  assert.ok(
+    reportPage.indexOf('<LaudoUploader') < reportPage.indexOf('<ManualExamForm'),
+    'manual entry should follow the PDF uploader',
+  )
+})

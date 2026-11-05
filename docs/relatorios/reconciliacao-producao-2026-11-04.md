@@ -104,3 +104,8 @@ Resumo (texto completo idêntico às definições de `20260718100000_tenancy_exp
   que não existe no repositório e não é usada pelo app.
 - **Edge Function `parse-laudo`:** o código do repositório ainda precisa de
   `supabase functions deploy parse-laudo`.
+  *Resolvido em 2026-11-05:* publicada a v11 (a v10 era de 2026-07-20) com
+  `--use-api`, no modo econômico (sem `PARSE_LAUDO_INTERPRETATION`: a interpretação
+  textual fica reservada a um futuro plano premium) e `GEMINI_MODEL=gemini-2.5-flash`.
+  Verificado: 401 sem credencial e CORS restrito ao site. A publicação ainda é
+  manual; a automação pelo GitHub depende do segredo `SUPABASE_ACCESS_TOKEN`.

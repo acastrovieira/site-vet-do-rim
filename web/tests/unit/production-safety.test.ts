@@ -820,6 +820,22 @@ test('cron health checks do not read clinical rows or use a settings endpoint as
   assert.doesNotMatch(source, /\/auth\/v1\/settings/)
 })
 
+test('cron REST API ping uses the service role key, the only key the OpenAPI root accepts', () => {
+  const source = readFileSync(
+    resolve(import.meta.dirname, '../../src/app/api/cron/keep-alive/route.ts'),
+    'utf8',
+  )
+
+  const restRootStart = source.indexOf('`${supabaseUrl}/rest/v1/`')
+  assert.notEqual(restRootStart, -1)
+  const restRootCall = source.slice(restRootStart)
+  const restRootHeaders = restRootCall.slice(0, restRootCall.indexOf('signal:'))
+
+  assert.match(restRootHeaders, /apikey: supabaseServiceKey/)
+  assert.match(restRootHeaders, /Authorization: `Bearer \$\{supabaseServiceKey\}`/)
+  assert.doesNotMatch(restRootHeaders, /supabasePublicKey/)
+})
+
 test('server query failures expose a stable code without provider details', () => {
   const providerError = {
     message: 'private SQL detail for tutor@example.test',

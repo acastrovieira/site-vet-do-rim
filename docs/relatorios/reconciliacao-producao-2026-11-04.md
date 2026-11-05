@@ -96,6 +96,10 @@ Resumo (texto completo idêntico às definições de `20260718100000_tenancy_exp
 - **`CRON_SECRET` ausente na Vercel:** as rotas agendadas respondiam 503 desde antes desta
   reconciliação. É preciso criar o segredo (≥ 32 caracteres) na produção da Vercel e,
   com o mesmo valor, nos segredos do GitHub Actions; depois, um novo deploy.
+  *Resolvido em 2026-11-05.* O nome da variável diferencia maiúsculas: `cron_secret` não é lido.
+- **Raiz da API REST só com `service_role`:** o Supabase passou a recusar a chave
+  pública em `GET /rest/v1/` (401). A checagem `supabase_api` de `/api/cron/keep-alive`
+  agora usa a service role key; antes disso a rota respondia 503 mesmo com o banco ativo.
 - **Drift aceito:** `clinic_memberships` de produção tem uma coluna extra `created_at`,
   que não existe no repositório e não é usada pelo app.
 - **Edge Function `parse-laudo`:** o código do repositório ainda precisa de

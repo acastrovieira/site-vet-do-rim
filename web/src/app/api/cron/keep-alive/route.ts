@@ -123,15 +123,19 @@ export async function GET(request: Request) {
 
   // ──────────────────────────────────────────────────────────────
   // 2. Ping HTTP ao REST API (verifica conectividade da API)
+  //
+  // A raiz /rest/v1/ (especificação OpenAPI) só aceita a service role
+  // key: com a chave pública o Supabase responde 401.
   // ──────────────────────────────────────────────────────────────
-  if (supabaseConfigured) {
+  if (supabaseConfigured && supabaseServiceKey) {
     try {
       const start = Date.now()
       const response = await fetch(`${supabaseUrl}/rest/v1/`, {
         cache: 'no-store',
         headers: {
           Accept: 'application/openapi+json',
-          apikey: supabasePublicKey,
+          apikey: supabaseServiceKey,
+          Authorization: `Bearer ${supabaseServiceKey}`,
         },
         redirect: 'error',
         signal: AbortSignal.timeout(timeoutMs),
@@ -150,6 +154,11 @@ export async function GET(request: Request) {
         type: error instanceof Error ? error.name : 'UnknownError',
       })
       results.supabase_api = { ok: false, message: 'API REST Supabase indisponivel.' }
+    }
+  } else if (supabaseConfigured) {
+    results.supabase_api = {
+      ok: false,
+      message: 'SUPABASE_SERVICE_ROLE_KEY nao configurada. Ping da API REST impossivel.',
     }
   } else {
     results.supabase_api = {

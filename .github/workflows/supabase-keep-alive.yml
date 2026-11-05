@@ -81,8 +81,10 @@ jobs:
           fi
 
       # Expurgo de eventos de claim com mais de 90 dias (M-04). Roda junto com o
-      # keep-alive porque o endpoint usa o mesmo CRON_SECRET.
+      # keep-alive porque o endpoint usa o mesmo CRON_SECRET, mas não depende
+      # do resultado do passo anterior.
       - name: Purge old laudo claim events
+        if: ${{ !cancelled() }}
         env:
           SITE_URL: ${{ secrets.SITE_URL || 'https://www.vetdorim.com.br' }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}

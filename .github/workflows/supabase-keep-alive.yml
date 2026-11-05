@@ -17,17 +17,26 @@ jobs:
       - name: Ping Supabase Database & Site Cron
         env:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY }}
-          SITE_URL: ${{ secrets.SITE_URL }}
+          # Só a service role lê tabelas: desde 2026-11-04 o papel anon não tem
+          # acesso direto a nenhuma tabela de public (AUDIT-001).
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SITE_URL: ${{ secrets.SITE_URL || 'https://www.vetdorim.com.br' }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           echo "=== Início do Keep-Alive ==="
           STATUS_SUCCESS=0
 
+          if [ -z "$CRON_SECRET" ] && [ -z "$SUPABASE_KEY" ]; then
+            echo "✗ ERRO: configure o segredo CRON_SECRET (mesmo valor da variável CRON_SECRET da Vercel)"
+            echo "  em: Repositório > Settings > Secrets and variables > Actions."
+            echo "  Alternativa: SUPABASE_SERVICE_ROLE_KEY para consulta direta ao banco."
+            exit 1
+          fi
+
           # 1. Se SITE_URL e CRON_SECRET estiverem configurados, aciona o endpoint do site
           if [ -n "$SITE_URL" ] && [ -n "$CRON_SECRET" ]; then
             echo "-> Testando endpoint do site: $SITE_URL/api/cron/keep-alive"
-            HTTP_CODE=$(curl -s -o /tmp/site_response.json -w "%{http_code}" \
+            HTTP_CODE=$(curl -s --max-time 30 -o /tmp/site_response.json -w "%{http_code}" \
               -H "Authorization: Bearer $CRON_SECRET" \
               "$SITE_URL/api/cron/keep-alive" || echo "000")
 
@@ -46,7 +55,7 @@ jobs:
           # 2. Consulta direta à REST API do Supabase (garantia infalível de query real no banco)
           if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_KEY" ]; then
             echo "-> Executando query direta no banco de dados do Supabase..."
-            SUPABASE_HTTP_CODE=$(curl -s -o /tmp/supabase_response.json -w "%{http_code}" \
+            SUPABASE_HTTP_CODE=$(curl -s --max-time 30 -o /tmp/supabase_response.json -w "%{http_code}" \
               -X GET "$SUPABASE_URL/rest/v1/profiles?select=id&limit=1" \
               -H "apikey: $SUPABASE_KEY" \
               -H "Authorization: Bearer $SUPABASE_KEY" \
@@ -62,11 +71,6 @@ jobs:
               cat /tmp/supabase_response.json 2>/dev/null || true
               echo ""
             fi
-          elif [ -z "$SITE_URL" ]; then
-            echo "✗ ERRO: Nenhuma credencial configurada nos GitHub Secrets!"
-            echo "  Configure NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (ou NEXT_PUBLIC_SUPABASE_ANON_KEY)"
-            echo "  em: Repositório > Settings > Secrets and variables > Actions"
-            exit 1
           fi
 
           if [ "$STATUS_SUCCESS" -eq 1 ]; then
@@ -75,3 +79,29 @@ jobs:
             echo "=== Keep-Alive falhou em todas as tentativas! Verifique as credenciais. ==="
             exit 1
           fi
+
+      # Expurgo de eventos de claim com mais de 90 dias (M-04). Roda junto com o
+      # keep-alive porque o endpoint usa o mesmo CRON_SECRET.
+      - name: Purge old laudo claim events
+        env:
+          SITE_URL: ${{ secrets.SITE_URL || 'https://www.vetdorim.com.br' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET ausente: expurgo não executado."
+            exit 0
+          fi
+
+          HTTP_CODE=$(curl -s --max-time 30 -o /tmp/purge_response.json -w "%{http_code}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$SITE_URL/api/cron/purge-claim-events" || echo "000")
+
+          echo "Resposta HTTP: $HTTP_CODE"
+          cat /tmp/purge_response.json 2>/dev/null || true
+          echo ""
+
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "✗ Expurgo de eventos de claim falhou."
+            exit 1
+          fi
+          echo "✓ Expurgo de eventos de claim concluído."

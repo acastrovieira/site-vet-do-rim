@@ -53,3 +53,7 @@ supabase/.temp/
 !supabase/functions/parse-laudo/deno.lock
 
 .vercel
+
+# ─── Graphify (grafo local e cache AST) ───────────────────────────────────────
+graphify-out/
+

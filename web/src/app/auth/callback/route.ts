@@ -47,10 +47,60 @@ function authRedirect(
   return response
 }
 
+type NonRecoveryEmailOtpType = 'signup' | 'email_change' | 'magiclink' | 'invite' | 'email'
+
+const ALLOWED_EMAIL_OTP_TYPES: ReadonlySet<string> = new Set<NonRecoveryEmailOtpType>([
+  'signup',
+  'email_change',
+  'magiclink',
+  'invite',
+  'email',
+])
+
+/**
+ * Revalida sessao e papel no servidor e resolve o destino pos-autenticacao.
+ * `allowConfirmedWithoutSession` cobre a primeira confirmacao de troca de
+ * e-mail (double confirm), em que ainda nao ha sessao ativa.
+ */
+async function resolveSessionRedirect(
+  request: Request,
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  explicitNext: string | null,
+  allowConfirmedWithoutSession = false,
+) {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+    return allowConfirmedWithoutSession
+      ? authRedirect(request, '/auth/login?notice=email_confirmado')
+      : authRedirect(request, '/auth/login?error=callback')
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+  const role = parseAppRole(profile?.role)
+
+  if (profileError || !role) {
+    return authRedirect(request, '/auth/login?error=profile')
+  }
+
+  const destination = explicitNext && isRoleAuthorizedForRedirect(explicitNext, role)
+    ? explicitNext
+    : roleHome(role)
+  return authRedirect(request, destination)
+}
+
 /**
  * Callback OAuth/email do Supabase Auth.
- * Handles both PKCE codes and recovery token hashes without exposing tokens,
- * provider errors or profile details in responses/logs.
+ * Handles PKCE codes and e-mail token hashes (recovery, signup, email change,
+ * magic link, invite) without exposing tokens, provider errors or profile
+ * details in responses/logs.
  */
 export async function GET(request: Request) {
   const rateLimit = checkIpRateLimit(request, 'auth_callback', 20, 60_000)
@@ -82,6 +132,19 @@ export async function GET(request: Request) {
       : authRedirect(request, '/auth/recuperar-senha?error=link_expirado')
   }
 
+  if (tokenHash && type && ALLOWED_EMAIL_OTP_TYPES.has(type)) {
+    const supabase = await createClient()
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: type as NonRecoveryEmailOtpType,
+    })
+
+    if (error) {
+      return authRedirect(request, '/auth/login?error=callback')
+    }
+    return resolveSessionRedirect(request, supabase, explicitNext, type === 'email_change')
+  }
+
   if (code) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
@@ -94,30 +157,7 @@ export async function GET(request: Request) {
         return authRedirect(request, '/auth/redefinir-senha', true)
       }
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-
-      if (userError || !user) {
-        return authRedirect(request, '/auth/login?error=callback')
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle()
-      const role = parseAppRole(profile?.role)
-
-      if (profileError || !role) {
-        return authRedirect(request, '/auth/login?error=profile')
-      }
-
-      const destination = explicitNext && isRoleAuthorizedForRedirect(explicitNext, role)
-        ? explicitNext
-        : roleHome(role)
-      return authRedirect(request, destination)
+      return resolveSessionRedirect(request, supabase, explicitNext)
     }
 
     if (type === 'recovery' || explicitNext === '/auth/redefinir-senha') {

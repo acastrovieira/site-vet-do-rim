@@ -14,6 +14,7 @@ interface LoginPageProps {
   searchParams?: Promise<{
     redirectTo?: string | string[]
     error?: string | string[]
+    notice?: string | string[]
   }>
 }
 
@@ -28,6 +29,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     : errorCode === 'callback'
       ? 'Não foi possível concluir o acesso pelo link. Tente entrar novamente.'
       : ''
+  const noticeCode = Array.isArray(params?.notice) ? params?.notice[0] : params?.notice
+  const noticeMessage = noticeCode === 'email_confirmado'
+    ? 'E-mail confirmado com sucesso. Entre na sua conta para continuar.'
+    : ''
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-science-50 dark:bg-[#0A0A0C] px-4 py-12 relative transition-colors duration-300">
@@ -55,6 +60,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           {authErrorMessage && (
             <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300" role="alert">
               {authErrorMessage}
+            </p>
+          )}
+          {noticeMessage && !authErrorMessage && (
+            <p className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300" role="status">
+              {noticeMessage}
             </p>
           )}
           <LoginForm redirectTo={redirectTo} />

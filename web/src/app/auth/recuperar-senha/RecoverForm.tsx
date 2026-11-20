@@ -41,8 +41,13 @@ export function RecoverForm() {
           })
         }
         setStatus('error')
-        if (error.message?.includes('rate limit') || error.message?.includes('429')) {
-          setErrorMsg('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.')
+        if (
+          error.status === 429
+          || error.code === 'over_email_send_rate_limit'
+          || error.code === 'over_request_rate_limit'
+          || /rate limit|429|only request this after/i.test(error.message ?? '')
+        ) {
+          setErrorMsg('Aguarde pelo menos 60 segundos antes de solicitar um novo link de recuperação.')
         } else if (error.message?.includes('redirect')) {
           setErrorMsg('Não foi possível concluir a recuperação. Contate o suporte.')
         } else {

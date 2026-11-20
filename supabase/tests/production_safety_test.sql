@@ -165,7 +165,6 @@ SELECT is(
       AND p.oid <> ALL (ARRAY[
         'private.abandon_laudo_upload(uuid)'::regprocedure,
         'private.can_access_reserved_laudo_object(text, text[], boolean)'::regprocedure,
-        'private.current_user_is_admin()'::regprocedure,
         'private.has_clinic_role(uuid, text[])'::regprocedure,
         'private.reserve_laudo_upload(uuid)'::regprocedure,
         'public.consume_clinical_rate_limit(text)'::regprocedure
@@ -185,14 +184,13 @@ SELECT is(
       AND p.oid = ANY (ARRAY[
         'private.abandon_laudo_upload(uuid)'::regprocedure,
         'private.can_access_reserved_laudo_object(text, text[], boolean)'::regprocedure,
-        'private.current_user_is_admin()'::regprocedure,
         'private.has_clinic_role(uuid, text[])'::regprocedure,
         'private.reserve_laudo_upload(uuid)'::regprocedure,
         'public.consume_clinical_rate_limit(text)'::regprocedure
       ])
   ),
-  6::bigint,
-  'authenticated can execute the six approved SECURITY DEFINER functions'
+  5::bigint,
+  'authenticated can execute only the five approved SECURITY DEFINER functions'
 );
 
 SELECT ok(

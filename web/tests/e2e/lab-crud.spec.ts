@@ -111,6 +111,71 @@ test.describe('Lab Evolution real CRUD', () => {
     await expect(page.getByText(`laudo-${runId}.pdf`)).toBeVisible()
     await expect(page.getByRole('button', { name: /Enviar PDF ao histórico/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /Trocar/i })).toBeVisible()
+
+    // Guardrails Iteracao C: status_paciente = 'obito' bloqueado via PATCH generico e validado em /obito
+    const blockedDeathPatch = await page.evaluate(async ({ currentPetId }) => {
+      const res = await fetch(`/api/pets/${currentPetId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status_paciente: 'obito' }),
+      })
+      return { status: res.status, body: await res.json() }
+    }, { currentPetId: petId! })
+    expect(blockedDeathPatch.status).toBe(422)
+    expect(blockedDeathPatch.body.code).toBe('DEATH_WORKFLOW_UNAVAILABLE')
+
+    const invalidDeathPost = await page.evaluate(async ({ currentPetId }) => {
+      const res = await fetch(`/api/pets/${currentPetId}/obito`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data_obito: '2099-01-01', motivo: 'x' }),
+      })
+      return { status: res.status, body: await res.json() }
+    }, { currentPetId: petId! })
+    expect(invalidDeathPost.status).toBe(400)
+    expect(invalidDeathPost.body.code).toBe('VALIDATION')
+
+    // Isolamento multi-clinica Iteracao D: alternar clinica ativa na UI isola pacientes e mutacoes
+    const clinicAName = process.env.E2E_CLINIC_A_NAME
+    const clinicBName = process.env.E2E_CLINIC_B_NAME
+    if (clinicAName && clinicBName) {
+      const switcher = page.getByLabel('Clínica ativa')
+      await expect(switcher).toBeVisible()
+      await Promise.all([
+        page.waitForResponse((res) =>
+          res.url().includes('/api/lab/active-clinic')
+          && res.request().method() === 'POST'
+          && res.status() === 200,
+        ),
+        switcher.selectOption({ label: clinicBName }),
+      ])
+
+      await page.goto('/lab/pacientes')
+      await expect(page.getByText(petEditedName)).toHaveCount(0)
+
+      const crossClinicPatch = await page.evaluate(async ({ currentPetId }) => {
+        const res = await fetch(`/api/pets/${currentPetId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome: 'Cross Tenant Probe' }),
+        })
+        return { status: res.status, body: await res.json() }
+      }, { currentPetId: petId! })
+      expect(crossClinicPatch.status).toBe(404)
+      expect(crossClinicPatch.body.code).toBe('NOT_FOUND')
+
+      await Promise.all([
+        page.waitForResponse((res) =>
+          res.url().includes('/api/lab/active-clinic')
+          && res.request().method() === 'POST'
+          && res.status() === 200,
+        ),
+        page.getByLabel('Clínica ativa').selectOption({ label: clinicAName }),
+      ])
+
+      await page.goto('/lab/pacientes')
+      await expect(page.getByText(petEditedName)).toBeVisible()
+    }
   })
 })
 

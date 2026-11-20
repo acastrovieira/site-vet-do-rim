@@ -5,18 +5,25 @@ import Link from 'next/link'
 import { Lock, ShieldAlert, ArrowRight, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-type GateStatus = 'loading' | 'allowed' | 'blocked-no-auth' | 'blocked-tutor' | 'error'
+export type VetGateStatus = 'loading' | 'allowed' | 'blocked-no-auth' | 'blocked-tutor' | 'error'
 const ACCESS_CHECK_TIMEOUT_MS = 8_000
 
 /**
  * Gate de acesso exclusivo a veterinários (role = 'vet' | 'admin').
  * Tutores e usuários não autenticados veem uma tela de bloqueio explicativa.
  */
-export function VetOnlyGate({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<GateStatus>('loading')
+export function VetOnlyGate({
+  children,
+  initialStatus,
+}: {
+  children: React.ReactNode
+  initialStatus?: Exclude<VetGateStatus, 'loading'>
+}) {
+  const [status, setStatus] = useState<VetGateStatus>(initialStatus ?? 'loading')
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
+    if (initialStatus && attempt === 0) return
     let cancelled = false
     let timedOut = false
     const timeout = window.setTimeout(() => {
@@ -60,7 +67,7 @@ export function VetOnlyGate({ children }: { children: React.ReactNode }) {
       cancelled = true
       window.clearTimeout(timeout)
     }
-  }, [attempt])
+  }, [attempt, initialStatus])
 
   if (status === 'loading') {
     return (

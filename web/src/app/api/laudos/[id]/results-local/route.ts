@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import {
+  ApiCsrfError,
   ApiPayloadTooLargeError,
   ApiUnsupportedMediaTypeError,
   ApiValidationError,
+  assertSameOriginMutation,
   readJsonObject,
   safeErrorSummary,
 } from '@/lib/api-validation'
@@ -16,6 +18,7 @@ import {
 } from '@/lib/lab/local-extraction/reviewed-result'
 import type { Json } from '@/types/database'
 import { CLINICAL_RATE_LIMIT_SCOPES, consumeClinicalRateLimit } from '@/lib/server-rate-limit'
+import { recordSecurityEvent } from '@/lib/security-telemetry'
 
 interface Params {
   params: Promise<{ id: string }>
@@ -46,6 +49,9 @@ export async function POST(request: Request, { params }: Params) {
     const supabase = await createClient()
     const authorization = await authorizeClinicAccess(supabase, ['vet', 'admin'])
     if (!authorization.ok) return authorizationFailureJson(authorization)
+
+    assertSameOriginMutation(request)
+
     const rateLimit = await consumeClinicalRateLimit(supabase, CLINICAL_RATE_LIMIT_SCOPES.localExtraction)
     if (rateLimit.state === 'limited') {
       return privateApiJson(
@@ -98,6 +104,13 @@ export async function POST(request: Request, { params }: Params) {
 
     const expectedPath = `clinics/${authorization.clinicId}/laudos/${id}/original.pdf`
     if (laudo.storage_path !== expectedPath) {
+      recordSecurityEvent({
+        event: 'extraction_storage_mismatch',
+        status: 409,
+        layer: 'api',
+        scope: '/api/laudos/:id/results-local',
+        code: 'PATH_MISMATCH',
+      })
       return privateApiJson({ ok: false, error: 'Caminho do laudo invalido', code: 'PATH_MISMATCH' }, { status: 409 })
     }
 
@@ -146,6 +159,7 @@ export async function POST(request: Request, { params }: Params) {
         status: 'concluido',
         erro_ia: null,
         tipo_exame: 'laboratorial_local',
+        origem_resultado: 'pdf_local',
       })
       .eq('id', id)
       .eq('pet_id', laudo.pet_id)
@@ -174,6 +188,9 @@ export async function POST(request: Request, { params }: Params) {
 
     return privateApiJson({ ok: true, data: result })
   } catch (error) {
+    if (error instanceof ApiCsrfError) {
+      return privateApiJson({ ok: false, error: error.message, code: 'CSRF_REJECTED' }, { status: 403 })
+    }
     if (error instanceof ApiPayloadTooLargeError) {
       return privateApiJson({ ok: false, error: error.message, code: 'PAYLOAD_TOO_LARGE' }, { status: 413 })
     }

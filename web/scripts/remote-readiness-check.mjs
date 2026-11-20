@@ -33,17 +33,25 @@ function addCheck(name, ok, detail, status = ok ? 'passed' : 'failed') {
   checks.push({ name, ok, status, detail })
 }
 
-function runCommand(command, args = []) {
+function runCommand(command, args = [], { timeoutMs = remoteTimeoutMs, env = process.env } = {}) {
   return spawnSync(command, args, {
     cwd: process.cwd(),
     encoding: 'utf8',
     shell: false,
-    timeout: remoteTimeoutMs,
+    timeout: timeoutMs,
+    env,
   })
 }
 
 function commandVersion(command, args = ['--version']) {
-  const result = runCommand(command, args)
+  const result = runCommand(command, args, {
+    timeoutMs: Math.max(remoteTimeoutMs, 12_000),
+    env: {
+      ...process.env,
+      DO_NOT_TRACK: '1',
+      SUPABASE_DISABLE_UPDATE_CHECK: 'true',
+    },
+  })
   const firstLine = (result.stdout || '').trim().split('\n')[0] || ''
   const safeVersion = /^[A-Za-z0-9][A-Za-z0-9 ._+(),-]{0,79}$/.test(firstLine)
     ? firstLine
@@ -175,13 +183,29 @@ const migrationPath = join(
   'migrations',
   '20260626010000_ai_quota_rpc_and_parse_laudo_hardening.sql',
 )
+const securityHardeningMigrationPath = join(
+  repoRoot,
+  'supabase',
+  'migrations',
+  '20261118120000_security_audit_total_hardening.sql',
+)
+const petDeathMigrationPath = join(
+  repoRoot,
+  'supabase',
+  'migrations',
+  '20261119120000_pet_death_audit_workflow.sql',
+)
 const functionPath = join(repoRoot, 'supabase', 'functions', 'parse-laudo', 'index.ts')
 const configPath = join(repoRoot, 'supabase', 'config.toml')
 const migrationExists = existsSync(migrationPath)
+const securityHardeningMigrationExists = existsSync(securityHardeningMigrationPath)
+const petDeathMigrationExists = existsSync(petDeathMigrationPath)
 const functionExists = existsSync(functionPath)
 const configExists = existsSync(configPath)
 
 addCheck('Migration de quota atomica existe', migrationExists, 'arquivo local')
+addCheck('Migration de blindagem de seguranca (#30) existe', securityHardeningMigrationExists, 'arquivo local')
+addCheck('Migration de workflow de obito (#31) existe', petDeathMigrationExists, 'arquivo local')
 addCheck('Edge Function parse-laudo existe', functionExists, 'arquivo local')
 addCheck('supabase/config.toml existe', configExists, 'arquivo local')
 
@@ -253,6 +277,8 @@ const localUploadPrerequisites = localLabPrerequisites &&
   deno.ok &&
   dbPassword.ok &&
   migrationExists &&
+  securityHardeningMigrationExists &&
+  petDeathMigrationExists &&
   functionExists &&
   configExists
 const remoteUploadVerified = remoteLabVerified &&

@@ -3,11 +3,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { requirePublicEnv } from '@/lib/env'
 import {
   isRoleAuthorized,
+  matchesRoutePrefix,
+  normalizePathname,
   parseAppRole,
   requiredRoles,
   requiresAuthentication,
   roleHome,
+  safeInternalRedirectPath,
 } from '@/lib/route-authorization'
+import { recordSecurityEvent } from '@/lib/security-telemetry'
 
 const AUTH_NO_STORE = 'private, no-store, no-cache, max-age=0, must-revalidate'
 
@@ -51,7 +55,21 @@ export async function proxy(request: NextRequest) {
     return markAuthResponsePrivate(NextResponse.redirect(url))
   }
 
+  if (normalizePathname(pathname) === null) {
+    recordSecurityEvent({
+      event: 'proxy_invalid_path',
+      status: 400,
+      layer: 'proxy',
+      scope: 'proxy_pathname',
+      code: 'INVALID_PATH',
+    })
+    return markAuthResponsePrivate(new NextResponse('Invalid path', { status: 400 }))
+  }
+
   const isProtected = requiresAuthentication(pathname)
+  if (!isProtected && matchesRoutePrefix(pathname, '/auth')) {
+    return markAuthResponsePrivate(NextResponse.next())
+  }
   // Rotas públicas e APIs com autenticação própria não pagam uma chamada remota
   // a Auth. Liveness/readiness também permanecem independentes da sessão.
   if (!isProtected) return NextResponse.next()
@@ -90,8 +108,10 @@ export async function proxy(request: NextRequest) {
 
   if (!user) {
     const url = request.nextUrl.clone()
+    const safeRedirectTarget = safeInternalRedirectPath(pathname) || '/lab'
     url.pathname = '/auth/login'
-    url.searchParams.set('redirectTo', request.nextUrl.pathname)
+    url.search = ''
+    url.searchParams.set('redirectTo', safeRedirectTarget)
     const response = NextResponse.redirect(url)
     supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
     return markAuthResponsePrivate(response)
@@ -120,6 +140,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap\\.xml|vendor/|images/|logo/|apple-touch-icon\\.png|favicon\\.png|icon-192\\.png|icon-512\\.png).*)',
   ],
 }

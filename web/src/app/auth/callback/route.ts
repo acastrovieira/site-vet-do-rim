@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkIpRateLimit } from '@/lib/ip-rate-limit'
 import {
   isRoleAuthorizedForRedirect,
   parseAppRole,
@@ -52,6 +53,17 @@ function authRedirect(
  * provider errors or profile details in responses/logs.
  */
 export async function GET(request: Request) {
+  const rateLimit = checkIpRateLimit(request, 'auth_callback', 20, 60_000)
+  if (!rateLimit.allowed) {
+    return new NextResponse('Too many requests', {
+      status: 429,
+      headers: {
+        ...AUTH_REDIRECT_HEADERS,
+        'Retry-After': String(rateLimit.retryAfterSeconds),
+      },
+    })
+  }
+
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')

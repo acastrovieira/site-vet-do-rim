@@ -1,4 +1,4 @@
-import { timingSafeEqual } from 'node:crypto'
+import { createHash, timingSafeEqual } from 'node:crypto'
 
 export const OPERATIONAL_NO_STORE_HEADERS = {
   'Cache-Control': 'no-store, no-cache, max-age=0, must-revalidate',
@@ -92,15 +92,17 @@ export function hasValidBearerSecret(
   if (
     !authorization?.startsWith('Bearer ') ||
     expectedSecret.length < 32 ||
-    expectedSecret.length > 4096 ||
-    authorization.length !== 'Bearer '.length + expectedSecret.length
+    expectedSecret.length > 4096
   ) {
     return false
   }
 
-  const supplied = Buffer.from(authorization.slice('Bearer '.length), 'utf8')
-  const expected = Buffer.from(expectedSecret, 'utf8')
-  return supplied.length === expected.length && timingSafeEqual(supplied, expected)
+  const suppliedToken = authorization.slice('Bearer '.length)
+  if (suppliedToken.length > 4096) return false
+
+  const suppliedDigest = createHash('sha256').update(suppliedToken, 'utf8').digest()
+  const expectedDigest = createHash('sha256').update(expectedSecret, 'utf8').digest()
+  return timingSafeEqual(suppliedDigest, expectedDigest)
 }
 
 export function getBoundedTimeoutMs(value: string | undefined, fallback = 5_000) {

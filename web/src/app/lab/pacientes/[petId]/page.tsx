@@ -11,7 +11,10 @@ import {
   assertServerQuerySucceeded,
   throwServerQueryFailure,
 } from '@/lib/server-query-safety'
-import { resolveActiveClinic } from '@/lib/server-clinic-context'
+import { readActiveClinicCookie } from '@/lib/server-active-clinic'
+import { resolveActiveClinicResult } from '@/lib/server-clinic-context'
+import { requireLabClinicContext } from '@/lib/server-lab-context'
+import { formatCivilDate, isCivilDate } from '@/lib/civil-date'
 import {
   ArrowLeft,
   User,
@@ -31,7 +34,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isUuid(petId)) notFound()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
+  const preferredClinicId = user ? await readActiveClinicCookie() : null
+  const clinicLookup = user
+    ? await resolveActiveClinicResult(supabase, user.id, preferredClinicId)
+    : { ok: true as const, context: null }
+  if (!clinicLookup.ok) throwServerQueryFailure('CLINIC_CONTEXT_QUERY_FAILED')
+  const activeClinic = clinicLookup.context
 
   type PetMeta = { nome: string }
   let petMetaQuery = supabase
@@ -76,9 +84,7 @@ const LAUDO_STATUS_INFO: Record<string, { label: string; color: string }> = {
 export default async function PacienteDetailPage({ params }: Props) {
   const { petId } = await params
   if (!isUuid(petId)) notFound()
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
+  const { supabase, activeClinic } = await requireLabClinicContext(`/lab/pacientes/${petId}`)
 
   type PetRow = {
     id: string
@@ -89,13 +95,14 @@ export default async function PacienteDetailPage({ params }: Props) {
     idade_meses: number | null
     peso_atual: number | null
     status_paciente: string
+    data_obito: string | null
     criado_em: string
     tutor_id: string
   }
 
   let petQuery = supabase
     .from('pets')
-    .select('id, nome, especie, raca, idade_anos, idade_meses, peso_atual, status_paciente, criado_em, tutor_id')
+    .select('id, nome, especie, raca, idade_anos, idade_meses, peso_atual, status_paciente, data_obito, criado_em, tutor_id')
     .eq('id', petId)
   if (activeClinic?.clinicId) {
     petQuery = petQuery.eq('clinic_id', activeClinic.clinicId)
@@ -145,6 +152,37 @@ export default async function PacienteDetailPage({ params }: Props) {
   const { data: laudos, error: laudosError } = await laudosQuery as { data: LaudoRow[] | null; error: unknown }
   assertServerQuerySucceeded(laudosError, 'PATIENT_REPORTS_QUERY_FAILED')
 
+  type DeathEventSummary = {
+    data_obito: string
+    motivo: string
+    observacoes: string | null
+    triagens_encerradas: number
+    follow_ups_cancelados: number
+    recorded_at: string
+  }
+
+  let deathEvent: DeathEventSummary | null = null
+  if (pet.status_paciente === 'obito' && activeClinic?.clinicId) {
+    const { data: eventRow, error: eventError } = await supabase
+      .from('pet_death_events')
+      .select('data_obito, motivo, observacoes, triagens_encerradas, follow_ups_cancelados, recorded_at')
+      .eq('pet_id', petId)
+      .eq('clinic_id', activeClinic.clinicId)
+      .order('recorded_at', { ascending: false })
+      .limit(1)
+      .maybeSingle() as { data: DeathEventSummary | null; error: { code?: string } | null }
+
+    if (eventError && eventError.code !== '42P01' && eventError.code !== 'PGRST205') {
+      assertServerQuerySucceeded(eventError, 'PATIENT_DEATH_EVENT_QUERY_FAILED')
+    }
+    deathEvent = eventRow ?? null
+  }
+
+  const formattedDeathDateRaw = deathEvent?.data_obito ?? pet.data_obito
+  const formattedDeathDate = formattedDeathDateRaw && isCivilDate(formattedDeathDateRaw)
+    ? formatCivilDate(formattedDeathDateRaw, { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : null
+
   const statusInfo = STATUS_LABELS[pet.status_paciente] ?? { label: pet.status_paciente, color: 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-science-200' }
 
   const idadeStr = [
@@ -192,8 +230,26 @@ export default async function PacienteDetailPage({ params }: Props) {
         </div>
 
         {/* Ações de status */}
-        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10">
+        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10 space-y-3">
           <TutorPetActions pet={pet} />
+          {pet.status_paciente === 'obito' && (formattedDeathDate || deathEvent) && (
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/5 px-4 py-3 text-xs text-slate-600 dark:text-science-200 space-y-1">
+              <p className="font-semibold text-slate-800 dark:text-white">
+                Óbito registrado{formattedDeathDate ? ` em ${formattedDeathDate}` : ''}
+                {deathEvent ? ` — ${deathEvent.motivo}` : ''}
+              </p>
+              {deathEvent?.observacoes && (
+                <p className="text-slate-500 dark:text-science-300">
+                  Observações: {deathEvent.observacoes}
+                </p>
+              )}
+              {deathEvent && (
+                <p className="text-slate-400 dark:text-science-400">
+                  Triagens encerradas: {deathEvent.triagens_encerradas} · Follow-ups silenciados: {deathEvent.follow_ups_cancelados}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

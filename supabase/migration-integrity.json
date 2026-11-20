@@ -120,6 +120,14 @@
     {
       "file": "20261104000000_safe_parse_date_stable.sql",
       "sha256": "995dfae40ee43d36f2367419b61110bb536f06d3feec069da6d0332f6ef6e109"
+    },
+    {
+      "file": "20261118120000_security_audit_total_hardening.sql",
+      "sha256": "4da9f47dfb76abd4f987836b38bc4aab8e832a90108db20eebe36f8590429ef5"
+    },
+    {
+      "file": "20261119120000_pet_death_audit_workflow.sql",
+      "sha256": "1b4e4dfa9f8df9e8e4bff89fda2e27b162cf92aa9db3215f48f179e4c70b1709"
     }
   ],
   "approvedHistoricalTransitions": [

@@ -2,6 +2,7 @@
 
 Status: **bloqueado para uso clinico ate homologacao**  
 Data-base: 2026-07-16  
+Atualizacao de governanca: 2026-11-19 (homologacao clinica exclusiva pelo Clinico e Administrador responsavel)  
 Escopo: fluidoterapia, potassio, bicarbonato, calcio, fosforo, magnesio, dieta renal e controle de peso.
 
 ## 1. Objetivo e regra de seguranca
@@ -14,7 +15,7 @@ Enquanto qualquer criterio deste plano estiver pendente:
 - nenhum resultado numerico prescritivo deve ser apresentado;
 - falha de fonte, validacao, unidade ou calculo nao pode produzir valor de contingencia;
 - aviso ou disclaimer nao torna um calculo inseguro aceitavel;
-- a reativacao exige aprovacao humana independente de dois revisores veterinarios e aprovacao tecnica separada.
+- a reativacao exige aprovacao humana formal do Clinico e Administrador responsavel e validacao tecnica automatizada.
 
 Todas as faixas clinicas, metas, formulas, coeficientes, limites, contraindicacoes e regras de monitoramento citadas nos artefatos de implementacao devem ser classificadas como **decisao veterinaria pendente** ate assinatura formal.
 
@@ -37,11 +38,11 @@ Nao deve existir transicao automatica de `blocked` para `released`.
 | --- | --- | --- | --- | --- |
 | Fluidos | Especie; peso; estado de perfusao; hidratacao; perdas mensuradas; objetivo e fase; funcao renal; diurese; comorbidades; fluido; janela de reavaliacao | Massa em kg; volume em mL; taxa em mL/kg/h e mL/h como campos distintos; tempo em h | Ressuscitacao, reidratacao, manutencao e perdas sao fases separadas; volume de uma fase nao pode ser extrapolado para outra; reavaliacao e obrigatoria; soma de componentes deve ser rastreavel | Input ausente; peso/tempo invalido; objetivo ambiguo; hipovolemia sem fluxo por etapas; risco de sobrecarga sem plano de monitoramento; fonte ou regra nao aprovada |
 | Potassio | Especie; peso; potassio medido; unidade do laboratorio; tendencia; funcao renal; diurese; fluido e volume; dispositivo de infusao; monitoramento | Concentracao em unidade unica aprovada; taxa por kg e taxa absoluta em campos distintos; volume em mL; tempo em h | Nunca converter silenciosamente entre por-volume e por-litro; nunca confundir taxa por kg com absoluta; resultado nao pode recomendar suplementacao diante de estado bloqueado pela regra clinica aprovada; mistura e administracao devem ser rastreaveis | Valor ausente/incompativel; unidade desconhecida; funcao renal/diurese nao avaliadas; faixa nao homologada; taxa ou concentracao fora da matriz assinada; bomba/monitoramento exigidos e indisponiveis |
-| Bicarbonato | Especie; peso; gasometria e contexto aprovados; bicarbonato medido; alvo homologado; perfusao; ventilacao; sodio; causa provavel; horario da amostra | Concentracao e quantidade em unidade unica aprovada; peso em kg; tempo em h; pH sem unidade | Se alvo nao representar deficit positivo, nao existe dose negativa; formula e alvo devem ser versionados juntos; indicacao depende do contexto, nao apenas de um numero | Gasometria/contexto ausentes; amostra sem data; alvo menor ou igual ao medido; unidade desconhecida; formula ou indicacao sem duas assinaturas |
+| Bicarbonato | Especie; peso; gasometria e contexto aprovados; bicarbonato medido; alvo homologado; perfusao; ventilacao; sodio; causa provavel; horario da amostra | Concentracao e quantidade em unidade unica aprovada; peso em kg; tempo em h; pH sem unidade | Se alvo nao representar deficit positivo, nao existe dose negativa; formula e alvo devem ser versionados juntos; indicacao depende do contexto, nao apenas de um numero | Gasometria/contexto ausentes; amostra sem data; alvo menor ou igual ao medido; unidade desconhecida; formula ou indicacao sem aprovacao formal do Clinico e Administrador |
 | Calcio | Especie; peso; indicacao; calcio relevante medido; unidade e tipo de amostra; produto/concentracao; via; acesso; ECG/monitoramento; funcao renal | Calcio elementar como base canonica; produto e concentracao em campos separados; volume e taxa nunca reutilizam o mesmo campo | Produtos nao compartilham limites por conveniencia; conversao produto-elementar e explicita; limite e compatibilidade sao especificos do produto; entrada invalida nao produz resultado | Produto/concentracao ambiguos; monitoramento exigido indisponivel; valor/indicacao ausentes; limite especifico nao homologado; incompatibilidade conhecida |
 | Fosforo | Especie; peso; fosforo medido; unidade; indicacao; funcao renal; calcio; magnesio; produto/concentracao; fluido; acesso; monitoramento | Taxa por kg e taxa absoluta separadas; quantidade em mmol ou unidade clinicamente aprovada; volume em mL; tempo em h | Campo por kg nunca recebe valor absoluto; compatibilidade de mistura e obrigatoria; conversoes devem preservar dimensao; protocolo empirico/extralabel deve estar explicitamente aprovado | Fosforo nao medido; unidade desconhecida; incompatibilidade; funcao renal nao avaliada; formula/faixa sem aprovacao; ausencia do plano de monitoramento requerido |
 | Magnesio | Especie; peso; magnesio medido; unidade e tipo; indicacao/sintomas; funcao renal; diurese; produto/concentracao; acesso; monitoramento | Quantidade, concentracao, taxa por kg e taxa absoluta em campos distintos | Nao inferir necessidade somente por especie; funcao renal e valor medido participam da decisao; nao usar ponto medio fixo como protocolo | Medida/indicacao ausentes; insuficiencia renal ou oliguria sem regra assinada; unidade/produto ambiguos; monitoramento indisponivel |
-| Dieta renal | Especie; identificador exato do produto/SKU; pais; apresentacao; peso; ECC; MCS; ingestao atual; apetite; fase de vida; condicoes clinicas e estadio aprovados; objetivo nutricional | Energia na unidade oficial aprovada; massa corporal em kg; alimento em g/dia; escore com escala identificada | Quantidade deve reproduzir a tabela oficial da versao/SKU; nao extrapolar fora da tabela; ECC e MCS sao independentes; peso baixo nao pode ser rotulado como ideal; contraindicacao bloqueia resultado | SKU/regiao/versao sem fonte; peso fora da tabela; fase de vida/contraindicacao nao avaliadas; fonte expirada ou alterada; produto descontinuado; dois revisores nao aprovaram a transcricao |
+| Dieta renal | Especie; identificador exato do produto/SKU; pais; apresentacao; peso; ECC; MCS; ingestao atual; apetite; fase de vida; condicoes clinicas e estadio aprovados; objetivo nutricional | Energia na unidade oficial aprovada; massa corporal em kg; alimento em g/dia; escore com escala identificada | Quantidade deve reproduzir a tabela oficial da versao/SKU; nao extrapolar fora da tabela; ECC e MCS sao independentes; peso baixo nao pode ser rotulado como ideal; contraindicacao bloqueia resultado | SKU/regiao/versao sem fonte; peso fora da tabela; fase de vida/contraindicacao nao avaliadas; fonte expirada ou alterada; produto descontinuado; o Clinico e Administrador nao aprovou a transcricao |
 | Controle de peso | Identificador estavel do paciente; especie; data/hora da observacao; peso; unidade; ECC; MCS quando aplicavel; meta definida pelo veterinario; contexto/observacao opcional | Peso canonico em kg; data ISO 8601 com fuso/politica definida; percentuais derivados sem arredondamento intermediario | Nunca misturar pacientes; ganho/perda nao recebe semantica positiva/negativa sem meta; ordem e intervalo temporal devem ser reais; dado corrompido nao pode ser silenciosamente apagado | Paciente ausente/ambiguo; especie divergente; data futura proibida pela politica; unidade desconhecida; armazenamento corrompido; meta clinica necessaria e ausente |
 
 Os inputs listados sao requisitos candidatos para revisao. A obrigatoriedade final de cada campo, inclusive situacoes em que um campo pode ser dispensado, e **decisao veterinaria pendente**.
@@ -74,7 +75,7 @@ Regras do contrato:
 - conversoes sao centralizadas e testadas, nunca feitas diretamente no componente visual;
 - a interface nao recalcula nem corrige resultados do motor;
 - `NaN`, infinito, numero negativo impossivel, overflow e divisao por zero resultam em `blocked`;
-- arredondamento ocorre somente na apresentacao e segue regra assinada pelos revisores;
+- arredondamento ocorre somente na apresentacao e segue regra assinada pelo Clinico e Administrador;
 - logs registram versao, regra e motivo de bloqueio, sem dados identificaveis do paciente;
 - nenhuma telemetria clinica deve ser adicionada sem revisao de privacidade e base legal.
 
@@ -188,7 +189,7 @@ Cada regra clinica e cada produto devem apontar para uma entrada imutavel no reg
 | Unidade exatamente como publicada | Sim |
 | Metodo de conversao, se houver | Sim |
 | Identificador do artefato verificado ou checksum permitido | Sim |
-| Revisor 1, revisor 2 e respectivas datas | Sim |
+| Clinico e Administrador responsavel e data de aprovacao | Sim |
 | Estado: vigente, substituida, retirada ou pendente | Sim |
 | Proxima revisao | Definida pelo Clinical Product Owner; decisao veterinaria pendente |
 
@@ -200,7 +201,7 @@ Regras de versionamento:
 - link indisponivel, pagina alterada ou fonte substituida suspende as regras dependentes ate revisao;
 - o artefato de homologacao registra o diff clinico e o diff tecnico;
 - a versao exibida ao usuario deve permitir reconstruir quais regras e fontes produziram o resultado;
-- o intervalo de revalidacao e definido pelos revisores, sem prazo presumido pela engenharia.
+- o intervalo de revalidacao e definido pelo Clinico e Administrador, sem prazo presumido pela engenharia.
 
 ## 7. Fontes primarias e de autoridade candidatas
 
@@ -228,50 +229,41 @@ Estas fontes sao pontos de partida, nao homologacao automatica:
 
 ### Produtos
 
-Para cada SKU, usar exclusivamente pagina, rotulo ou ficha tecnica oficial do fabricante aplicavel ao Brasil e a apresentacao comercial selecionada. Exemplos de portais oficiais que ainda precisam de transcricao e dupla revisao:
+Para cada SKU, usar exclusivamente pagina, rotulo ou ficha tecnica oficial do fabricante aplicavel ao Brasil e a apresentacao comercial selecionada. Exemplos de portais oficiais que ainda precisam de transcricao e aprovacao formal pelo Clinico e Administrador:
 
 - Hill's Brasil: <https://www.hillspet.com.br/>
 - Royal Canin Brasil: <https://www.royalcanin.com/br>
 - Premier Pet: <https://premierpet.com.br/>
 - Farmina Brasil: <https://www.farmina.com/pt/>
 
-Fonte secundaria pode apoiar contexto, mas nao substituir fonte primaria ou de autoridade quando esta existir. Conflitos entre fontes permanecem bloqueados ate decisao documentada dos dois revisores.
+Fonte secundaria pode apoiar contexto, mas nao substituir fonte primaria ou de autoridade quando esta existir. Conflitos entre fontes permanecem bloqueados ate decisao documentada do Clinico e Administrador.
 
-## 8. Revisao humana independente
+## 8. Homologacao humana exclusiva e validacao tecnica
 
-### Revisor 1 - responsavel clinico do dominio
+### Clinico e Administrador - responsavel clinico e de governanca
 
-- medico-veterinario com experiencia documentada no dominio do motor;
-- fluidos e eletrolitos: preferencialmente nefrologia e/ou terapia intensiva;
-- dieta e peso: preferencialmente nutricao clinica e/ou nefrologia;
+- medico-veterinario responsavel pelo produto e pela validacao clinica de todos os motores;
 - seleciona fontes, define indicacoes, inputs, limites, monitoramento, arredondamento e condicoes de bloqueio;
-- fornece golden cases com entradas, saidas e racional clinico;
-- assina a versao exata do pacote de regras e testes.
-
-### Revisor 2 - validador clinico independente
-
-- medico-veterinario qualificado no mesmo dominio;
-- nao pode ser autor do codigo nem apenas repetir a revisao do Revisor 1;
-- recalcula de forma independente os golden cases;
+- fornece e valida os golden cases com entradas, saidas e racional clinico;
 - revisa unidades, fronteiras, contraindicacoes, linguagem publica e fluxo fail-closed;
-- registra aprovacao, ressalva ou rejeicao com justificativa e fonte.
+- registra aprovacao, ressalva ou rejeicao com justificativa, fonte e assinatura da versao exata do pacote.
 
 ### Engenharia e QA
 
-- implementam somente regras assinadas;
-- demonstram equivalencia entre especificacao, motor, interface e testes;
+- implementam somente regras assinadas pelo Clinico e Administrador;
+- demonstram equivalencia entre especificacao, motor, interface e testes automatizados;
 - nao resolvem conflito clinico escolhendo a formula que "parece correta";
 - mantem rastreabilidade de commits, versoes, testes e artefatos;
-- bloqueiam release diante de divergencia, inclusive se ambos os revisores aprovarem uma implementacao tecnicamente inconsistente.
+- bloqueiam release diante de divergencia tecnica, inclusive se o pacote clinico parecer valido em testes informais.
 
-Nao ha aprovacao por maioria. Discordancia entre revisores, ausencia de assinatura ou ressalva aberta mantem o motor bloqueado.
+Ausencia de aprovacao formal do Clinico e Administrador, divergencia tecnica ou ressalva aberta mantem o motor bloqueado.
 
 ## 9. Criterios de bloqueio e suspensao
 
 Qualquer item abaixo bloqueia ou suspende o motor:
 
 - fonte primaria ausente, inacessivel, substituida ou sem identificacao de versao;
-- regra clinica, limite, unidade ou arredondamento sem duas assinaturas;
+- regra clinica, limite, unidade ou arredondamento sem assinatura do Clinico e Administrador;
 - produto sem SKU, regiao, apresentacao ou tabela inequivoca;
 - input clinico obrigatorio ausente, invalido, desatualizado ou com unidade desconhecida;
 - conversao implicita ou dimensionalmente incorreta;
@@ -297,9 +289,9 @@ Quando suspenso, o motor nao deve reutilizar o ultimo resultado calculado nem co
 - [ ] Inputs obrigatorios e opcionais foram decididos por veterinarios.
 - [ ] Indicacoes, contraindicacoes e monitoramento foram decididos por veterinarios.
 - [ ] Unidades e arredondamentos foram aprovados explicitamente.
-- [ ] Golden cases concretos foram fornecidos pelo Revisor 1.
-- [ ] Golden cases foram recalculados independentemente pelo Revisor 2.
-- [ ] Ambos assinaram o mesmo hash/versao do pacote.
+- [ ] Golden cases concretos foram fornecidos e conferidos pelo Clinico e Administrador.
+- [ ] Golden cases e bordas dimensionais foram travados na suite automatizada.
+- [ ] O Clinico e Administrador assinou o mesmo hash/versao do pacote.
 - [ ] Nao existem conflitos ou ressalvas abertas.
 
 ### Implementacao e testes
@@ -337,9 +329,8 @@ Quando suspenso, o motor nao deve reutilizar o ultimo resultado calculado nem co
 
 ### Aprovacao final
 
-- [ ] Revisor 1 aprovou formalmente.
-- [ ] Revisor 2 aprovou formalmente e de modo independente.
-- [ ] QA clinico anexou evidencias dos golden cases.
+- [ ] O Clinico e Administrador aprovou e assinou formalmente.
+- [ ] QA tecnico anexou evidencias dos golden cases e suite automatizada.
 - [ ] QA tecnico anexou resultados de testes e matriz de rastreabilidade.
 - [ ] Responsavel de seguranca/privacidade aprovou o fluxo de dados.
 - [ ] Product Owner confirmou que o escopo publico e igual ao homologado.
@@ -353,7 +344,7 @@ Cada motor deve produzir, antes da reativacao:
 1. especificacao clinica versionada;
 2. registro das fontes e extracoes;
 3. matriz de inputs, unidades, regras e bloqueios;
-4. golden cases assinados pelos dois revisores;
+4. golden cases assinados pelo Clinico e Administrador;
 5. suite automatizada com evidencias;
 6. matriz de rastreabilidade `fonte -> regra -> codigo -> teste -> interface`;
 7. parecer de privacidade quando houver dado de paciente;

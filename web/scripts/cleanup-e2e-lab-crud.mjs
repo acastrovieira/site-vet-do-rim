@@ -107,6 +107,19 @@ async function deleteData(data) {
 
 async function deleteUsers(users) {
   await runCleanupSteps(users.map((user) => [user.email, async () => {
+    const { error: membershipError } = await supabase
+      .from('clinic_memberships')
+      .delete()
+      .eq('user_id', user.id)
+    if (membershipError) throw new Error(`Failed to unlink memberships for ${user.email}: ${membershipError.message}`)
+
+    const { error: clinicsError } = await supabase
+      .from('clinics')
+      .delete()
+      .eq('created_by', user.id)
+      .ilike('nome', 'Clinica E2E %')
+    if (clinicsError) throw new Error(`Failed to remove E2E clinics for ${user.email}: ${clinicsError.message}`)
+
     const { error } = await supabase.auth.admin.deleteUser(user.id)
     if (error) throw new Error(`Failed to delete ${user.email}: ${error.message}`)
     console.log(`Deleted user: ${user.email}`)

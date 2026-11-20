@@ -48,6 +48,19 @@ export function setAnalyticsConsent(consent: Exclude<AnalyticsConsent, null>): v
   window.dispatchEvent(new Event(ANALYTICS_CONSENT_EVENT))
 }
 
+export function clearAnalyticsConsent(): void {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.removeItem(ANALYTICS_CONSENT_KEY)
+    window.localStorage.removeItem(LEGACY_COOKIE_CONSENT_KEY)
+  } catch {
+    // Armazenamento indisponível não deve quebrar a interface.
+  }
+
+  window.dispatchEvent(new Event(ANALYTICS_CONSENT_EVENT))
+}
+
 export function subscribeToAnalyticsConsent(onChange: () => void): () => void {
   if (typeof window === 'undefined') return () => undefined
 

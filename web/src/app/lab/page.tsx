@@ -1,12 +1,10 @@
 import type { Metadata } from 'next'
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { FlaskConical, Users, Activity, TrendingUp } from 'lucide-react'
 import {
   assertServerQuerySucceeded,
   throwServerQueryFailure,
 } from '@/lib/server-query-safety'
-import { resolveActiveClinic } from '@/lib/server-clinic-context'
+import { requireLabClinicContext } from '@/lib/server-lab-context'
 
 export const metadata: Metadata = {
   title: 'Dashboard — Lab Evolution',
@@ -15,11 +13,7 @@ export const metadata: Metadata = {
 }
 
 export default async function LabDashboardPage() {
-  const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) redirect('/auth/login?redirectTo=/lab')
-
-  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
+  const { supabase, user, activeClinic } = await requireLabClinicContext('/lab')
 
   let petsCountQuery = supabase.from('pets').select('id', { count: 'exact', head: true })
   let tutoresCountQuery = supabase.from('tutores').select('id', { count: 'exact', head: true })

@@ -48,6 +48,8 @@ jobs:
         node node_modules/@playwright/test/cli.js test
         tests/e2e/api-security.spec.ts
         tests/e2e/auth.spec.ts
+        tests/e2e/local-ocr-assets.spec.ts
+        tests/e2e/motion-runtime.spec.ts
         tests/e2e/public-smoke.spec.ts
         tests/e2e/public-flows.spec.ts
         tests/e2e/mobile-layout.spec.ts
@@ -94,9 +96,12 @@ jobs:
       run: node scripts/verify-supply-chain.mjs
     - run: npm ci --no-fund --no-audit
     - name: Install ${{ matrix.browser }} runtime
-      run: node node_modules/@playwright/test/cli.js install --with-deps ${{ matrix.browser }}
-    - name: Run non-mutating browser smoke
-      run: node node_modules/@playwright/test/cli.js test tests/e2e/cross-browser-smoke.spec.ts --project=${{ matrix.project }} --workers=1
       env:
+        PLAYWRIGHT_BROWSER: ${{ matrix.browser }}
+      run: node node_modules/@playwright/test/cli.js install --with-deps "$PLAYWRIGHT_BROWSER"
+    - name: Run non-mutating browser smoke
+      env:
+        PLAYWRIGHT_PROJECT: ${{ matrix.project }}
         NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
         NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.placeholder
+      run: node node_modules/@playwright/test/cli.js test tests/e2e/cross-browser-smoke.spec.ts --project="$PLAYWRIGHT_PROJECT" --workers=1

@@ -30,7 +30,7 @@ export function ClinicalReviewNotice({ toolName }: ClinicalReviewNoticeProps) {
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300" aria-hidden />
           <span>
             A ferramenta só será reativada após testes dimensionais, casos clínicos de referência
-            e homologação formal por especialistas veterinários.
+            e homologação clínica formal pelo médico-veterinário responsável.
           </span>
         </div>
       </div>

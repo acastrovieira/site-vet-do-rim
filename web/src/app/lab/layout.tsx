@@ -3,6 +3,12 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { LabShell } from '@/components/lab/LabShell'
 import { parseAppRole, roleHome } from '@/lib/route-authorization'
+import { readActiveClinicCookie } from '@/lib/server-active-clinic'
+import {
+  listActiveUserClinics,
+  resolveActiveClinicFromList,
+} from '@/lib/server-clinic-context'
+import { throwServerQueryFailure } from '@/lib/server-query-safety'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -35,9 +41,20 @@ export default async function LabLayout({ children }: { children: React.ReactNod
   if (profileError || !rawProfile || !role) redirect('/auth/login?error=profile')
   if (role !== 'vet' && role !== 'admin') redirect(roleHome(role))
 
+  const [clinicsResult, preferredClinicId] = await Promise.all([
+    listActiveUserClinics(supabase, user.id),
+    readActiveClinicCookie(),
+  ])
+  if (!clinicsResult.ok) {
+    throwServerQueryFailure('CLINIC_CONTEXT_QUERY_FAILED')
+  }
+  const activeClinic = resolveActiveClinicFromList(clinicsResult.clinics, preferredClinicId)
+
   return (
     <LabShell
       profile={{ fullName: rawProfile.full_name, role }}
+      clinics={clinicsResult.clinics}
+      activeClinicId={activeClinic?.clinicId ?? null}
     >
       {children}
     </LabShell>

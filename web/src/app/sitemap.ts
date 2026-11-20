@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { getAllPosts } from '@/lib/blog'
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vetdorim.com.br').replace(/\/+$/, '')
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.vetdorim.com.br').replace(/\/+$/, '')
 
 const publicRoutes = [
   '',

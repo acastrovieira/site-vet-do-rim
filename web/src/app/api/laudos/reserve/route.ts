@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import {
+  ApiCsrfError,
   ApiUnsupportedMediaTypeError,
   ApiPayloadTooLargeError,
   ApiValidationError,
   assertAllowedKeys,
+  assertSameOriginMutation,
   readJsonObject,
   requiredText,
   safeErrorSummary,
@@ -34,6 +36,8 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const authorization = await authorizeClinicAccess(supabase, ['vet', 'admin'])
     if (!authorization.ok) return authorizationFailureJson(authorization)
+
+    assertSameOriginMutation(request)
 
     const rateLimit = await consumeClinicalRateLimit(supabase, CLINICAL_RATE_LIMIT_SCOPES.reserve)
     if (rateLimit.state === 'limited') {
@@ -76,6 +80,12 @@ export async function POST(request: Request) {
       { status: 201 },
     )
   } catch (err) {
+    if (err instanceof ApiCsrfError) {
+      return privateApiJson(
+        { ok: false, error: err.message, code: 'CSRF_REJECTED' },
+        { status: 403 },
+      )
+    }
     if (err instanceof ApiPayloadTooLargeError) {
       return privateApiJson(
         { ok: false, error: err.message, code: 'PAYLOAD_TOO_LARGE' },

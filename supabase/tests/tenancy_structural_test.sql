@@ -95,19 +95,19 @@ SELECT is(
   'no policy on clinics or clinic_memberships reduces to global true'
 );
 
--- 6. clinic_id/created_by existem como uuid NULLABLE nas 6 tabelas legadas
---    (Fase 1 é expand: obrigatoriedade só chega no enforce).
+-- 6. clinic_id passou a ser NOT NULL no enforce de blindagem, enquanto
+--    created_by permanece nullable uuid nas 6 tabelas legadas.
 SELECT is(
   (
     SELECT count(*)
     FROM (VALUES
-      ('tutores', 'clinic_id'), ('tutores', 'created_by'),
-      ('pets', 'clinic_id'), ('pets', 'created_by'),
-      ('triagens', 'clinic_id'), ('triagens', 'created_by'),
-      ('follow_ups', 'clinic_id'), ('follow_ups', 'created_by'),
-      ('colaboradores', 'clinic_id'), ('colaboradores', 'created_by'),
-      ('laudos_pdf', 'clinic_id'), ('laudos_pdf', 'created_by')
-    ) AS expected(table_name, column_name)
+      ('tutores', 'clinic_id', 'NO'), ('tutores', 'created_by', 'YES'),
+      ('pets', 'clinic_id', 'NO'), ('pets', 'created_by', 'YES'),
+      ('triagens', 'clinic_id', 'NO'), ('triagens', 'created_by', 'YES'),
+      ('follow_ups', 'clinic_id', 'NO'), ('follow_ups', 'created_by', 'YES'),
+      ('colaboradores', 'clinic_id', 'NO'), ('colaboradores', 'created_by', 'YES'),
+      ('laudos_pdf', 'clinic_id', 'NO'), ('laudos_pdf', 'created_by', 'YES')
+    ) AS expected(table_name, column_name, expected_nullable)
     WHERE EXISTS (
       SELECT 1
       FROM information_schema.columns AS c
@@ -115,11 +115,11 @@ SELECT is(
         AND c.table_name = expected.table_name
         AND c.column_name = expected.column_name
         AND c.data_type = 'uuid'
-        AND c.is_nullable = 'YES'
+        AND c.is_nullable = expected.expected_nullable
     )
   ),
   12::bigint,
-  'clinic_id and created_by are nullable uuid columns on all six legacy tables'
+  'clinic_id is non-null uuid and created_by is nullable uuid on all six legacy tables'
 );
 
 -- 7. As 19 FKs de tenant/composição existem. Entram como NOT VALID no expand;

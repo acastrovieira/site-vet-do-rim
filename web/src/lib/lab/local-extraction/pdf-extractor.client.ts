@@ -64,13 +64,30 @@ export async function extractLocalDraftFromPdf(
   assertNotAborted(options.signal)
   options.onProgress?.({ phase: 'reading', current: 0, total: 1, message: 'Abrindo PDF no dispositivo…' })
 
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const isPdfSignature = bytes.length >= 5
+    && bytes[0] === 0x25
+    && bytes[1] === 0x50
+    && bytes[2] === 0x44
+    && bytes[3] === 0x46
+    && bytes[4] === 0x2d
+  if (!isPdfSignature) {
+    throw new Error('O arquivo selecionado não possui assinatura PDF válida.')
+  }
+
   const pdfjs = await import('pdfjs-dist')
   pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
     import.meta.url,
   ).toString()
 
-  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) })
+  const loadingTask = pdfjs.getDocument({
+    data: bytes,
+    enableXfa: false,
+    disableRange: true,
+    disableStream: true,
+    disableAutoFetch: true,
+  })
   const pdf = await loadingTask.promise
 
   try {

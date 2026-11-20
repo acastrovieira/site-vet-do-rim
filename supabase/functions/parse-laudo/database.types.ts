@@ -138,6 +138,10 @@ export type Database = {
         Args: { p_laudo_id: string };
         Returns: number;  // linhas inseridas/atualizadas
       };
+      consume_clinical_rate_limit: {
+        Args: { p_scope: string };
+        Returns: Array<{ allowed: boolean; retry_after_seconds: number }>;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

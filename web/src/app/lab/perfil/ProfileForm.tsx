@@ -29,6 +29,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
 
   // Contato
   const [email, setEmail] = useState(initialData.email)
+  const [contactPassword, setContactPassword] = useState('')
   const [phone, setPhone] = useState(initialData.phone ?? '')
   const [address, setAddress] = useState(initialData.address ?? '')
   const [contactStatus, setContactStatus] = useState<SectionStatus>('idle')
@@ -36,6 +37,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
   const [lastRequestedEmail, setLastRequestedEmail] = useState(initialData.email)
 
   // Senha
+  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
@@ -118,6 +120,20 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
 
       let emailRequestSent = false
       if (nextEmail !== lastRequestedEmail) {
+        if (!contactPassword) {
+          setContactStatus('error')
+          setContactMsg('Informe sua senha atual para alterar o e-mail de acesso.')
+          return
+        }
+        const { error: reauthError } = await supabase.auth.signInWithPassword({
+          email: initialData.email,
+          password: contactPassword,
+        })
+        if (reauthError) {
+          setContactStatus('error')
+          setContactMsg('Senha atual incorreta. Não foi possível autorizar a alteração de e-mail.')
+          return
+        }
         const { error: emailError } = await supabase.auth.updateUser(
           { email: nextEmail },
           { emailRedirectTo: new URL('/auth/callback', window.location.origin).toString() },
@@ -129,6 +145,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
         }
         emailRequestSent = true
         setLastRequestedEmail(nextEmail)
+        setContactPassword('')
       }
 
       const { data: updatedProfile, error: profileError } = await supabase
@@ -162,6 +179,9 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
 
   async function handlePasswordSave(e: React.FormEvent) {
     e.preventDefault()
+    if (!currentPassword) {
+      setPwStatus('error'); setPwMsg('Informe sua senha atual.'); return
+    }
     if (newPassword !== confirmPassword) {
       setPwStatus('error'); setPwMsg('As senhas não coincidem.'); return
     }
@@ -174,6 +194,15 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
     setPwMsg('')
     try {
       const supabase = createClient()
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: initialData.email,
+        password: currentPassword,
+      })
+      if (reauthError) {
+        setPwStatus('error')
+        setPwMsg('Senha atual incorreta.')
+        return
+      }
       const { error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) {
         setPwStatus('error')
@@ -181,8 +210,10 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
         return
       }
 
+      await supabase.auth.signOut({ scope: 'others' }).catch(() => undefined)
       setPwStatus('success')
-      setPwMsg('Senha alterada com sucesso!')
+      setPwMsg('Senha alterada com sucesso! Outras sessões ativas foram encerradas.')
+      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
       if (passwordTimerRef.current) clearTimeout(passwordTimerRef.current)
@@ -259,6 +290,28 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
               />
             </div>
           </div>
+          {email.trim() !== lastRequestedEmail && (
+            <div>
+              <label htmlFor="contact-current-pw" className="block text-sm font-medium text-slate-700 dark:text-science-100 mb-1.5">
+                Senha atual (confirmação para alterar e-mail)
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  id="contact-current-pw"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  maxLength={128}
+                  disabled={contactStatus === 'loading'}
+                  value={contactPassword}
+                  onChange={(e) => setContactPassword(e.target.value)}
+                  placeholder="Digite sua senha atual"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent placeholder:text-slate-400 dark:placeholder:text-science-500 transition-all"
+                />
+              </div>
+            </div>
+          )}
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-slate-700 dark:text-science-100 mb-1.5">
               Telefone / WhatsApp
@@ -316,6 +369,26 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
         </h2>
         <form onSubmit={handlePasswordSave} className="space-y-4" aria-busy={pwStatus === 'loading'}>
           <div>
+            <label htmlFor="current-pw" className="block text-sm font-medium text-slate-700 dark:text-science-100 mb-1.5">
+              Senha atual
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                id="current-pw"
+                type={showPw ? 'text' : 'password'}
+                autoComplete="current-password"
+                required
+                maxLength={128}
+                disabled={pwStatus === 'loading'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Digite sua senha atual"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent placeholder:text-slate-400 dark:placeholder:text-science-500 transition-all"
+              />
+            </div>
+          </div>
+          <div>
             <label htmlFor="new-pw" className="block text-sm font-medium text-slate-700 dark:text-science-100 mb-1.5">
               Nova senha
             </label>
@@ -367,7 +440,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
           <StatusFeedback status={pwStatus} message={pwMsg} />
           <button
             type="submit"
-            disabled={pwStatus === 'loading' || !newPassword || !confirmPassword}
+            disabled={pwStatus === 'loading' || !currentPassword || !newPassword || !confirmPassword}
             className="px-5 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {pwStatus === 'loading' ? 'Salvando...' : 'Alterar senha'}

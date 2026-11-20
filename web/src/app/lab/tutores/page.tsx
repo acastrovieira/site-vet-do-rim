@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { Users, Plus, Phone, Mail, ChevronRight, AlertTriangle, RefreshCw, Search } from 'lucide-react'
 import { ListPagination } from '@/components/lab/ListPagination'
 import { listPageRange, parseListPage } from '@/lib/list-pagination'
-import { resolveActiveClinic } from '@/lib/server-clinic-context'
+import { requireLabClinicContext } from '@/lib/server-lab-context'
 
 export const metadata: Metadata = {
   title: 'Tutores — Lab Evolution',
@@ -38,9 +37,7 @@ function tutorsHref(page: number, query: string) {
 }
 
 export default async function TutoresPage({ searchParams }: TutoresPageProps) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
+  const { supabase, activeClinic } = await requireLabClinicContext('/lab/tutores')
   const params = await searchParams
   const query = normalizedQuery(params?.q)
   const page = parseListPage(params?.page, PAGE_SIZE)

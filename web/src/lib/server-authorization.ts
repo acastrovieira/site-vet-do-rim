@@ -1,21 +1,23 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ClinicMembershipRole, Database } from '../types/database.ts'
 import { parseAppRole, type AppRole } from './route-authorization.ts'
-import { resolveActiveClinic } from './server-clinic-context.ts'
+import { recordSecurityEvent } from './security-telemetry.ts'
+import { readActiveClinicCookie } from './server-active-clinic.ts'
+import { resolveActiveClinicResult } from './server-clinic-context.ts'
 
 type ServerSupabaseClient = SupabaseClient<Database>
 
 export type ServerAuthorizationResult =
   | {
-      ok: true
-      role: AppRole
-      userId: string
-    }
+    ok: true
+    role: AppRole
+    userId: string
+  }
   | {
-      ok: false
-      code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'AUTHORIZATION_UNAVAILABLE'
-      status: 401 | 403 | 503
-    }
+    ok: false
+    code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'AUTHORIZATION_UNAVAILABLE'
+    status: 401 | 403 | 503
+  }
 
 /**
  * Igual a `ServerAuthorizationResult`, mas no ramo `ok` inclui o contexto de
@@ -23,17 +25,17 @@ export type ServerAuthorizationResult =
  */
 export type ServerClinicAuthorizationResult =
   | {
-      ok: true
-      role: AppRole
-      userId: string
-      clinicId: string | null
-      membershipRole: ClinicMembershipRole | null
-    }
+    ok: true
+    role: AppRole
+    userId: string
+    clinicId: string | null
+    membershipRole: ClinicMembershipRole | null
+  }
   | {
-      ok: false
-      code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'AUTHORIZATION_UNAVAILABLE'
-      status: 401 | 403 | 503
-    }
+    ok: false
+    code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'AUTHORIZATION_UNAVAILABLE'
+    status: 401 | 403 | 503
+  }
 
 /**
  * Revalida identidade e papel usando fontes controladas pelo servidor.
@@ -62,11 +64,25 @@ export async function authorizeServerRoles(
     .maybeSingle()
 
   if (profileError) {
+    recordSecurityEvent({
+      event: 'authorization_unavailable',
+      status: 503,
+      layer: 'authz',
+      scope: 'profiles',
+      code: 'AUTHORIZATION_UNAVAILABLE',
+    })
     return { ok: false, code: 'AUTHORIZATION_UNAVAILABLE', status: 503 }
   }
 
   const role = parseAppRole(profile?.role)
   if (!role || !allowedRoles.includes(role)) {
+    recordSecurityEvent({
+      event: 'authorization_forbidden',
+      status: 403,
+      layer: 'authz',
+      scope: 'profiles_role',
+      code: 'FORBIDDEN',
+    })
     return { ok: false, code: 'FORBIDDEN', status: 403 }
   }
 
@@ -90,17 +106,35 @@ export async function authorizeServerRoles(
 export async function authorizeClinicAccess(
   supabase: ServerSupabaseClient,
   allowedRoles: readonly AppRole[],
+  preferredClinicId?: string | null,
 ): Promise<ServerClinicAuthorizationResult> {
   const base = await authorizeServerRoles(supabase, allowedRoles)
   if (!base.ok) return base
 
-  const clinicContext = await resolveActiveClinic(supabase, base.userId)
+  const effectivePreferredClinicId = preferredClinicId === undefined
+    ? await readActiveClinicCookie()
+    : preferredClinicId
+  const clinicLookup = await resolveActiveClinicResult(
+    supabase,
+    base.userId,
+    effectivePreferredClinicId,
+  )
+  if (!clinicLookup.ok) {
+    recordSecurityEvent({
+      event: 'authorization_unavailable',
+      status: 503,
+      layer: 'authz',
+      scope: 'clinic_memberships',
+      code: 'AUTHORIZATION_UNAVAILABLE',
+    })
+    return { ok: false, code: 'AUTHORIZATION_UNAVAILABLE', status: 503 }
+  }
 
   return {
     ok: true,
     role: base.role,
     userId: base.userId,
-    clinicId: clinicContext?.clinicId ?? null,
-    membershipRole: clinicContext?.membershipRole ?? null,
+    clinicId: clinicLookup.context?.clinicId ?? null,
+    membershipRole: clinicLookup.context?.membershipRole ?? null,
   }
 }

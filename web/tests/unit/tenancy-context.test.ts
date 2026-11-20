@@ -103,6 +103,15 @@ test('resolveActiveClinic fails closed to null on a query error', async () => {
   assert.equal(await resolveActiveClinic(client, 'user-1'), null)
 })
 
+test('authorizeClinicAccess fails closed with 503 when membership lookup errors', async () => {
+  const client = fakeMembershipClient('user-1', [], { membershipError: new Error('connection reset') })
+  assert.deepEqual(await authorizeClinicAccess(client, ['vet', 'admin']), {
+    ok: false,
+    code: 'AUTHORIZATION_UNAVAILABLE',
+    status: 503,
+  })
+})
+
 test('authorizeClinicAccess stays retrocompatible: no membership does not block a role-authorized user', async () => {
   const client = fakeMembershipClient('user-1', [])
   assert.deepEqual(await authorizeClinicAccess(client, ['vet', 'admin']), {

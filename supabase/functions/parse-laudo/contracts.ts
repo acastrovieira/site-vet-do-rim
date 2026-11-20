@@ -4,7 +4,10 @@ export const MAX_PROVIDER_RESPONSE_BYTES = 512 * 1024;
 
 const MAX_SCHEMA_DEPTH = 12;
 const MAX_SCHEMA_ARRAY_ITEMS = 100;
-const MAX_SCHEMA_STRING_BYTES = 16 * 1024;
+const MAX_SCHEMA_STRING_BYTES = 2048;
+const MAX_REGISTRATION_STRING_BYTES = 256;
+const MAX_CLINICAL_NUMBER = 100_000_000;
+const CONTROL_CHAR_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/;
 const textEncoder = new TextEncoder();
 const ISO_CIVIL_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -204,8 +207,21 @@ export function assertJsonMatchesSchema(
   if (value === null) return;
 
   if (typeof value === "string") {
-    if (textEncoder.encode(value).byteLength > MAX_SCHEMA_STRING_BYTES) {
+    if (CONTROL_CHAR_RE.test(value)) {
+      throw new Error(`Resposta da IA com caractere invalido em ${path}.`);
+    }
+    const maxBytes = path.startsWith("$.paciente.") || path === "$.laboratorio"
+      ? MAX_REGISTRATION_STRING_BYTES
+      : MAX_SCHEMA_STRING_BYTES;
+    if (textEncoder.encode(value).byteLength > maxBytes) {
       throw new Error(`Resposta da IA com texto excessivo em ${path}.`);
+    }
+    return;
+  }
+
+  if (typeof value === "number") {
+    if (value < 0 || value >= MAX_CLINICAL_NUMBER) {
+      throw new Error(`Resposta da IA com valor numerico fora dos limites em ${path}.`);
     }
     return;
   }

@@ -1,10 +1,38 @@
 import type { NextConfig } from 'next'
 import path from 'node:path'
+import { SECURITY_HEADERS } from './src/lib/security-headers'
 
 const nextConfig: NextConfig = {
   // ── Segurança ─────────────────────────────────────────────
   // Remove o header "X-Powered-By: Next.js" para não expor informações do servidor
   poweredByHeader: false,
+
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [...SECURITY_HEADERS],
+      },
+      {
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store, no-cache, max-age=0, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/auth/(.*)',
+        headers: [
+          {
+            key: 'Referrer-Policy',
+            value: 'no-referrer',
+          },
+        ],
+      },
+    ]
+  },
 
   // ── Imagens ───────────────────────────────────────────────
   images: {

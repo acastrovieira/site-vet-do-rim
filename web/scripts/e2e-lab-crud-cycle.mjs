@@ -12,10 +12,13 @@ import {
   verifyStoragePathsAbsent,
   verifyTableRowsAbsent,
 } from './lib/e2e-cleanup-match.mjs'
-import { explicitSupabaseTarget } from './lib/supabase-target.mjs'
+import { assertLocalSupabaseTarget, explicitSupabaseTarget } from './lib/supabase-target.mjs'
 
 const localEnv = loadLocalEnv()
-const { supabaseUrl } = explicitSupabaseTarget(localEnv, { mutation: true })
+const localTargetMode = process.argv.includes('--local')
+const { supabaseUrl } = localTargetMode
+  ? assertLocalSupabaseTarget(requiredEnv(localEnv, 'LOCAL_SUPABASE_URL'))
+  : explicitSupabaseTarget(localEnv, { mutation: true })
 const serviceRoleKey = requiredEnv(localEnv, 'SUPABASE_SERVICE_ROLE_KEY')
 const anonKey = requiredEnv(localEnv, 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
 
@@ -31,10 +34,12 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 })
 
 const runId = `labcrud-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}`
+const clinicAName = `Clinica E2E Lab CRUD A ${runId}`
+const clinicBName = `Clinica E2E Lab CRUD B ${runId}`
 const nextBuildPath = join(process.cwd(), '.next')
 let createdUser
-let createdClinicId
-let createdMembershipId
+const createdClinicIds = []
+const createdMemberships = []
 
 function password() {
   return `VetRim-${randomBytes(9).toString('base64url')}!9`
@@ -73,24 +78,14 @@ async function createVetUser() {
     throw new Error(`Failed to set vet profile: ${profileError.message}`)
   }
 
-  const { data: existingClinic, error: existingClinicError } = await supabase
-    .from('clinics')
-    .select('id')
-    .eq('status', 'active')
-    .order('criado_em', { ascending: true })
-    .limit(1)
-    .maybeSingle()
-
-  if (existingClinicError) {
-    throw new Error(`Failed to resolve active clinic: ${existingClinicError.message}`)
-  }
-
-  let targetClinicId = existingClinic?.id ?? null
-  if (!targetClinicId) {
+  const clinicNames = [clinicAName, clinicBName]
+  const baseMembershipMs = Date.now()
+  for (let index = 0; index < clinicNames.length; index += 1) {
+    const clinicName = clinicNames[index]
     const { data: clinic, error: clinicError } = await supabase
       .from('clinics')
       .insert({
-        nome: `Clinica E2E Lab CRUD ${runId}`,
+        nome: clinicName,
         status: 'active',
         created_by: data.user.id,
       })
@@ -98,28 +93,29 @@ async function createVetUser() {
       .single()
 
     if (clinicError || !clinic) {
-      throw new Error(`Failed to create E2E clinic: ${clinicError?.message || 'no clinic returned'}`)
+      throw new Error(`Failed to create E2E clinic (${clinicName}): ${clinicError?.message || 'no clinic returned'}`)
     }
-    createdClinicId = clinic.id
-    targetClinicId = clinic.id
-  }
+    createdClinicIds.push(clinic.id)
 
-  const { data: membership, error: membershipError } = await supabase
-    .from('clinic_memberships')
-    .upsert({
-      clinic_id: targetClinicId,
-      user_id: data.user.id,
-      role: 'vet',
-      status: 'active',
-      created_by: data.user.id,
-    }, { onConflict: 'clinic_id,user_id' })
-    .select('id')
-    .single()
+    const membershipTimestamp = new Date(baseMembershipMs + index * 1000).toISOString()
+    const { data: membership, error: membershipError } = await supabase
+      .from('clinic_memberships')
+      .insert({
+        clinic_id: clinic.id,
+        user_id: data.user.id,
+        role: 'vet',
+        status: 'active',
+        created_by: data.user.id,
+        criado_em: membershipTimestamp,
+      })
+      .select('clinic_id, user_id')
+      .single()
 
-  if (membershipError || !membership) {
-    throw new Error(`Failed to create E2E clinic membership: ${membershipError?.message || 'no membership returned'}`)
+    if (membershipError || !membership) {
+      throw new Error(`Failed to create E2E clinic membership: ${membershipError?.message || 'no membership returned'}`)
+    }
+    createdMemberships.push({ clinicId: membership.clinic_id, userId: membership.user_id })
   }
-  createdMembershipId = membership.id
 
   return { email, password: userPassword }
 }
@@ -160,12 +156,17 @@ async function cleanupData() {
     }
 
     await deleteRowsByIds(supabase, 'tutores', scope.tutorIds, 'Tutores')
-    if (createdMembershipId) {
-      await deleteRowsByIds(supabase, 'clinic_memberships', [createdMembershipId], 'Clinic memberships')
+    for (const membership of createdMemberships) {
+      const { error: membershipCleanupError } = await supabase
+        .from('clinic_memberships')
+        .delete()
+        .eq('clinic_id', membership.clinicId)
+        .eq('user_id', membership.userId)
+      if (membershipCleanupError) {
+        throw new Error(`Cleanup clinic membership failed: ${membershipCleanupError.message}`)
+      }
     }
-    if (createdClinicId) {
-      await deleteRowsByIds(supabase, 'clinics', [createdClinicId], 'Clinics')
-    }
+    await deleteRowsByIds(supabase, 'clinics', createdClinicIds, 'Clinics')
   } catch (error) {
     cleanupError = error
   }
@@ -179,8 +180,20 @@ async function verifyNoDataResidues({ tutorIds, petIds, laudoIds, storagePaths }
   await verifyTableRowsAbsent(supabase, 'laudos_pdf', laudoIds)
   await verifyTableRowsAbsent(supabase, 'pets', petIds)
   await verifyTableRowsAbsent(supabase, 'tutores', tutorIds)
-  await verifyTableRowsAbsent(supabase, 'clinic_memberships', createdMembershipId ? [createdMembershipId] : [])
-  await verifyTableRowsAbsent(supabase, 'clinics', createdClinicId ? [createdClinicId] : [])
+  if (createdMemberships.length > 0 && createdUser) {
+    const { data: remainingMembership, error: membershipVerifyError } = await supabase
+      .from('clinic_memberships')
+      .select('clinic_id')
+      .eq('user_id', createdUser.id)
+      .in('clinic_id', createdMemberships.map((item) => item.clinicId))
+    if (membershipVerifyError) {
+      throw new Error(`Failed to verify clinic_memberships cleanup: ${membershipVerifyError.message}`)
+    }
+    if (remainingMembership && remainingMembership.length > 0) {
+      throw new Error('clinic_memberships cleanup left residue.')
+    }
+  }
+  await verifyTableRowsAbsent(supabase, 'clinics', createdClinicIds)
   await verifyStoragePathsAbsent(supabase, 'laudos', storagePaths)
 }
 
@@ -221,6 +234,8 @@ try {
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey,
     E2E_RUN_ID: runId,
+    E2E_CLINIC_A_NAME: clinicAName,
+    E2E_CLINIC_B_NAME: clinicBName,
     E2E_VET_EMAIL: credentials.email,
     E2E_VET_PASSWORD: credentials.password,
     PORT: process.env.PORT ?? '3316',

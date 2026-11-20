@@ -43,6 +43,18 @@ const commands = [
   {
     command: process.execPath,
     args: [
+      'scripts/verify-dependency-audit.mjs',
+    ],
+  },
+  {
+    command: process.execPath,
+    args: [
+      'scripts/verify-sprint-3-safety.mjs',
+    ],
+  },
+  {
+    command: process.execPath,
+    args: [
       '--check',
       'scripts/lib/env-file.mjs',
     ],

@@ -264,7 +264,7 @@ test.describe('professional clinical tools gates', () => {
       await page.goto(route)
 
       await expect(page.getByRole('heading', { name: /Ferramenta temporariamente indisponível/i })).toBeVisible()
-      await expect(page.getByText(/homologação formal por especialistas veterinários/i)).toBeVisible()
+      await expect(page.getByText(/homologação clínica formal pelo médico-veterinário responsável/i)).toBeVisible()
     })
   }
 })

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Mail } from 'lucide-react'
+import { CookiePreferencesButton } from '@/components/ui/CookiePreferencesButton'
 
 function IconWhatsApp({ className }: { className?: string }) {
   return (
@@ -191,7 +192,13 @@ export function Footer() {
           }}
         >
           <p>© {new Date().getFullYear()} Vet do Rim. Todos os direitos reservados.</p>
-          <p>Conteúdo educacional. Não substitui consulta veterinária presencial.</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <Link href="/legal/privacidade" className="underline underline-offset-2 hover:opacity-90 transition-opacity">
+              Privacidade
+            </Link>
+            <CookiePreferencesButton />
+            <p>Conteúdo educacional. Não substitui consulta veterinária presencial.</p>
+          </div>
         </div>
       </div>
     </footer>

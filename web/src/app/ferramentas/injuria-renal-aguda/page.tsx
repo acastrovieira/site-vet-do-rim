@@ -1,9 +1,14 @@
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import { Header } from '@/components/marketing/Header'
 import { Footer } from '@/components/marketing/Footer'
 import { IRACalculator } from '@/components/ferramentas/IRACalculator'
-import { VetOnlyGate } from '@/components/ferramentas/VetOnlyGate'
+import { VetOnlyGate, type VetGateStatus } from '@/components/ferramentas/VetOnlyGate'
+import { createClient } from '@/lib/supabase/server'
+import { parseAppRole } from '@/lib/route-authorization'
 import { Zap } from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Classificação de Injúria Renal Aguda (IRA) — Cães e Gatos',
@@ -20,7 +25,35 @@ export const metadata: Metadata = {
   alternates: { canonical: '/ferramentas/injuria-renal-aguda' },
 }
 
-export default function InjuriaRenalAgudaPage() {
+async function resolveServerVetStatus(): Promise<Exclude<VetGateStatus, 'loading'>> {
+  const cookieStore = await cookies()
+  const hasSessionCookie = cookieStore.getAll().some((cookie) => cookie.name.startsWith('sb-'))
+  if (!hasSessionCookie) return 'blocked-no-auth'
+
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return 'blocked-no-auth'
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profileError || !profile) return 'error'
+    const role = parseAppRole(profile.role)
+    if (role === 'vet' || role === 'admin') return 'allowed'
+    if (role === 'tutor') return 'blocked-tutor'
+    return 'blocked-no-auth'
+  } catch {
+    return 'error'
+  }
+}
+
+export default async function InjuriaRenalAgudaPage() {
+  const serverStatus = await resolveServerVetStatus()
+
   return (
     <>
       <Header />
@@ -79,8 +112,8 @@ export default function InjuriaRenalAgudaPage() {
             </p>
           </div>
 
-          <VetOnlyGate>
-            <IRACalculator />
+          <VetOnlyGate initialStatus={serverStatus}>
+            {serverStatus === 'allowed' ? <IRACalculator /> : null}
           </VetOnlyGate>
         </div>
       </main>

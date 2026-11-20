@@ -5,6 +5,7 @@
  */
 
 import type { Especie, ECC } from './dieta-renal-calculator'
+import { isCivilDate } from './civil-date.ts'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,14 @@ const MAX_REGISTROS = 500 // limite de segurança para o localStorage
 let ultimoErroStorage: string | null = null
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
+
+function dataAtualLocalISO(): string {
+  const agora = new Date()
+  const ano = agora.getFullYear()
+  const mes = String(agora.getMonth() + 1).padStart(2, '0')
+  const dia = String(agora.getDate()).padStart(2, '0')
+  return `${ano}-${mes}-${dia}`
+}
 
 function gerarId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
@@ -103,6 +112,13 @@ function escreverStorage(registros: RegistroPeso[]): void {
 export function salvarPeso(
   dados: Omit<RegistroPeso, 'id' | 'criadoEm'>,
 ): RegistroPeso {
+  if (!isCivilDate(dados.data)) {
+    throw new Error('Data do registro inválida. Use o formato YYYY-MM-DD.')
+  }
+  if (dados.data > dataAtualLocalISO()) {
+    throw new Error('A data do registro não pode estar no futuro.')
+  }
+
   const historico = lerStorage()
   if (ultimoErroStorage) throw new Error(ultimoErroStorage)
   if (historico.length >= MAX_REGISTROS) {
@@ -129,16 +145,16 @@ export function salvarPeso(
  * @returns Lista de registros
  */
 export function listarPesos(filtro?: { nomePaciente?: string }): RegistroPeso[] {
-  const historico = lerStorage()
+  const ordenados = [...lerStorage()].sort((a, b) => b.criadoEm - a.criadoEm)
 
   if (filtro?.nomePaciente) {
     const termo = filtro.nomePaciente.toLowerCase()
-    return historico.filter((r) =>
+    return ordenados.filter((r) =>
       r.nomePaciente?.toLowerCase().includes(termo),
     )
   }
 
-  return historico.sort((a, b) => b.criadoEm - a.criadoEm)
+  return ordenados
 }
 
 /** Retorna um aviso seguro quando o histórico local não pôde ser validado. */

@@ -66,7 +66,7 @@ WITH checks AS (
       WHERE table_schema = 'public'
         AND table_name = 'laudos_pdf'
         AND grantee = 'authenticated'
-        AND privilege_type = 'UPDATE'
+        AND privilege_type IN ('INSERT', 'UPDATE', 'DELETE')
     )
     AND NOT EXISTS (
       SELECT 1

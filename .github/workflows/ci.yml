@@ -60,12 +60,7 @@ jobs:
         run: npm test
 
       - name: Dependency audit
-        run: npm audit --audit-level=high
-
-      - name: Tooling dependency audits
-        run: |
-          npm --prefix ../.aiox-core audit --audit-level=high --package-lock-only
-          npm --prefix ../.aiox-core/scripts/diagnostics/health-dashboard audit --audit-level=high --package-lock-only
+        run: npm run check:audit
 
       - name: Generate and validate production SBOM
         run: |

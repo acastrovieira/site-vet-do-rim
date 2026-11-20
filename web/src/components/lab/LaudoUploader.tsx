@@ -139,13 +139,29 @@ export function LaudoUploader({ petId }: { petId: string }) {
     return () => { active = false }
   }, [supabase])
 
-  const handleFile = useCallback((file: File) => {
+  const handleFile = useCallback(async (file: File) => {
     if (file.type !== 'application/pdf') {
       setErrorMsg('Apenas arquivos PDF são aceitos.')
       return
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setErrorMsg('Arquivo muito grande. Máximo: 10 MB.')
+    if (file.size <= 0 || file.size > 10 * 1024 * 1024) {
+      setErrorMsg('Arquivo inválido ou muito grande. Máximo: 10 MB.')
+      return
+    }
+    try {
+      const header = new Uint8Array(await file.slice(0, 5).arrayBuffer())
+      const hasPdfMagic = header.length === 5
+        && header[0] === 0x25
+        && header[1] === 0x50
+        && header[2] === 0x44
+        && header[3] === 0x46
+        && header[4] === 0x2d
+      if (!hasPdfMagic) {
+        setErrorMsg('O arquivo selecionado não possui assinatura PDF válida.')
+        return
+      }
+    } catch {
+      setErrorMsg('Não foi possível validar a assinatura do PDF selecionado.')
       return
     }
     setErrorMsg(null)
@@ -179,7 +195,7 @@ export function LaudoUploader({ petId }: { petId: string }) {
     e.preventDefault()
     setDragActive(false)
     const file = e.dataTransfer.files[0]
-    if (file) handleFile(file)
+    if (file) void handleFile(file)
   }, [handleFile])
 
   /**
@@ -364,9 +380,8 @@ export function LaudoUploader({ petId }: { petId: string }) {
           onDragOver={(e) => { e.preventDefault(); setDragActive(true) }}
           onDragLeave={() => setDragActive(false)}
           onDrop={handleDrop}
-          className={`rounded-2xl border-2 border-dashed p-10 text-center transition-all duration-200 cursor-pointer ${
-            dragActive ? 'border-brand-400 bg-brand-50 dark:bg-brand-500/10' : 'border-slate-200 dark:border-white/10 hover:border-brand-300 hover:bg-slate-50 dark:hover:bg-white/5'
-          }`}
+          className={`rounded-2xl border-2 border-dashed p-10 text-center transition-all duration-200 cursor-pointer ${dragActive ? 'border-brand-400 bg-brand-50 dark:bg-brand-500/10' : 'border-slate-200 dark:border-white/10 hover:border-brand-300 hover:bg-slate-50 dark:hover:bg-white/5'
+            }`}
           role="button"
           tabIndex={0}
           aria-label="Área de upload de laudo PDF"
@@ -386,7 +401,10 @@ export function LaudoUploader({ petId }: { petId: string }) {
             type="file"
             accept="application/pdf"
             className="hidden"
-            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+            onChange={(e) => {
+              const selected = e.target.files?.[0]
+              if (selected) void handleFile(selected)
+            }}
           />
         </div>
       ) : (
@@ -429,7 +447,7 @@ export function LaudoUploader({ petId }: { petId: string }) {
           {/* Painel de resultado */}
           <div className="order-1 lg:order-2 space-y-4">
             {/* Botão principal: carregamento do PDF */}
-                {(status === 'idle' || (status === 'error' && !laudoId && !cleanupBlocked)) && (
+            {(status === 'idle' || (status === 'error' && !laudoId && !cleanupBlocked)) && (
               <div className="space-y-2">
                 <button
                   type="button"
@@ -516,11 +534,11 @@ export function LaudoUploader({ petId }: { petId: string }) {
                       ? 'Análise temporariamente indisponível'
                       : aiRetryBlocked
                         ? 'Recarregue para confirmar o status'
-                      : aiQuota !== null && aiQuota.used >= aiQuota.limit
-                        ? 'Limite de análises atingido'
-                        : status === 'error'
-                          ? 'Tentar análise novamente'
-                          : '2. Analisar com IA e gerar tabela'}
+                        : aiQuota !== null && aiQuota.used >= aiQuota.limit
+                          ? 'Limite de análises atingido'
+                          : status === 'error'
+                            ? 'Tentar análise novamente'
+                            : '2. Analisar com IA e gerar tabela'}
                 </button>
                 {aiQuotaStatus === 'error' && (
                   <p role="alert" className="text-center text-xs text-amber-700 dark:text-amber-300">
@@ -546,9 +564,9 @@ export function LaudoUploader({ petId }: { petId: string }) {
                         ? 'Não repita o envio nesta tela. O suporte deverá verificar o armazenamento e o registro antes de uma nova tentativa.'
                         : laudoId && aiRetryBlocked
                           ? 'O PDF já está salvo. Recarregue a página e confirme o status da análise antes de qualquer nova tentativa. Evite enviar dados sensíveis pelo WhatsApp.'
-                        : laudoId
-                          ? 'O PDF já está salvo. Não o envie novamente; tente apenas a análise opcional ou acione o suporte. Evite enviar dados sensíveis pelo WhatsApp.'
-                          : 'Se a falha persistir, tente reenviar o PDF ou acione o suporte para análise manual. Evite enviar dados sensíveis pelo WhatsApp.'}
+                          : laudoId
+                            ? 'O PDF já está salvo. Não o envie novamente; tente apenas a análise opcional ou acione o suporte. Evite enviar dados sensíveis pelo WhatsApp.'
+                            : 'Se a falha persistir, tente reenviar o PDF ou acione o suporte para análise manual. Evite enviar dados sensíveis pelo WhatsApp.'}
                     </p>
                     <a
                       href={SUPPORT_HREF}

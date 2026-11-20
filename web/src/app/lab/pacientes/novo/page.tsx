@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
 import { AlertTriangle, ArrowLeft, RefreshCw } from 'lucide-react'
 import { PacienteForm } from './PacienteForm'
 import { isUuid } from '@/lib/identifiers'
@@ -9,7 +8,7 @@ import {
   TUTOR_SELECTION_LIMIT,
   type TutorOption,
 } from '@/lib/lab/tutor-selection'
-import { resolveActiveClinic } from '@/lib/server-clinic-context'
+import { requireLabClinicContext } from '@/lib/server-lab-context'
 
 export const metadata: Metadata = {
   title: 'Novo Paciente — Lab Evolution',
@@ -22,9 +21,7 @@ interface PageProps {
 }
 
 export default async function NovoPacientePage({ searchParams }: PageProps) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
+  const { supabase, user, activeClinic } = await requireLabClinicContext('/lab/pacientes/novo')
   const { tutor_id: rawDefaultTutorId } = await searchParams
   const requestedTutorId = isUuid(rawDefaultTutorId) ? rawDefaultTutorId : undefined
 

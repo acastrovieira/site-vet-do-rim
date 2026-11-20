@@ -1,6 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { ApiValidationError, safeErrorSummary } from '@/lib/api-validation'
+import {
+  ApiCsrfError,
+  ApiValidationError,
+  assertSameOriginMutation,
+  safeErrorSummary,
+} from '@/lib/api-validation'
 import { authorizeClinicAccess } from '@/lib/server-authorization'
 import {
   authorizationFailureJson,
@@ -8,6 +13,8 @@ import {
 } from '@/lib/server-api-response'
 import { isUuid } from '@/lib/identifiers'
 import { mapAbandonLaudoUploadError } from '@/lib/lab/laudo-reservation'
+import { CLINICAL_RATE_LIMIT_SCOPES, consumeClinicalRateLimit } from '@/lib/server-rate-limit'
+import { recordSecurityEvent } from '@/lib/security-telemetry'
 
 interface Params {
   params: Promise<{ id: string }>
@@ -16,19 +23,9 @@ interface Params {
 /**
  * AUDIT-001 Fase 2 (Tarefa 2.5) — compensacao deterministica de uma reserva
  * de upload de laudo que nunca foi concluida (falha de upload ou desistencia
- * explicita). DECISAO registrada na migration 20260718120000: a RPC
- * private.abandon_laudo_upload NUNCA apaga storage.objects via SQL (isso
- * deixaria o objeto binario orfao no backend de armazenamento, sem trilha
- * alcancavel); ela apenas marca o laudo como 'abandonado' com trilha
- * auditavel (abandoned_at/abandoned_by) e devolve bucket/path. A remocao do
- * objeto (quando existir) e feita AQUI, com um cliente service_role, usando a
- * API de Storage do Supabase — nunca SQL direto em storage.objects.
- *
- * Falha na remocao do objeto NAO bloqueia a resposta de sucesso: a linha ja
- * foi marcada 'abandonado' pela RPC antes desta chamada, entao ha trilha
- * auditavel (status + timestamps + storage_path) mesmo se a limpeza do
- * Storage precisar ser reconciliada depois — nunca um DELETE silencioso sem
- * evidencia.
+ * explicita). A RPC apenas marca 'abandonado' e devolve bucket/path; a remocao
+ * no Storage e feita com service_role SOMENTE apos validar que o caminho e
+ * estritamente canonico para a clinica ativa do chamador.
  */
 export async function POST(request: Request, { params }: Params) {
   try {
@@ -40,6 +37,33 @@ export async function POST(request: Request, { params }: Params) {
     const supabase = await createClient()
     const authorization = await authorizeClinicAccess(supabase, ['vet', 'admin'])
     if (!authorization.ok) return authorizationFailureJson(authorization)
+
+    assertSameOriginMutation(request)
+
+    if (
+      !authorization.clinicId
+      || !authorization.membershipRole
+      || !['vet', 'clinic_admin'].includes(authorization.membershipRole)
+    ) {
+      return privateApiJson(
+        { ok: false, error: 'Clinica ativa nao confirmada', code: 'CLINIC_REQUIRED' },
+        { status: 403 },
+      )
+    }
+
+    const rateLimit = await consumeClinicalRateLimit(supabase, CLINICAL_RATE_LIMIT_SCOPES.abandon)
+    if (rateLimit.state === 'limited') {
+      return privateApiJson(
+        { ok: false, error: 'Muitas solicitações em sequência. Aguarde e tente novamente.', code: 'RATE_LIMITED' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } },
+      )
+    }
+    if (rateLimit.state === 'unavailable') {
+      return privateApiJson(
+        { ok: false, error: 'Não foi possível validar o limite da operação.', code: 'RATE_LIMIT_UNAVAILABLE' },
+        { status: 503 },
+      )
+    }
 
     const { data, error } = await supabase.rpc('abandon_laudo_upload', { p_laudo_id: id })
     const outcome = data?.[0]
@@ -54,34 +78,54 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     let storageCleanup: 'removed' | 'not_found' | 'unconfirmed' | 'skipped' = 'skipped'
+    const expectedBucket = 'laudos'
+    const expectedPath = `clinics/${authorization.clinicId}/laudos/${id}/original.pdf`
 
     if (outcome.storage_path) {
-      try {
-        const serviceClient = createServiceClient()
-        const { data: removed, error: removeError } = await serviceClient.storage
-          .from(outcome.storage_bucket ?? 'laudos')
-          .remove([outcome.storage_path])
-
-        if (removeError) {
-          storageCleanup = 'unconfirmed'
-          console.error('[POST /api/laudos/:id/abandon] storage cleanup failed', {
-            name: removeError.name,
-          })
-        } else if (removed?.length === 1) {
-          storageCleanup = 'removed'
-        } else {
-          // Nenhum objeto correspondia ao path (upload nunca chegou a
-          // acontecer) — resultado esperado na maioria dos abandons.
-          storageCleanup = 'not_found'
-        }
-      } catch (cleanupErr) {
+      if (
+        outcome.storage_path !== expectedPath
+        || (outcome.storage_bucket ?? expectedBucket) !== expectedBucket
+      ) {
         storageCleanup = 'unconfirmed'
-        console.error('[POST /api/laudos/:id/abandon] storage cleanup threw', safeErrorSummary(cleanupErr))
+        recordSecurityEvent({
+          event: 'extraction_storage_mismatch',
+          status: 409,
+          layer: 'api',
+          scope: '/api/laudos/:id/abandon',
+          code: 'PATH_MISMATCH',
+        })
+        console.error('[POST /api/laudos/:id/abandon] storage path contract mismatch', {
+          code: 'PATH_MISMATCH',
+        })
+      } else {
+        try {
+          const serviceClient = createServiceClient()
+          const { data: removed, error: removeError } = await serviceClient.storage
+            .from(outcome.storage_bucket ?? expectedBucket)
+            .remove([outcome.storage_path])
+
+          if (removeError) {
+            storageCleanup = 'unconfirmed'
+            console.error('[POST /api/laudos/:id/abandon] storage cleanup failed', {
+              name: removeError.name,
+            })
+          } else if (removed?.length === 1) {
+            storageCleanup = 'removed'
+          } else {
+            storageCleanup = 'not_found'
+          }
+        } catch (cleanupErr) {
+          storageCleanup = 'unconfirmed'
+          console.error('[POST /api/laudos/:id/abandon] storage cleanup threw', safeErrorSummary(cleanupErr))
+        }
       }
     }
 
     return privateApiJson({ ok: true, disposition: outcome.disposition, storageCleanup })
   } catch (err) {
+    if (err instanceof ApiCsrfError) {
+      return privateApiJson({ ok: false, error: err.message, code: 'CSRF_REJECTED' }, { status: 403 })
+    }
     if (err instanceof ApiValidationError) {
       return privateApiJson({ ok: false, error: err.message, code: 'VALIDATION' }, { status: 400 })
     }

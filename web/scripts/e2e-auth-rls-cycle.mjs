@@ -8,10 +8,13 @@ import {
   deleteAuthUsersAndVerify,
   runCleanupSteps,
 } from './lib/e2e-cleanup-match.mjs'
-import { explicitSupabaseTarget } from './lib/supabase-target.mjs'
+import { assertLocalSupabaseTarget, explicitSupabaseTarget } from './lib/supabase-target.mjs'
 
 const localEnv = loadLocalEnv()
-const { supabaseUrl } = explicitSupabaseTarget(localEnv, { mutation: true })
+const localTargetMode = process.argv.includes('--local')
+const { supabaseUrl } = localTargetMode
+  ? assertLocalSupabaseTarget(requiredEnv(localEnv, 'LOCAL_SUPABASE_URL'))
+  : explicitSupabaseTarget(localEnv, { mutation: true })
 const serviceRoleKey = requiredEnv(localEnv, 'SUPABASE_SERVICE_ROLE_KEY')
 const anonKey = requiredEnv(localEnv, 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
 
@@ -71,6 +74,16 @@ async function createRoleUser(role) {
 
 async function cleanup() {
   const users = [...createdUsers].reverse()
+  const userIds = users.map((user) => user.id)
+  if (userIds.length > 0) {
+    const { error: membershipError } = await supabase
+      .from('clinic_memberships')
+      .delete()
+      .in('user_id', userIds)
+    if (membershipError) {
+      throw new Error(`Failed to clear E2E memberships before deleteUser: ${membershipError.message}`)
+    }
+  }
   await deleteAuthUsersAndVerify(supabase.auth.admin, users, {
     isExpectedUser: (user) => (
       roles.includes(user.role)

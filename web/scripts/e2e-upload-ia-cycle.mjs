@@ -179,6 +179,14 @@ async function cleanupData() {
 
     await deleteRowsByIds(supabase, 'tutores', createdTutorId ? [createdTutorId] : [], 'Tutor')
 
+    if (createdUser) {
+      const { error: membershipError } = await supabase
+        .from('clinic_memberships')
+        .delete()
+        .eq('user_id', createdUser.id)
+      if (membershipError) throw new Error(`Cleanup clinic membership failed: ${membershipError.message}`)
+    }
+
     if (createdClinicId) {
       const { error: clinicError } = await supabase
         .from('clinics')

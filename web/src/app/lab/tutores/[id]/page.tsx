@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
 import {
   assertServerQuerySucceeded,
   throwServerQueryFailure,
@@ -10,7 +9,7 @@ import { TutorPetActions } from './TutorPetActions'
 import { ListPagination } from '@/components/lab/ListPagination'
 import { isUuid } from '@/lib/identifiers'
 import { listPageRange, parseListPage } from '@/lib/list-pagination'
-import { resolveActiveClinic } from '@/lib/server-clinic-context'
+import { requireLabClinicContext } from '@/lib/server-lab-context'
 import {
   ArrowLeft,
   Phone,
@@ -46,9 +45,7 @@ export default async function TutorDetailPage({
   const queryParams = await searchParams
   const page = parseListPage(queryParams?.page, PAGE_SIZE)
   const { firstRow, lastRow } = listPageRange(page, PAGE_SIZE)
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
+  const { supabase, activeClinic } = await requireLabClinicContext(`/lab/tutores/${id}`)
 
   type TutorRow = {
     id: string; nome: string; email: string | null; telefone: string

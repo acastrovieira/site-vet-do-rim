@@ -7,6 +7,8 @@ import {
   OPERATIONAL_NO_STORE_HEADERS,
   parseHttpsHealthUrl,
 } from '@/lib/operational-health'
+import { checkIpRateLimit } from '@/lib/ip-rate-limit'
+import { recordSecurityEvent } from '@/lib/security-telemetry'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -30,6 +32,20 @@ type ServiceResult = {
  * Todas as chamadas possuem timeout e as respostas nunca são armazenadas em cache.
  */
 export async function GET(request: Request) {
+  const rateLimit = checkIpRateLimit(request, 'cron_keep_alive', 10, 60_000)
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { ok: false, message: 'Too many requests' },
+      {
+        status: 429,
+        headers: {
+          ...OPERATIONAL_NO_STORE_HEADERS,
+          'Retry-After': String(rateLimit.retryAfterSeconds),
+        },
+      },
+    )
+  }
+
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret || cronSecret.length < 32) {
     console.error('[Cron Keep-Alive] configuracao_invalida', {
@@ -42,6 +58,13 @@ export async function GET(request: Request) {
   }
 
   if (!hasValidBearerSecret(request.headers.get('authorization'), cronSecret)) {
+    recordSecurityEvent({
+      event: 'cron_auth_failed',
+      status: 401,
+      layer: 'cron',
+      scope: 'cron_keep_alive',
+      code: 'CRON_UNAUTHORIZED',
+    })
     return new NextResponse('Unauthorized', {
       status: 401,
       headers: OPERATIONAL_NO_STORE_HEADERS,

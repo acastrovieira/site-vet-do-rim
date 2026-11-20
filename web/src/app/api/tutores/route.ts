@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import {
+  ApiCsrfError,
   ApiUnsupportedMediaTypeError,
   ApiPayloadTooLargeError,
   ApiValidationError,
   assertAllowedKeys,
+  assertSameOriginMutation,
   optionalText,
   readJsonObject,
   requiredText,
@@ -14,6 +16,8 @@ import {
   authorizationFailureJson,
   privateApiJson,
 } from '@/lib/server-api-response'
+import { CLINICAL_RATE_LIMIT_SCOPES, consumeClinicalRateLimit } from '@/lib/server-rate-limit'
+import { recordSecurityEvent } from '@/lib/security-telemetry'
 
 const UF_RE = /^[A-Z]{2}$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -56,6 +60,22 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const authorization = await authorizeClinicAccess(supabase, ['vet', 'admin'])
     if (!authorization.ok) return authorizationFailureJson(authorization)
+
+    assertSameOriginMutation(request)
+
+    const rateLimit = await consumeClinicalRateLimit(supabase, CLINICAL_RATE_LIMIT_SCOPES.tutoresMutation)
+    if (rateLimit.state === 'limited') {
+      return privateApiJson(
+        { ok: false, error: 'Muitas operações em sequência. Aguarde e tente novamente.', code: 'RATE_LIMITED' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } },
+      )
+    }
+    if (rateLimit.state === 'unavailable') {
+      return privateApiJson(
+        { ok: false, error: 'Não foi possível validar o limite da operação.', code: 'RATE_LIMIT_UNAVAILABLE' },
+        { status: 503 },
+      )
+    }
 
     const body = await readJsonObject(request)
     assertAllowedKeys(body, [
@@ -117,18 +137,41 @@ export async function POST(request: Request) {
       })
 
       const isRLS = error?.code === '42501' || error?.message?.toLowerCase().includes('row-level')
+      if (isRLS) {
+        recordSecurityEvent({
+          event: 'rls_denied',
+          status: 403,
+          layer: 'api',
+          scope: '/api/tutores',
+          code: 'RLS_DENIED',
+        })
+      }
+      const isConflict = error?.code === '23505'
+      const isConstraint = error?.code === '23503' || error?.code === '23514' || error?.code === '22P02'
       return privateApiJson(
         {
           ok: false,
-          error: isRLS ? 'Permissao insuficiente para criar tutor.' : 'Nao foi possivel criar o tutor.',
-          code: isRLS ? 'RLS_DENIED' : 'DATABASE',
+          error: isRLS
+            ? 'Permissao insuficiente para criar tutor.'
+            : isConflict
+              ? 'Tutor ja cadastrado com estes dados.'
+              : isConstraint
+                ? 'Dados invalidos para criar tutor.'
+                : 'Nao foi possivel criar o tutor.',
+          code: isRLS ? 'RLS_DENIED' : isConflict ? 'CONFLICT' : isConstraint ? 'VALIDATION' : 'DATABASE',
         },
-        { status: isRLS ? 403 : 500 }
+        { status: isRLS ? 403 : isConflict ? 409 : isConstraint ? 400 : 500 }
       )
     }
 
     return privateApiJson({ ok: true, id: data.id }, { status: 201 })
   } catch (err) {
+    if (err instanceof ApiCsrfError) {
+      return privateApiJson(
+        { ok: false, error: err.message, code: 'CSRF_REJECTED' },
+        { status: 403 },
+      )
+    }
     if (err instanceof ApiPayloadTooLargeError) {
       return privateApiJson(
         { ok: false, error: err.message, code: 'PAYLOAD_TOO_LARGE' },

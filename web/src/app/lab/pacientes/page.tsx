@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { FlaskConical, Plus, Search, AlertTriangle, RefreshCw } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { ListPagination } from '@/components/lab/ListPagination'
 import { listPageRange, parseListPage } from '@/lib/list-pagination'
-import { resolveActiveClinic } from '@/lib/server-clinic-context'
+import { requireLabClinicContext } from '@/lib/server-lab-context'
 
 export const metadata: Metadata = {
   title: 'Pacientes — Lab Evolution',
@@ -38,9 +37,7 @@ function patientsHref(page: number, query: string) {
 }
 
 export default async function PacientesPage({ searchParams }: PacientesPageProps) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
+  const { supabase, activeClinic } = await requireLabClinicContext('/lab/pacientes')
   const params = await searchParams
   const query = normalizedQuery(params?.q)
   const page = parseListPage(params?.page, PAGE_SIZE)

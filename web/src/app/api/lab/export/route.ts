@@ -11,6 +11,7 @@ import {
 } from '@/lib/lab/transform-laudo-data'
 import { getCategoryForLabKey, type HemogramaKey } from '@/lib/lab/reference-values'
 import { CLINICAL_RATE_LIMIT_SCOPES, consumeClinicalRateLimit } from '@/lib/server-rate-limit'
+import { recordSecurityEvent } from '@/lib/security-telemetry'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -27,6 +28,18 @@ export const runtime = 'nodejs'
  * Isso evita depender da migration histórica de exam_result_items.
  */
 export async function GET(request: Request) {
+  const secFetchSite = request.headers.get('sec-fetch-site')?.trim().toLowerCase()
+  if (secFetchSite === 'cross-site') {
+    recordSecurityEvent({
+      event: 'csrf_rejected',
+      status: 403,
+      layer: 'api',
+      scope: '/api/lab/export',
+      code: 'CSRF_REJECTED',
+    })
+    return privateApiJson({ error: 'Requisição cross-site não autorizada.' }, { status: 403 })
+  }
+
   const { searchParams } = new URL(request.url)
   const petId = searchParams.get('petId')
   const format = searchParams.get('format') ?? 'csv'
@@ -89,6 +102,7 @@ export async function GET(request: Request) {
     .eq('clinic_id', authorization.clinicId)
     .eq('status', 'concluido')
     .order('created_at', { ascending: true })
+    .limit(200)
 
   if (queryError) {
     console.error('[Export] query_error', { code: queryError.code })
@@ -266,8 +280,8 @@ const STATUS_LABELS: Record<string, string> = {
 function escapeCsvCell(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return ''
   const raw = String(value)
-  const str = typeof value === 'string' && /^[\s]*[=+\-@]/.test(raw) ? `'${raw}` : raw
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+  const str = typeof value === 'string' && /^[\s\x00-\x1f]*[=+\-@\t\r|]/.test(raw) ? `'${raw}` : raw
+  if (str.includes(',') || str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
     return `"${str.replace(/"/g, '""')}"`
   }
   return str

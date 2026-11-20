@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(16);
+SELECT plan(17);
 
 SELECT is(
   (
@@ -28,8 +28,8 @@ SELECT is(
         'laudos_pdf', 'exam_result_items'
       ]::name[])
   ),
-  18::bigint,
-  'tenant-owned tables expose only the reviewed 18-policy allowlist'
+  17::bigint,
+  'tenant-owned tables expose only the reviewed 17-policy allowlist'
 );
 
 SELECT is(
@@ -97,6 +97,11 @@ SELECT is(
 SELECT ok(
   NOT has_table_privilege('authenticated', 'public.laudos_pdf', 'UPDATE'),
   'authenticated cannot update laudos_pdf directly'
+);
+
+SELECT ok(
+  NOT has_table_privilege('authenticated', 'public.laudos_pdf', 'INSERT'),
+  'authenticated cannot insert laudos_pdf directly'
 );
 
 SELECT is(

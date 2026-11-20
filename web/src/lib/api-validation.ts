@@ -1,3 +1,5 @@
+import { recordSecurityEvent, sanitizeTelemetryRoutePath } from './security-telemetry.ts'
+
 const DEFAULT_MAX_JSON_BYTES = 32 * 1024
 
 export class ApiValidationError extends Error {
@@ -18,6 +20,71 @@ export class ApiPayloadTooLargeError extends ApiValidationError {
   constructor() {
     super('Corpo da requisicao excede o limite permitido')
     this.name = 'ApiPayloadTooLargeError'
+  }
+}
+
+export class ApiCsrfError extends ApiValidationError {
+  constructor(message = 'Origem da requisicao nao autorizada') {
+    super(message)
+    this.name = 'ApiCsrfError'
+  }
+}
+
+function resolveExpectedHost(request: Request): string {
+  const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim()
+  const hostHeader = request.headers.get('host')?.trim()
+  if (forwardedHost) return forwardedHost.toLowerCase()
+  if (hostHeader) return hostHeader.toLowerCase()
+  try {
+    return new URL(request.url).host.toLowerCase()
+  } catch {
+    return ''
+  }
+}
+
+function rejectCsrf(request: Request): never {
+  recordSecurityEvent({
+    event: 'csrf_rejected',
+    status: 403,
+    layer: 'api',
+    scope: sanitizeTelemetryRoutePath(request.url),
+    code: 'CSRF_REJECTED',
+  })
+  throw new ApiCsrfError()
+}
+
+function parseHeaderHost(rawUrl: string): string | null {
+  try {
+    return new URL(rawUrl).host.toLowerCase()
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Garante que mutacoes baseadas em cookie partam apenas da propria origem.
+ * Bloqueia `Sec-Fetch-Site: cross-site` e `Origin`/`Referer` divergentes.
+ */
+export function assertSameOriginMutation(request: Request) {
+  const secFetchSite = request.headers.get('sec-fetch-site')?.trim().toLowerCase()
+  if (secFetchSite && secFetchSite !== 'same-origin' && secFetchSite !== 'none') {
+    rejectCsrf(request)
+  }
+
+  const expectedHost = resolveExpectedHost(request)
+  const origin = request.headers.get('origin')?.trim()
+  if (origin) {
+    if (origin.toLowerCase() === 'null' || !expectedHost || parseHeaderHost(origin) !== expectedHost) {
+      rejectCsrf(request)
+    }
+    return
+  }
+
+  const referer = request.headers.get('referer')?.trim()
+  if (referer) {
+    if (!expectedHost || parseHeaderHost(referer) !== expectedHost) {
+      rejectCsrf(request)
+    }
   }
 }
 

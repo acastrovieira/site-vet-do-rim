@@ -373,6 +373,36 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['clinic_memberships']['Insert']>
         Relationships: []
       }
+      pet_death_events: {
+        Row: {
+          id: string
+          clinic_id: string
+          pet_id: string
+          actor_user_id: string
+          previous_status: string
+          data_obito: string
+          motivo: string
+          observacoes: string | null
+          triagens_encerradas: number
+          follow_ups_cancelados: number
+          recorded_at: string
+        }
+        Insert: {
+          id?: string
+          clinic_id: string
+          pet_id: string
+          actor_user_id: string
+          previous_status: string
+          data_obito: string
+          motivo: string
+          observacoes?: string | null
+          triagens_encerradas?: number
+          follow_ups_cancelados?: number
+          recorded_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['pet_death_events']['Insert']>
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     // Tarefa 2.5 (20260718120000_laudo_upload_reservation.sql): as duas RPCs
@@ -390,7 +420,17 @@ export interface Database {
         Returns: { disposition: string; storage_bucket: string | null; storage_path: string | null }[]
       }
       consume_clinical_rate_limit: {
-        Args: { p_scope: 'laudo_reserve' | 'laudo_local_extraction' | 'lab_export' }
+        Args: {
+          p_scope:
+          | 'laudo_reserve'
+          | 'laudo_abandon'
+          | 'laudo_local_extraction'
+          | 'laudo_ai_parse'
+          | 'lab_export'
+          | 'pets_mutation'
+          | 'tutores_mutation'
+          | 'profile_mutation'
+        }
         Returns: { allowed: boolean; retry_after_seconds: number }[]
       }
       populate_exam_result_items: {
@@ -400,6 +440,26 @@ export interface Database {
       purge_old_claim_events: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      record_pet_death: {
+        Args: {
+          p_clinic_id: string
+          p_actor_user_id: string
+          p_pet_id: string
+          p_data_obito: string
+          p_motivo: string
+          p_observacoes?: string | null
+        }
+        Returns: {
+          event_id: string
+          pet_id: string
+          clinic_id: string
+          previous_status: string
+          data_obito: string
+          triagens_encerradas: number
+          follow_ups_cancelados: number
+          recorded_at: string
+        }[]
       }
     }
     Enums: Record<string, never>

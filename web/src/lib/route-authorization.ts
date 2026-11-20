@@ -10,16 +10,74 @@ const ROLE_RULES: ReadonlyArray<{
   { prefix: '/portal', roles: ['tutor'] },
 ]
 
+/**
+ * Decodifica percent-encoding iterativamente (ate 2 passes) e rejeita
+ * sequencias invalidas, bytes de controle, barras invertidas ou traversal (`..`).
+ * Retorna `null` em caso de path malformado/suspeito para permitir fail-closed.
+ */
+export function normalizePathname(pathname: string): string | null {
+  if (!pathname || typeof pathname !== 'string') return null
+  if (
+    !pathname.startsWith('/') ||
+    pathname.startsWith('//') ||
+    pathname.includes('\\') ||
+    /[\u0000-\u001f\u007f]/.test(pathname)
+  ) {
+    return null
+  }
+
+  let current = pathname
+  for (let pass = 0; pass < 2; pass += 1) {
+    let decoded: string
+    try {
+      decoded = decodeURIComponent(current)
+    } catch {
+      return null
+    }
+
+    if (
+      decoded.startsWith('//') ||
+      decoded.includes('\\') ||
+      /[\u0000-\u001f\u007f]/.test(decoded)
+    ) {
+      return null
+    }
+
+    if (decoded === current) break
+    current = decoded
+  }
+
+  const collapsed = current.replace(/\/+/g, '/')
+  const segments = collapsed.split('/')
+  if (segments.some((segment) => segment === '.' || segment === '..')) {
+    return null
+  }
+
+  return collapsed
+}
+
 export function matchesRoutePrefix(pathname: string, prefix: string) {
-  return pathname === prefix || pathname.startsWith(`${prefix}/`)
+  const normalized = normalizePathname(pathname)
+  if (!normalized) return false
+  return normalized === prefix || normalized.startsWith(`${prefix}/`)
 }
 
 export function requiresAuthentication(pathname: string) {
-  return AUTHENTICATED_PREFIXES.some((prefix) => matchesRoutePrefix(pathname, prefix))
+  const normalized = normalizePathname(pathname)
+  if (!normalized) return true
+  return AUTHENTICATED_PREFIXES.some(
+    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`),
+  )
 }
 
 export function requiredRoles(pathname: string) {
-  return ROLE_RULES.find(({ prefix }) => matchesRoutePrefix(pathname, prefix))?.roles ?? null
+  const normalized = normalizePathname(pathname)
+  if (!normalized) return null
+  return (
+    ROLE_RULES.find(
+      ({ prefix }) => normalized === prefix || normalized.startsWith(`${prefix}/`),
+    )?.roles ?? null
+  )
 }
 
 export function roleHome(role: AppRole | null) {
@@ -33,6 +91,7 @@ export function parseAppRole(value: unknown): AppRole | null {
 }
 
 export function isRoleAuthorized(pathname: string, role: AppRole | null) {
+  if (normalizePathname(pathname) === null) return false
   const roles = requiredRoles(pathname)
   return roles === null || (role !== null && roles.includes(role))
 }
@@ -53,16 +112,15 @@ export function safeInternalRedirectPath(value: string | null | undefined) {
     const base = new URL('https://internal.invalid')
     const candidate = new URL(value, base)
     if (candidate.origin !== base.origin || candidate.hash) return ''
-    const decodedPath = decodeURIComponent(candidate.pathname)
+    const normalizedPath = normalizePathname(candidate.pathname)
+    if (!normalizedPath) return ''
     if (
-      decodedPath.startsWith('//') ||
-      decodedPath.includes('\\') ||
-      /[\u0000-\u001f\u007f]/.test(decodedPath)
+      normalizedPath === '/auth' ||
+      normalizedPath.startsWith('/auth/')
     ) {
       return ''
     }
-    if (matchesRoutePrefix(candidate.pathname, '/auth')) return ''
-    return `${candidate.pathname}${candidate.search}`
+    return `${normalizedPath}${candidate.search}`
   } catch {
     return ''
   }

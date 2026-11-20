@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import {
+  ApiCsrfError,
   ApiUnsupportedMediaTypeError,
   ApiPayloadTooLargeError,
   ApiValidationError,
   assertAllowedKeys,
+  assertSameOriginMutation,
   optionalNumber,
   optionalText,
   readJsonObject,
@@ -16,6 +18,8 @@ import {
   privateApiJson,
 } from '@/lib/server-api-response'
 import { isUuid } from '@/lib/identifiers'
+import { CLINICAL_RATE_LIMIT_SCOPES, consumeClinicalRateLimit } from '@/lib/server-rate-limit'
+import { recordSecurityEvent } from '@/lib/security-telemetry'
 
 interface Params {
   params: Promise<{ id: string }>
@@ -38,6 +42,22 @@ export async function PATCH(request: Request, { params }: Params) {
     const supabase = await createClient()
     const authorization = await authorizeClinicAccess(supabase, ['vet', 'admin'])
     if (!authorization.ok) return authorizationFailureJson(authorization)
+
+    assertSameOriginMutation(request)
+
+    const rateLimit = await consumeClinicalRateLimit(supabase, CLINICAL_RATE_LIMIT_SCOPES.petsMutation)
+    if (rateLimit.state === 'limited') {
+      return privateApiJson(
+        { ok: false, error: 'Muitas operações em sequência. Aguarde e tente novamente.', code: 'RATE_LIMITED' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } },
+      )
+    }
+    if (rateLimit.state === 'unavailable') {
+      return privateApiJson(
+        { ok: false, error: 'Não foi possível validar o limite da operação.', code: 'RATE_LIMIT_UNAVAILABLE' },
+        { status: 503 },
+      )
+    }
 
     const body = await readJsonObject(request)
     assertAllowedKeys(body, [
@@ -200,6 +220,15 @@ export async function PATCH(request: Request, { params }: Params) {
       })
 
       const isRLS = error?.code === '42501' || error?.message?.toLowerCase().includes('row-level')
+      if (isRLS) {
+        recordSecurityEvent({
+          event: 'rls_denied',
+          status: 403,
+          layer: 'api',
+          scope: '/api/pets/:id',
+          code: 'RLS_DENIED',
+        })
+      }
       const isNotFound = error?.code === 'PGRST116'
       const isConstraint = error?.code === '23503' || error?.code === '23514' || error?.code === '22P02'
       const isMissing = expectedStatus === null && !error && !data
@@ -236,6 +265,12 @@ export async function PATCH(request: Request, { params }: Params) {
 
     return privateApiJson({ ok: true, id: data.id })
   } catch (err) {
+    if (err instanceof ApiCsrfError) {
+      return privateApiJson(
+        { ok: false, error: err.message, code: 'CSRF_REJECTED' },
+        { status: 403 },
+      )
+    }
     if (err instanceof ApiPayloadTooLargeError) {
       return privateApiJson(
         { ok: false, error: err.message, code: 'PAYLOAD_TOO_LARGE' },

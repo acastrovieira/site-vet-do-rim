@@ -17,7 +17,9 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { ClinicSwitcher } from '@/components/lab/ClinicSwitcher'
 import type { AppRole } from '@/lib/route-authorization'
+import type { ActiveClinicOption } from '@/lib/server-clinic-context'
 
 interface LabShellProps {
   children: React.ReactNode
@@ -25,6 +27,8 @@ interface LabShellProps {
     fullName: string | null
     role: AppRole
   }
+  clinics: readonly ActiveClinicOption[]
+  activeClinicId: string | null
 }
 
 const navItems = [
@@ -37,7 +41,12 @@ const navItems = [
  * Shell (sidebar + topbar) do Lab Evolution.
  * Server layout passa user/profile; este componente é client-side para interatividade.
  */
-export function LabShell({ children, profile }: LabShellProps) {
+export function LabShell({
+  children,
+  profile,
+  clinics,
+  activeClinicId,
+}: LabShellProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -66,7 +75,9 @@ export function LabShell({ children, profile }: LabShellProps) {
     const returnFocusTo = menuButtonRef.current
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const firstControl = sidebarRef.current?.querySelector<HTMLElement>('a[href], button:not([disabled])')
+    const firstControl = sidebarRef.current?.querySelector<HTMLElement>(
+      'a[href], button:not([disabled]), select:not([disabled])',
+    )
     firstControl?.focus()
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -78,7 +89,9 @@ export function LabShell({ children, profile }: LabShellProps) {
 
       if (event.key !== 'Tab' || !sidebarRef.current) return
       const focusable = Array.from(
-        sidebarRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'),
+        sidebarRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
       ).filter((element) => element.getClientRects().length > 0)
       if (focusable.length === 0) {
         event.preventDefault()
@@ -111,6 +124,7 @@ export function LabShell({ children, profile }: LabShellProps) {
     setLogoutError(null)
     startTransition(async () => {
       try {
+        await fetch('/api/lab/active-clinic', { method: 'DELETE' }).catch(() => undefined)
         const supabase = createClient()
         const { error } = await supabase.auth.signOut()
         if (error) {
@@ -163,6 +177,13 @@ export function LabShell({ children, profile }: LabShellProps) {
             <span className="block text-[10px] text-gold-400 font-medium tracking-wider mt-0.5">Lab Evolution</span>
           </div>
         </div>
+
+        {/* Seletor multi-clínica */}
+        <ClinicSwitcher
+          clinics={clinics}
+          activeClinicId={activeClinicId}
+          onSwitched={() => setSidebarOpen(false)}
+        />
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5" aria-label="Menu principal">

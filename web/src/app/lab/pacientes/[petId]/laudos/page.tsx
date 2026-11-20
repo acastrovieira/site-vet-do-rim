@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { LaudoUploader } from '@/components/lab/LaudoUploader'
 import { ManualExamForm } from '@/components/lab/ManualExamForm'
 import { ArrowLeft, FileText } from 'lucide-react'
@@ -12,7 +11,7 @@ import {
 import { ListPagination } from '@/components/lab/ListPagination'
 import { isUuid } from '@/lib/identifiers'
 import { listPageRange, parseListPage } from '@/lib/list-pagination'
-import { resolveActiveClinic } from '@/lib/server-clinic-context'
+import { requireLabClinicContext } from '@/lib/server-lab-context'
 
 interface Props {
   params: Promise<{ petId: string }>
@@ -43,9 +42,7 @@ export default async function LaudosPacientePage({ params, searchParams }: Props
   const queryParams = await searchParams
   const page = parseListPage(queryParams?.page, PAGE_SIZE)
   const { firstRow, lastRow } = listPageRange(page, PAGE_SIZE)
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const activeClinic = user ? await resolveActiveClinic(supabase, user.id) : null
+  const { supabase, activeClinic } = await requireLabClinicContext(`/lab/pacientes/${petId}/laudos`)
 
   type PetRow = { id: string; nome: string; especie: string; raca: string | null }
 
@@ -84,10 +81,10 @@ export default async function LaudosPacientePage({ params, searchParams }: Props
   }
 
   const { data: laudos, error: laudosError, count } = await laudosQuery as {
-      data: LaudoRow[] | null
-      error: unknown
-      count: number | null
-    }
+    data: LaudoRow[] | null
+    error: unknown
+    count: number | null
+  }
   assertServerQuerySucceeded(laudosError, 'PATIENT_REPORT_HISTORY_QUERY_FAILED')
   if (count === null) throwServerQueryFailure('PATIENT_REPORT_HISTORY_COUNT_MISSING')
 
